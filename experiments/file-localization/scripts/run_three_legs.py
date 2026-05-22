@@ -35,7 +35,11 @@ from agent_eval.reports import write_aggregate_csv, write_csv, write_markdown
 from file_localization.adapters import load_swebench, to_localization_tasks
 from file_localization.llm_trial import make_llm_trial
 from file_localization.turn_loop_trial import LocalRepoView, make_turn_loop_trial
-from file_localization.agent_cli_trial import is_available, make_claude_code_trial
+from file_localization.agent_cli_trial import (
+    CLAUDE_CODE_READONLY_TOOLS,
+    is_available,
+    make_claude_code_trial,
+)
 from file_localization.contract import LocalizationTask
 from file_localization.repos import prepare as prepare_repo
 
@@ -117,8 +121,20 @@ def main() -> int:
         top_k=20,
         transcripts_dir=transcripts_dir,
     )
-    claude_code = (
+    claude_code_full = (
         make_claude_code_trial(repo_view_for=repo_view_for, top_k=20)
+        if have_claude_code
+        else None
+    )
+    # Apples-to-apples variant: restrict Claude Code to roughly the DIY
+    # turn-loop's read-only surface (Read = view_file, Grep = grep,
+    # Glob = list_files). No Bash, no Edit, no web.
+    claude_code_readonly = (
+        make_claude_code_trial(
+            repo_view_for=repo_view_for,
+            top_k=20,
+            allowed_tools=CLAUDE_CODE_READONLY_TOOLS,
+        )
         if have_claude_code
         else None
     )
@@ -129,13 +145,16 @@ def main() -> int:
         if condition == "turn-loop":
             return turn_loop(client, condition, task)
         if condition == "claude-code":
-            assert claude_code is not None
-            return claude_code(client, condition, task)
+            assert claude_code_full is not None
+            return claude_code_full(client, condition, task)
+        if condition == "claude-code-readonly":
+            assert claude_code_readonly is not None
+            return claude_code_readonly(client, condition, task)
         raise ValueError(f"unknown condition: {condition}")
 
     conditions = ["one-shot", "turn-loop"]
     if have_claude_code:
-        conditions.append("claude-code")
+        conditions += ["claude-code", "claude-code-readonly"]
 
     print(f"\nrunning {len(tasks)} task(s) x {len(conditions)} condition(s) "
           f"x {args.repetitions} replicate(s)... ({len(tasks)*len(conditions)*args.repetitions} trials)")

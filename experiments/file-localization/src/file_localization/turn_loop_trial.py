@@ -1,28 +1,23 @@
-"""Turn-loop trial for file localization.
+"""Turn-loop trial for file localization (tool_use protocol).
 
 The model explores a repo via tools and submits a ranked file list.
 Trial signature matches `agent_eval.Sweep`:
     (ModelClient, condition, LocalizationTask) -> RunRecord
 
-Tools the model gets:
-  - list_files(path?)           → ranked list of paths under `path`
-  - grep(pattern, glob?, limit?) → fast content search, returns hits with
-                                    path:line:snippet
-  - view_file(path, line_range?) → file contents (optionally a range)
-  - done(files=[...])            → final ranked answer; loop exits
+Tools are defined ONCE in `file_localization.tools` (TOOL_SCHEMAS +
+apply_tool_call) and shared with the structured-loop variant. The
+RepoView abstraction lives in `file_localization.repo_view`.
 
-The loop honors the same escape valves as code-editing's agent runner
-(max_turns, max_consecutive_errors, max_no_progress_turns).
+The loop itself (this module) just owns: escape valves, message
+sequencing, scoring, transcript dumping.
 """
 
 from __future__ import annotations
 
-import fnmatch
-import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Callable
 
 from agent_eval.pricing import cost_usd
 from agent_eval.types import (
@@ -35,158 +30,26 @@ from agent_eval.types import (
 )
 
 from file_localization.contract import LocalizationTask, score
+from file_localization.repo_view import LocalRepoView, RepoView  # re-exported for compat
+from file_localization.tools import TOOL_SCHEMAS, apply_tool_call
 
-
-# ============ RepoView abstraction ============
-
-
-class RepoView(Protocol):
-    """Read-only view of a repo at a specific commit/state."""
-
-    def list_files(self, subpath: str = "") -> list[str]: ...
-    def grep(self, pattern: str, glob: str = "", limit: int = 50) -> list[tuple[str, int, str]]: ...
-    def view_file(self, path: str, line_range: tuple[int, int] | None = None) -> str: ...
-
-
-@dataclass
-class LocalRepoView:
-    """A RepoView backed by a local directory."""
-
-    root: Path
-
-    def __post_init__(self) -> None:
-        self.root = Path(self.root).resolve()
-
-    def _safe(self, rel: str) -> Path:
-        p = (self.root / rel).resolve()
-        if not str(p).startswith(str(self.root)):
-            raise ValueError(f"path escapes repo: {rel}")
-        return p
-
-    def list_files(self, subpath: str = "") -> list[str]:
-        base = self._safe(subpath) if subpath else self.root
-        if not base.exists() or not base.is_dir():
-            return []
-        out: list[str] = []
-        for p in base.rglob("*"):
-            if not p.is_file():
-                continue
-            parts = p.relative_to(self.root).parts
-            if any(seg in {".git", "__pycache__", "node_modules", ".venv"} for seg in parts):
-                continue
-            out.append(str(p.relative_to(self.root)))
-        return sorted(out)
-
-    def grep(self, pattern: str, glob: str = "", limit: int = 50) -> list[tuple[str, int, str]]:
-        try:
-            rx = re.compile(pattern)
-        except re.error as e:
-            raise ValueError(f"bad regex {pattern!r}: {e}") from e
-        hits: list[tuple[str, int, str]] = []
-        for rel in self.list_files():
-            if glob and not fnmatch.fnmatch(rel, glob):
-                continue
-            try:
-                text = (self.root / rel).read_text(encoding="utf-8", errors="ignore")
-            except (OSError, UnicodeDecodeError):
-                continue
-            for i, line in enumerate(text.splitlines(), start=1):
-                if rx.search(line):
-                    snippet = line[:200].rstrip()
-                    hits.append((rel, i, snippet))
-                    if len(hits) >= limit:
-                        return hits
-        return hits
-
-    def view_file(self, path: str, line_range: tuple[int, int] | None = None) -> str:
-        p = self._safe(path)
-        if not p.exists() or not p.is_file():
-            raise FileNotFoundError(path)
-        text = p.read_text(encoding="utf-8", errors="replace")
-        if line_range is None:
-            return text
-        lines = text.splitlines()
-        start, end = line_range
-        return "\n".join(lines[max(0, start - 1) : min(len(lines), end)])
-
-
-# ============ tool schemas ============
-
-
-TOOLS: list[dict[str, Any]] = [
-    {
-        "name": "list_files",
-        "description": (
-            "List every file under the given subpath (default: repo root). "
-            "Returns one path per line, relative to the repo root. Excludes "
-            ".git, __pycache__, node_modules, .venv."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "path": {"type": "string", "description": "Subdirectory to list. Defaults to root.", "default": ""}
-            },
-            "required": [],
-        },
-    },
-    {
-        "name": "grep",
-        "description": (
-            "Search file contents for a regex pattern. Returns up to `limit` "
-            "matches as `path:line: snippet`. Optionally filter by a glob over "
-            "the path (e.g. `*.py`, `src/**/*.ts`)."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "pattern": {"type": "string", "description": "Python regex pattern."},
-                "glob": {"type": "string", "description": "Optional path glob filter.", "default": ""},
-                "limit": {"type": "integer", "description": "Max matches.", "default": 50},
-            },
-            "required": ["pattern"],
-        },
-    },
-    {
-        "name": "view_file",
-        "description": (
-            "Read a file's contents. Optionally pass `line_range` as [start, end] "
-            "(1-indexed, inclusive) to get only that slice."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "path": {"type": "string"},
-                "line_range": {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                    "minItems": 2,
-                    "maxItems": 2,
-                    "description": "[start, end] (1-indexed, inclusive). Optional.",
-                },
-            },
-            "required": ["path"],
-        },
-    },
-    {
-        "name": "done",
-        "description": (
-            "Submit your final answer: the ranked list of files needed to "
-            "investigate and fix the issue. Most important first. After this "
-            "call, the loop exits — you cannot edit or retract."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Ranked file paths, most important first.",
-                },
-            },
-            "required": ["files"],
-        },
-    },
+# Re-exports so existing `from turn_loop_trial import LocalRepoView, ...`
+# imports continue to work after the extraction.
+__all__ = [
+    "LocalRepoView",
+    "RepoView",
+    "TOOL_SCHEMAS",
+    "apply_tool_call",
+    "make_turn_loop_trial",
+    "_Limits",
 ]
+
+# Legacy aliases — referenced by the structured-loop module and tests.
+TOOLS = TOOL_SCHEMAS
+_apply = apply_tool_call
+
+
+# ============ loop-local prompts ============
 
 
 SYSTEM_PROMPT = """\
@@ -235,49 +98,6 @@ class _Limits:
     max_turns: int = 15
     max_consecutive_errors: int = 3
     max_no_progress_turns: int = 4
-
-
-def _apply(call: ToolCall, repo: RepoView) -> ToolResult:
-    """Apply one tool call against the repo view."""
-    args = call.arguments
-    try:
-        if call.name == "list_files":
-            paths = repo.list_files(args.get("path", "") or "")
-            content = "\n".join(paths) if paths else "(empty)"
-            return ToolResult(call.call_id, "ok", content[:8000])
-        if call.name == "grep":
-            pattern = args.get("pattern")
-            if not pattern:
-                return ToolResult(call.call_id, "error", "missing `pattern`")
-            hits = repo.grep(
-                pattern, glob=args.get("glob", "") or "", limit=int(args.get("limit", 50))
-            )
-            if not hits:
-                return ToolResult(call.call_id, "ok", "(no matches)")
-            content = "\n".join(f"{p}:{ln}: {snip}" for p, ln, snip in hits)
-            return ToolResult(call.call_id, "ok", content[:8000])
-        if call.name == "view_file":
-            path = args.get("path")
-            if not path:
-                return ToolResult(call.call_id, "error", "missing `path`")
-            line_range = args.get("line_range")
-            rng = tuple(line_range) if line_range else None
-            try:
-                text = repo.view_file(path, rng)
-            except FileNotFoundError:
-                return ToolResult(call.call_id, "error", f"file not found: {path}")
-            numbered = "\n".join(
-                f"{i + 1:>5}: {line}" for i, line in enumerate(text.splitlines())
-            )
-            return ToolResult(call.call_id, "ok", numbered[:8000])
-        if call.name == "done":
-            files = args.get("files") or []
-            if not isinstance(files, list):
-                return ToolResult(call.call_id, "error", "`files` must be a list")
-            return ToolResult(call.call_id, "ok", f"accepted {len(files)} file(s)")
-        return ToolResult(call.call_id, "error", f"unknown tool: {call.name}")
-    except ValueError as e:
-        return ToolResult(call.call_id, "error", str(e))
 
 
 def _snapshot(submitted: list[str]) -> tuple[str, ...]:

@@ -216,14 +216,13 @@ def make_claude_code_trial(
     timeout: int = 120,
     fp_penalty: float = 0.05,
     top_k: int | None = None,
+    allowed_tools: list[str] | None = None,
+    disallowed_tools: list[str] | None = None,
 ):
     """Factory: returns a Trial that drives Anthropic's `claude` CLI.
 
     The CLI is spawned in non-interactive mode (`claude -p "<prompt>"`)
-    with `cwd` set to the repo root. Cost/token usage is NOT captured —
-    Claude Code routes via the user's subscription, and parsing
-    `--output-format=json` is intentionally avoided for cross-version
-    robustness. Recorded `usage` and `cost_usd` are zeros.
+    with `cwd` set to the repo root. Cost/token usage is NOT captured.
 
     Args:
         repo_view_for: callable mapping a task to a RepoView whose `.root`
@@ -232,20 +231,31 @@ def make_claude_code_trial(
         timeout: subprocess timeout in seconds.
         fp_penalty: scorer's false-positive penalty.
         top_k: if set, only the top-k parsed files are scored.
+        allowed_tools: when set, restrict Claude Code to this tool set via
+            `--allowed-tools "Tool1 Tool2 ..."`. Useful for apples-to-apples
+            comparisons with the DIY turn-loop. To match the DIY surface
+            (list_files / grep / view_file) pass `["Read", "Grep", "Glob"]`.
+        disallowed_tools: counterpart to allowed_tools. Pass to block
+            specific tools like `["Bash", "Edit", "Write"]`.
     """
+
+    extra_flags: list[str] = []
+    if allowed_tools:
+        extra_flags += ["--allowed-tools", " ".join(allowed_tools)]
+    if disallowed_tools:
+        extra_flags += ["--disallowed-tools", " ".join(disallowed_tools)]
 
     def build_argv(prompt: str) -> list[str]:
         # `-p / --print`: one-shot non-interactive print mode.
         # `--permission-mode bypassPermissions`: don't prompt during a
-        # benchmark run; the agent is read-only by intent (it should only
-        # explore). The user must already have run `claude` once to accept
-        # workspace trust; -p skips the trust dialog itself.
+        # benchmark run.
         return [
             cli_path,
             "-p",
             prompt,
             "--permission-mode",
             "bypassPermissions",
+            *extra_flags,
         ]
 
     return _make_trial(
@@ -255,6 +265,11 @@ def make_claude_code_trial(
         fp_penalty=fp_penalty,
         top_k=top_k,
     )
+
+
+# Pre-set "match the DIY turn-loop surface" — Read=view_file, Grep=grep,
+# Glob=list_files-equivalent. No Bash, no edits, no web.
+CLAUDE_CODE_READONLY_TOOLS: list[str] = ["Read", "Grep", "Glob"]
 
 
 # ---------- OpenAI Codex ----------
