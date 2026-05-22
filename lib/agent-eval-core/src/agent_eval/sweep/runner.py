@@ -11,6 +11,7 @@ The runner DOES know:
   - how to track cumulative cost
   - how to halt on budget overrun
   - how to run in parallel
+  - how to run each cell N times (replicates) for distribution estimates
   - how to collect RunRecord results
 """
 
@@ -18,12 +19,12 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 from agent_eval.models import make_client
 from agent_eval.pricing import cost_usd
 from agent_eval.sweep.budget import Budget, BudgetExceeded
-from agent_eval.types import ModelClient, RunRecord
+from agent_eval.types import ModelClient, RunRecord, TurnUsage
 
 
 TrialFn = Callable[[ModelClient, str, Any], RunRecord]
@@ -37,13 +38,18 @@ def _task_id(task: Any) -> str:
 
 @dataclass
 class Sweep:
-    """A grid of (model x condition x task) to evaluate.
+    """A grid of (model x condition x task) to evaluate, optionally repeated.
 
     Args:
         models: model ids understood by `agent_eval.models.make_client`
         conditions: free string labels; passed verbatim to your trial fn
         tasks: any iterable of task objects; passed to your trial fn
         trial: `(model_client, condition, task) -> RunRecord`
+        repetitions: how many times to run each (model, condition, task) cell.
+            Default 1 (no replication). Set N > 1 for distribution estimates
+            of pass rate / turns / cost / latency. Each replicate gets the
+            same task input but a fresh ModelClient (so message history /
+            cache doesn't bleed across runs).
         budget: optional USD cap
         skip: optional predicate `(model, condition, task) -> bool`
         parallelism: thread pool size (1 = sequential)
@@ -54,28 +60,31 @@ class Sweep:
     conditions: list[str]
     tasks: list[Any]
     trial: TrialFn
+    repetitions: int = 1
     budget: Budget | None = None
     skip: SkipFn | None = None
     parallelism: int = 1
     on_progress: ProgressFn | None = None
     records: list[RunRecord] = field(default_factory=list)
 
-    def grid(self) -> list[tuple[str, str, Any]]:
-        out: list[tuple[str, str, Any]] = []
+    def grid(self) -> list[tuple[str, str, Any, int]]:
+        """Return every (model, condition, task, replicate_index) tuple."""
+        out: list[tuple[str, str, Any, int]] = []
         for task in self.tasks:
             for model in self.models:
                 for cond in self.conditions:
                     if self.skip and self.skip(model, cond, task):
                         continue
-                    out.append((model, cond, task))
+                    for rep in range(max(1, self.repetitions)):
+                        out.append((model, cond, task, rep))
         return out
 
     def run(self) -> list[RunRecord]:
         cells = self.grid()
         total = len(cells)
         if self.parallelism <= 1:
-            for i, (model, cond, task) in enumerate(cells, start=1):
-                rec = self._run_one(model, cond, task)
+            for i, (model, cond, task, rep) in enumerate(cells, start=1):
+                rec = self._run_one(model, cond, task, rep)
                 if rec is None:
                     return self.records
                 self.records.append(rec)
@@ -84,19 +93,21 @@ class Sweep:
         else:
             with ThreadPoolExecutor(max_workers=self.parallelism) as pool:
                 futures = {
-                    pool.submit(self._run_one, m, c, t): (m, c, t) for m, c, t in cells
+                    pool.submit(self._run_one, m, c, t, r): (m, c, t, r)
+                    for m, c, t, r in cells
                 }
                 for i, fut in enumerate(as_completed(futures), start=1):
                     rec = fut.result()
                     if rec is None:
-                        # budget hit; let already-running futures finish but don't enqueue more
                         continue
                     self.records.append(rec)
                     if self.on_progress:
                         self.on_progress(i, total, rec)
         return self.records
 
-    def _run_one(self, model: str, cond: str, task: Any) -> RunRecord | None:
+    def _run_one(
+        self, model: str, cond: str, task: Any, replicate: int
+    ) -> RunRecord | None:
         try:
             client = make_client(model)
         except KeyError as e:
@@ -108,11 +119,13 @@ class Sweep:
                 turns=0,
                 tool_calls=0,
                 invalid_tool_calls=0,
-                usage=__import__("agent_eval.types", fromlist=["TurnUsage"]).TurnUsage(),
+                usage=TurnUsage(),
                 latency_seconds=0.0,
+                replicate=replicate,
                 error=f"unknown_model: {e}",
             )
         rec = self.trial(client, cond, task)
+        rec.replicate = replicate
         # Bill the run if pricing is available and cost wasn't pre-set.
         if rec.cost_usd == 0.0:
             rec.cost_usd = cost_usd(model, rec.usage)

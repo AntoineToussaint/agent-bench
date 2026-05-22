@@ -101,6 +101,9 @@ class RunRecord:
     usage: TurnUsage
     latency_seconds: float
     cost_usd: float = 0.0
+    # 0..N-1; non-zero only when running with Sweep(repetitions=N>1). Same
+    # (task, model, condition) cell yields N records distinguished by this.
+    replicate: int = 0
     stdout: str = ""
     stderr: str = ""
     error: str | None = None
