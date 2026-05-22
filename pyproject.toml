@@ -12,9 +12,9 @@ dependencies = []
 [tool.uv.workspace]
 members = [
     "lib/agent-eval-core",
-    "experiments/coding-tool",
+    "experiments/code-editing",
     "experiments/tool-selection",
-    "experiments/codeloc-bench",
+    "experiments/file-localization",
 ]
 
 [tool.uv.sources]

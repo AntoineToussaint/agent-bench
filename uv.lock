@@ -24,8 +24,8 @@ exclude-newer-span = "P3D"
 members = [
     "agent-bench",
     "agent-eval-core",
-    "codeloc-bench",
-    "coding-tool",
+    "code-editing",
+    "file-localization",
     "tool-selection",
 ]
 
@@ -475,39 +475,9 @@ wheels = [
 ]
 
 [[package]]
-name = "codeloc-bench"
+name = "code-editing"
 version = "0.1.0"
-source = { editable = "experiments/codeloc-bench" }
-dependencies = [
-    { name = "datasets" },
-    { name = "rank-bm25" },
-    { name = "tqdm" },
-    { name = "unidiff" },
-]
-
-[package.optional-dependencies]
-embeddings = [
-    { name = "sentence-transformers" },
-]
-semble = [
-    { name = "semble" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "datasets", specifier = ">=2.20.0" },
-    { name = "rank-bm25", specifier = ">=0.2.2" },
-    { name = "semble", marker = "extra == 'semble'", git = "https://github.com/MinishLab/semble" },
-    { name = "sentence-transformers", marker = "extra == 'embeddings'", specifier = ">=3.0.0" },
-    { name = "tqdm", specifier = ">=4.66.0" },
-    { name = "unidiff", specifier = ">=0.7.5" },
-]
-provides-extras = ["embeddings", "semble"]
-
-[[package]]
-name = "coding-tool"
-version = "0.1.0"
-source = { editable = "experiments/coding-tool" }
+source = { editable = "experiments/code-editing" }
 dependencies = [
     { name = "agent-eval-core" },
     { name = "anthropic" },
@@ -817,6 +787,36 @@ sdist = { url = "https://files.pythonhosted.org/packages/20/b5/23b216d9d985a9566
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/a8/20d0723294217e47de6d9e2e40fd4a9d2f7c4b6ef974babd482a59743694/fastjsonschema-2.21.2-py3-none-any.whl", hash = "sha256:1c797122d0a86c5cace2e54bf4e819c36223b552017172f32c5c024a6b77e463", size = 24024, upload-time = "2025-08-14T18:49:34.776Z" },
 ]
+
+[[package]]
+name = "file-localization"
+version = "0.1.0"
+source = { editable = "experiments/file-localization" }
+dependencies = [
+    { name = "datasets" },
+    { name = "rank-bm25" },
+    { name = "tqdm" },
+    { name = "unidiff" },
+]
+
+[package.optional-dependencies]
+embeddings = [
+    { name = "sentence-transformers" },
+]
+semble = [
+    { name = "semble" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "datasets", specifier = ">=2.20.0" },
+    { name = "rank-bm25", specifier = ">=0.2.2" },
+    { name = "semble", marker = "extra == 'semble'", git = "https://github.com/MinishLab/semble" },
+    { name = "sentence-transformers", marker = "extra == 'embeddings'", specifier = ">=3.0.0" },
+    { name = "tqdm", specifier = ">=4.66.0" },
+    { name = "unidiff", specifier = ">=0.7.5" },
+]
+provides-extras = ["embeddings", "semble"]
 
 [[package]]
 name = "filelock"
