@@ -92,12 +92,22 @@ catalog filtering helps selection).
 
 | Adapter | Status | Source |
 |---|---|---|
-| `tool_selection.catalogs.*` | shipping | hand-defined Python toolboxes: `filesystem`, `git`, `github` × {narrow, fat, narrow-rich, ...} |
-| `tool_selection.tasks.*` | shipping | 16 hand-authored tasks tagged with failure modes (confusable siblings, phantom tool, long sequence, etc.) |
+| `tool_selection.catalogs.*` | shipping | hand-defined Python toolboxes: `filesystem`, `git`, `github` × {narrow, fat, narrow-rich, narrow-rich-80, narrow-rich-150, primitive} |
+| `tool_selection.adapters.local_hand_authored` | shipping | 16 hand-authored tasks split by difficulty (easy / medium / hard) and by failure-mode tags (bash / pytest / runner / verify). Underlying lists live in `tool_selection/tasks/`. |
 | `adapters/mcp_server.py` | **planned** | live tool inventory from a running MCP server (Anthropic, Modelcontextprotocol.io) |
 | `adapters/bfcl.py` | **planned** | [BFCL v3](https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard) tasks |
 | `adapters/composio.py` | **planned** | [Composio's tool-use eval set](https://composio.dev/) |
 | `adapters/trajectbench.py` | **planned** | [TRAJECT-Bench](https://arxiv.org/abs/2509.21796) "confusable sibling" coverage |
+
+Quick recipes:
+
+```python
+from tool_selection.adapters import all_tasks, tasks_by_difficulty, tasks_by_failure_mode
+
+all_16 = all_tasks()                       # tuple[Task, ...]
+easy_only = tasks_by_difficulty()["easy"]  # tuple[Task, ...]
+pytest_only = tasks_by_failure_mode()["pytest"]
+```
 
 ## Conditions — what trials vary
 
@@ -115,13 +125,16 @@ calling scales nearly flat with catalog size while one-phase scales 2.5–4×
 worse. See also the cross-experiment writeup at
 [`notes/tool-use-vs-structured-output.md`](../../notes/tool-use-vs-structured-output.md).
 
-## Refactor TODO
+## Refactor status
 
-When this experiment is ported to `agent-eval-core`, the following mapping
-applies:
-
-- `tool_selection.types.Task` → input task type (passed to the Trial)
-- `tool_selection.scorer.score()` → produces metrics for `RunRecord.extra`
-- `tool_selection.runner` → replaced by `agent_eval.Sweep` + a single
-  `trial = (ModelClient, approach_str, Task) -> RunRecord` function
-- `tool_selection.pricing` → consumed from `agent_eval.pricing`
+- ✅ `tool_selection.contract` re-exports canonical types as the standard import path.
+- ✅ `tool_selection.adapters.local_hand_authored` is the local task adapter.
+- ✅ `tool_selection.pricing` now delegates to `agent_eval.pricing` (the
+  pricing YAML); a small fallback table covers embeddings + research
+  placeholders.
+- ⏳ `tool_selection.runner` still uses its own sweep loop. Migration to
+  `agent_eval.Sweep` is the next step — needs a `trial = (ModelClient,
+  approach_str, Task) -> RunRecord` wrapper around the existing
+  approach/phase pipeline.
+- ⏳ `tool_selection.scorer.ScoreCard` → embed into `RunRecord.extra` once
+  the runner moves to `agent_eval.Sweep`.
