@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
+from agent_eval.pricing import cost_usd
 from agent_eval.types import (
     AssistantMessage,
     ModelClient,
@@ -385,6 +386,12 @@ def make_turn_loop_trial(
 
         from agent_eval.types import TurnUsage as _TU
 
+        usage = _TU(
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            cache_read_tokens=cache_r,
+            cache_creation_tokens=cache_w,
+        )
         return RunRecord(
             task_id=task.task_id,
             model=client.name,
@@ -393,13 +400,9 @@ def make_turn_loop_trial(
             turns=turns,
             tool_calls=tool_calls,
             invalid_tool_calls=invalid,
-            usage=_TU(
-                input_tokens=in_tok,
-                output_tokens=out_tok,
-                cache_read_tokens=cache_r,
-                cache_creation_tokens=cache_w,
-            ),
+            usage=usage,
             latency_seconds=latency,
+            cost_usd=cost_usd(client.name, usage),
             error=error,
             extra={
                 **s.as_extra(),

@@ -25,6 +25,7 @@ from agent_eval.types import (
 from agent_eval.models import make_client, MODELS
 from agent_eval.pricing import cost_usd, price_table
 from agent_eval.sweep import Sweep, Budget
+from agent_eval.transcripts import dump_transcript, load_transcript, summarize_transcript
 
 __all__ = [
     "AssistantMessage",
@@ -38,8 +39,11 @@ __all__ = [
     "Transcript",
     "TurnUsage",
     "cost_usd",
+    "dump_transcript",
+    "load_transcript",
     "make_client",
     "price_table",
+    "summarize_transcript",
 ]
 
 __version__ = "0.1.0"
