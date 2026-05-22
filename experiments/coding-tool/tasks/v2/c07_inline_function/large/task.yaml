@@ -1,0 +1,22 @@
+task_id: c07_inline_function__large
+language: python
+category: inline_function
+instructions: |
+  In `ecom/coupons.py`, the private helper
+
+      def _is_currently_active(coupon, today):
+          return coupon.active and coupon.expires_on >= today
+
+  is trivial and only used in two places: `list_active_coupons` and
+  `is_coupon_currently_valid`.
+
+  Inline `_is_currently_active`: at each call site, replace
+  `_is_currently_active(<coupon>, <today>)` with the equivalent expression
+  `(<coupon>.active and <coupon>.expires_on >= <today>)`, then DELETE the
+  `_is_currently_active` definition.
+
+  Behavior must be unchanged — every existing test in `tests/test_coupons.py`
+  must still pass. Do not modify any other module.
+files_in_context:
+  - ecom/coupons.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

@@ -1,0 +1,39 @@
+[project]
+name = "tool-selection"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "AntoineToussaint", email = "antoine@tensorzero.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "altair>=6.1.0",
+    "anthropic>=0.99.0",
+    "marimo[recommended]>=0.23.5",
+    "matplotlib>=3.10.9",
+    "numpy>=2.4.4",
+    "openai>=2.34.0",
+    "polars>=1.40.1",
+    "pydantic>=2.13.3",
+    "python-dotenv>=1.2.2",
+    "rank-bm25>=0.2.2",
+    "rich>=15.0.0",
+    "scikit-learn>=1.8.0",
+    "sentence-transformers>=5.4.1",
+    "tenacity>=9.1.4",
+]
+
+[project.scripts]
+tool-selection = "tool_selection:main"
+
+[build-system]
+requires = ["uv_build>=0.11.8,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.2",
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+]

@@ -1,0 +1,42 @@
+task_id: c06_extract_function__large
+language: python
+category: extract_function
+instructions: |
+  Two duplicated patterns need to be extracted into helpers.
+
+  1. In `ecom/notifications.py`, the three handlers
+     `send_order_confirmation`, `send_shipping_update`, and
+     `send_cancellation` each build a near-identical payload dict with the
+     same four keys (`to`, `subject`, `body`, `reply_to`). Only the subject
+     and body strings differ. Extract a private helper
+
+         def _build_payload(order, subject_template, body_template) -> dict:
+             return {
+                 "to": order.user.email,
+                 "subject": subject_template.format(order_id=order.order_id),
+                 "body": body_template.format(name=order.user.name),
+                 "reply_to": SUPPORT_EMAIL,
+             }
+
+     and rewrite the three `send_*` functions to call it with the correct
+     templates. Keep the existing `print(...)` line. Payload outputs must
+     remain byte-for-byte identical.
+
+  2. In `ecom/reports.py`, the functions `revenue_by_user` and
+     `status_breakdown` share a "iterate items, group by some key, sum some
+     value into a dict" loop pattern. Extract a private helper
+
+         def _group_by_sum(items, key_fn, value_fn) -> dict:
+             ...
+
+     and rewrite both functions to delegate the loop to that helper.
+     `revenue_by_user` must keep filtering with `_is_billable` and rounding
+     to 2 decimals; only the inner sum-into-dict loop should be replaced.
+     The public return values of both functions must remain identical.
+
+  Do not modify any other module. All existing tests in `tests/` must
+  continue to pass.
+files_in_context:
+  - ecom/notifications.py
+  - ecom/reports.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

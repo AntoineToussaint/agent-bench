@@ -1,0 +1,21 @@
+task_id: c04_signature_change__large
+language: python
+category: signature_change
+instructions: |
+  Add a new keyword parameter `currency: str = "USD"` to `compute_total` in
+  `ecom/pricing.py`, positioned AFTER the existing `order` argument.
+
+  The function must accept `currency` but does NOT use it for the math —
+  the returned total is unchanged. The parameter exists so callers can record
+  which currency a quote was produced in.
+
+  Update exactly ONE call site: in `ecom/orders.py`, the `create_order`
+  function must pass `currency="EUR"` to `compute_total`. Every other caller
+  of `compute_total` — `ship_order`, `cancel_order`, `add_line`, every route
+  in `ecom/app.py`, every helper in `ecom/coupons.py`, every aggregator in
+  `ecom/reports.py`, and the existing regression tests — must NOT be
+  modified. They all rely on the default `currency="USD"`.
+files_in_context:
+  - ecom/pricing.py
+  - ecom/orders.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

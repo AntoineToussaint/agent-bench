@@ -1,0 +1,18 @@
+task_id: c09_remove_sweep__small
+language: python
+category: remove_sweep
+instructions: |
+  The function `deprecated_double` in `math_utils.py` is being retired.
+  Remove it from the codebase entirely.
+
+  1. Delete `deprecated_double` from `math_utils.py`.
+  2. In `app.py`, replace the call site in `total(...)` with an inline
+     `2 * v` so that `total` keeps returning the same values. Update the
+     import in `app.py` so `deprecated_double` is no longer referenced.
+
+  Do not touch `square`, `cube`, or `squares`. The string `deprecated_double`
+  must not appear anywhere in the source after your change.
+files_in_context:
+  - math_utils.py
+  - app.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

@@ -1,0 +1,22 @@
+task_id: c04_signature_change__medium
+language: python
+category: signature_change
+instructions: |
+  Add a new keyword parameter `include_shipping: bool = True` to
+  `compute_total` in `ecom/pricing.py`, positioned AFTER the existing `order`
+  argument. When `include_shipping=False`, skip the `apply_shipping` step and
+  return the rounded post-tax amount (still rounded to 2 dp).
+
+  Then update `estimate_savings` (also in `ecom/pricing.py`) so its comparison
+  call uses `compute_total(order, include_shipping=False)`. The no-discount
+  baseline computation already inlines
+  `apply_shipping(apply_tax(order.subtotal), order.total_weight_kg)` — leave
+  that line alone; only the `compute_total(order)` call inside
+  `estimate_savings` should change.
+
+  Other callers of `compute_total` (in `ecom/orders.py`, `ecom/app.py`, and
+  the existing regression tests) must NOT be modified — they rely on the
+  default `include_shipping=True`. Do not change the default behaviour.
+files_in_context:
+  - ecom/pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

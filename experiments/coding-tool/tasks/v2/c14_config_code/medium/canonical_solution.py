@@ -1,0 +1,76 @@
+"""Canonical solution for c14_config_code / medium."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+
+CONFIG_PY = '''"""Pricing configuration constants."""
+
+from __future__ import annotations
+
+
+TAX_RATE = 0.08
+SHIPPING_PER_KG = 2.50
+FREE_SHIPPING_THRESHOLD = 100.0
+MAX_DISCOUNT_PCT = 50.0
+'''
+
+
+NEW_PRICING_PY = '''"""Pricing calculations.
+
+Intentional shape:
+  - `apply_tax`, `apply_discount`, `apply_shipping` all follow a similar
+    "compute adjustment as a percentage" pattern (extract-method candidate).
+  - `TAX_RATE` constant is referenced from multiple places (multi-site candidate).
+  - `compute_total` is the orchestrator that all callers go through.
+"""
+
+from __future__ import annotations
+
+from ecom.config import (
+    FREE_SHIPPING_THRESHOLD,
+    MAX_DISCOUNT_PCT,
+    SHIPPING_PER_KG,
+    TAX_RATE,
+)
+from ecom.models import Order
+
+
+def apply_discount(subtotal: float, discount_pct: float) -> float:
+    if discount_pct < 0 or discount_pct > MAX_DISCOUNT_PCT:
+        raise ValueError(f"discount_pct out of range: {discount_pct}")
+    adjustment = subtotal * (discount_pct / 100.0)
+    return subtotal - adjustment
+
+
+def apply_tax(subtotal: float) -> float:
+    adjustment = subtotal * TAX_RATE
+    return subtotal + adjustment
+
+
+def apply_shipping(subtotal: float, weight_kg: float) -> float:
+    if subtotal >= FREE_SHIPPING_THRESHOLD:
+        return subtotal
+    adjustment = weight_kg * SHIPPING_PER_KG
+    return subtotal + adjustment
+
+
+def compute_total(order: Order) -> float:
+    subtotal = order.subtotal
+    after_discount = apply_discount(subtotal, order.discount_pct)
+    after_tax = apply_tax(after_discount)
+    after_shipping = apply_shipping(after_tax, order.total_weight_kg)
+    return round(after_shipping, 2)
+
+
+def estimate_savings(order: Order) -> float:
+    """How much does the customer save vs no-discount."""
+    no_disc = apply_shipping(apply_tax(order.subtotal), order.total_weight_kg)
+    return round(no_disc - compute_total(order), 2)
+'''
+
+
+def apply(workdir: Path) -> None:
+    (workdir / "ecom" / "config.py").write_text(CONFIG_PY, encoding="utf-8")
+    (workdir / "ecom" / "pricing.py").write_text(NEW_PRICING_PY, encoding="utf-8")

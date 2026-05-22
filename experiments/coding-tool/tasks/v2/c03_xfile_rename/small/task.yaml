@@ -1,0 +1,12 @@
+task_id: c03_xfile_rename__small
+language: python
+category: cross_file_rename
+instructions: |
+  Rename the function `helper` to `double_value` everywhere it appears in the
+  project — definition, all call sites, and any tests. The behavior of the
+  function must be unchanged. The other functions (`triple`, `quadruple`) must
+  not be modified.
+files_in_context:
+  - utils.py
+  - main.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

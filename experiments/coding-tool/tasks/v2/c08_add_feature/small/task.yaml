@@ -1,0 +1,22 @@
+task_id: c08_add_feature__small
+language: python
+category: add_feature
+instructions: |
+  Extend `ages.py` with two new functions:
+
+  1. `category(age) -> str` that returns one of:
+     - `"minor"` when `age < LEGAL_AGE`
+     - `"adult"` when `LEGAL_AGE <= age < SENIOR_AGE`
+     - `"senior"` when `age >= SENIOR_AGE`
+
+  2. `discount_pct(age) -> float` that returns:
+     - `0.5` for minors
+     - `0.0` for adults
+     - `0.3` for seniors
+
+  Both functions live in `ages.py`. Reuse the existing `LEGAL_AGE` and
+  `SENIOR_AGE` constants. Do not modify `is_adult` or `is_senior` — they must
+  keep working as before.
+files_in_context:
+  - ages.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

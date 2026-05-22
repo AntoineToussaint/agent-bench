@@ -1,0 +1,32 @@
+task_id: c13_test_work__large
+language: python
+category: test_work
+instructions: |
+  Extend `tests/test_coupons.py` with four new test cases that cover edge
+  cases not yet exercised. Follow the existing style — reuse the `_order(...)`
+  helper, import additional names from `ecom.coupons` as needed.
+
+  Add the following test functions (names must match exactly):
+
+    - `test_coupon_min_order_amount_blocks_below` — build an order whose
+      subtotal is below a coupon's `min_order_amount`; assert that
+      `apply_coupon` raises `CouponError`.
+
+    - `test_coupon_usage_cap_exhausted` — create a coupon with `max_uses=1`,
+      apply it successfully once, then assert that the second `apply_coupon`
+      call raises `CouponError`.
+
+    - `test_apply_coupon_free_shipping_combines_with_subtotal` — create an
+      order whose subtotal is below the free-shipping threshold (so shipping
+      would normally be charged); apply a `FREE_SHIPPING` coupon; assert the
+      new total equals the tax-applied subtotal (no shipping charge).
+
+    - `test_register_coupon_roundtrip` — register a coupon, then assert
+      `get_coupon(c.code) is c`. Use `clear_coupons()` first to start clean.
+
+  Do not modify existing tests or any other module — only append the four
+  new test functions.
+files_in_context:
+  - tests/test_coupons.py
+  - ecom/coupons.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

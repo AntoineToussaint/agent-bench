@@ -1,0 +1,19 @@
+task_id: c07_inline_function__medium
+language: python
+category: inline_function
+instructions: |
+  In `ecom/pricing.py`, the private helper `_percent(subtotal, pct)` simply
+  returns `subtotal * (pct / 100.0)`. It is too trivial to justify its own
+  function and is only used in one place: `apply_discount`.
+
+  Inline `_percent`: replace its single call site inside `apply_discount`
+  with the equivalent expression and DELETE the `_percent` definition.
+
+  Behavior must be unchanged — every existing test in
+  `tests/test_pricing.py` and `tests/test_orders.py` must still pass.
+  In particular, `apply_discount(100.0, 10.0)` must still equal `90.0`.
+
+  Do not modify any other module.
+files_in_context:
+  - ecom/pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

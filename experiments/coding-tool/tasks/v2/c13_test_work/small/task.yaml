@@ -1,0 +1,18 @@
+task_id: c13_test_work__small
+language: python
+category: test_work
+instructions: |
+  Extend `tests/test_calc.py` with three additional test cases for the `add`
+  function, following the existing style.
+
+  The new tests must be named exactly:
+    - `test_add_negative` — verifies behaviour with negative inputs
+    - `test_add_zero` — verifies behaviour when one operand is zero
+    - `test_add_large` — verifies behaviour for large operands
+
+  Do not modify the existing tests (`test_add`, `test_sub`, `test_mul`,
+  `test_div`) or the `calc.py` module. Only append new test functions.
+files_in_context:
+  - tests/test_calc.py
+  - calc.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

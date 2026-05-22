@@ -1,0 +1,31 @@
+[project]
+name = "agent-eval-core"
+version = "0.1.0"
+description = "Domain-agnostic plumbing for LLM evaluation experiments — sweeps, model clients, budgets, transcripts, reports"
+readme = "README.md"
+authors = [
+    { name = "AntoineToussaint", email = "antoine@tensorzero.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.103.0",
+    "openai>=2.37.0",
+    "pydantic>=2.13.4",
+    "python-dotenv>=1.2.2",
+    "rich>=15.0.0",
+    "typer>=0.25.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.14,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "agent_eval"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+]

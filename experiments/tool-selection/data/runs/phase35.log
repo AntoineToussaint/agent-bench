@@ -1,0 +1,181 @@
+Phase 3.5: 2 modes × 4 conds × 3 reps × 5 eps
+
+================================================================================================
+MODE: verify  CONDITION: baseline
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth           att=2 m=1/1 events=[] $=0.0040
+  rep0 ep2 [FAIL] ft=✗ V2-verify-parser         att=4 m=0/1 events=[] $=0.0082
+  rep0 ep3 [OK ] ft=✗ V3-verify-client         att=3 m=1/1 events=[] $=0.0061
+  rep0 ep4 [OK ] ft=✗ V4-verify-config         att=2 m=1/1 events=[] $=0.0041
+  rep0 ep5 [OK ] ft=✗ V5-verify-db             att=2 m=1/1 events=[] $=0.0040
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=[] $=0.0058
+  rep1 ep2 [FAIL] ft=✗ V2-verify-parser         att=4 m=0/1 events=[] $=0.0082
+  rep1 ep3 [OK ] ft=✗ V3-verify-client         att=3 m=1/1 events=[] $=0.0061
+  rep1 ep4 [OK ] ft=✗ V4-verify-config         att=2 m=1/1 events=[] $=0.0040
+  rep1 ep5 [OK ] ft=✗ V5-verify-db             att=2 m=1/1 events=[] $=0.0041
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=[] $=0.0058
+  rep2 ep2 [FAIL] ft=✗ V2-verify-parser         att=4 m=0/1 events=[] $=0.0082
+  rep2 ep3 [OK ] ft=✗ V3-verify-client         att=3 m=1/1 events=[] $=0.0060
+  rep2 ep4 [OK ] ft=✗ V4-verify-config         att=2 m=1/1 events=[] $=0.0040
+  rep2 ep5 [OK ] ft=✗ V5-verify-db             att=2 m=1/1 events=[] $=0.0041
+
+  → verify/baseline: 0/15 (0%) cost=$0.0827
+
+================================================================================================
+MODE: verify  CONDITION: lessons-only
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth           att=2 m=1/1 events=[] $=0.0049
+  rep0 ep2 [OK ] ft=✗ V2-verify-parser         att=2 m=1/1 events=[] $=0.0050
+  rep0 ep3 [OK ] ft=✗ V3-verify-client         att=4 m=1/1 events=[] $=0.0117
+  rep0 ep4 [OK ] ft=✗ V4-verify-config         att=3 m=1/1 events=[] $=0.0086
+  rep0 ep5 [FAIL] ft=✗ V5-verify-db             att=4 m=0/1 events=[] $=0.0121
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth           att=2 m=1/1 events=[] $=0.0049
+  rep1 ep2 [OK ] ft=✗ V2-verify-parser         att=2 m=1/1 events=[] $=0.0039
+  rep1 ep3 [OK ] ft=✗ V3-verify-client         att=2 m=1/1 events=[] $=0.0039
+  rep1 ep4 [OK ] ft=✗ V4-verify-config         att=2 m=1/1 events=[] $=0.0039
+  rep1 ep5 [OK ] ft=✗ V5-verify-db             att=2 m=1/1 events=[] $=0.0039
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=[] $=0.0068
+  rep2 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0019
+
+  → verify/lessons-only: 4/15 (27%) cost=$0.0771
+
+================================================================================================
+MODE: verify  CONDITION: promotion-llm
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=['derived:pytest_run'] $=0.0159
+  rep0 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0022
+  rep0 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0022
+  rep0 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0022
+  rep0 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0021
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth           att=2 m=1/1 events=['derived:pytest_run'] $=0.0126
+  rep1 ep2 [FAIL] ft=✗ V2-verify-parser         att=4 m=0/1 events=[] $=0.0078
+  rep1 ep3 [OK ] ft=✗ V3-verify-client         att=2 m=1/1 events=[] $=0.0041
+  rep1 ep4 [OK ] ft=✗ V4-verify-config         att=2 m=1/1 events=[] $=0.0041
+  rep1 ep5 [OK ] ft=✗ V5-verify-db             att=2 m=1/1 events=[] $=0.0040
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=['derived:pytest_run'] $=0.0158
+  rep2 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0022
+  rep2 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0022
+  rep2 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0022
+  rep2 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0021
+
+  → verify/promotion-llm: 8/15 (53%) cost=$0.0816
+
+================================================================================================
+MODE: verify  CONDITION: description-augment
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=['augment:bash'] $=0.0093
+  rep0 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0020
+  rep0 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0020
+  rep0 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0020
+  rep0 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0020
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth           att=3 m=1/1 events=['augment:bash'] $=0.0090
+  rep1 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0019
+  rep1 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0020
+  rep1 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0020
+  rep1 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0020
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth           att=2 m=1/1 events=['augment:bash'] $=0.0072
+  rep2 ep2 [OK ] ft=✓ V2-verify-parser         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep3 [OK ] ft=✓ V3-verify-client         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep4 [OK ] ft=✓ V4-verify-config         att=1 m=1/1 events=[] $=0.0019
+  rep2 ep5 [OK ] ft=✓ V5-verify-db             att=1 m=1/1 events=[] $=0.0019
+
+  → verify/description-augment: 12/15 (80%) cost=$0.0492
+
+================================================================================================
+MODE: runner  CONDITION: baseline
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=[] $=0.0057
+  rep0 ep2 [OK ] ft=✗ R2-run-migrate           att=2 m=1/1 events=[] $=0.0037
+  rep0 ep3 [OK ] ft=✗ R3-run-seed              att=2 m=1/1 events=[] $=0.0039
+  rep0 ep4 [OK ] ft=✗ R4-run-lint              att=2 m=1/1 events=[] $=0.0037
+  rep0 ep5 [OK ] ft=✗ R5-run-deploy            att=3 m=1/1 events=[] $=0.0059
+  rep1 ep1 [OK ] ft=✗ R1-run-build             att=2 m=1/1 events=[] $=0.0039
+  rep1 ep2 [OK ] ft=✗ R2-run-migrate           att=2 m=1/1 events=[] $=0.0037
+  rep1 ep3 [OK ] ft=✗ R3-run-seed              att=2 m=1/1 events=[] $=0.0040
+  rep1 ep4 [OK ] ft=✗ R4-run-lint              att=2 m=1/1 events=[] $=0.0037
+  rep1 ep5 [OK ] ft=✗ R5-run-deploy            att=3 m=1/1 events=[] $=0.0059
+  rep2 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=[] $=0.0057
+  rep2 ep2 [OK ] ft=✗ R2-run-migrate           att=2 m=1/1 events=[] $=0.0037
+  rep2 ep3 [OK ] ft=✗ R3-run-seed              att=2 m=1/1 events=[] $=0.0039
+  rep2 ep4 [OK ] ft=✗ R4-run-lint              att=2 m=1/1 events=[] $=0.0037
+  rep2 ep5 [OK ] ft=✗ R5-run-deploy            att=3 m=1/1 events=[] $=0.0059
+
+  → runner/baseline: 0/15 (0%) cost=$0.0667
+
+================================================================================================
+MODE: runner  CONDITION: lessons-only
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=[] $=0.0064
+  rep0 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0018
+  rep0 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0018
+  rep0 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0018
+  rep0 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0018
+  rep1 ep1 [OK ] ft=✗ R1-run-build             att=2 m=1/1 events=[] $=0.0044
+  rep1 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0018
+  rep1 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0019
+  rep1 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0018
+  rep1 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0018
+  rep2 ep1 [OK ] ft=✗ R1-run-build             att=2 m=1/1 events=[] $=0.0044
+  rep2 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0018
+  rep2 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0019
+  rep2 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0018
+  rep2 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0018
+
+  → runner/lessons-only: 12/15 (80%) cost=$0.0372
+
+================================================================================================
+MODE: runner  CONDITION: promotion-llm
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build             att=2 m=1/1 events=['derived:project_build'] $=0.0117
+  rep0 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0020
+  rep0 ep3 [FAIL] ft=✗ R3-run-seed              att=4 m=0/1 events=[] $=0.0082
+  rep0 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0020
+  rep0 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0022
+  rep1 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=['derived:project_build'] $=0.0136
+  rep1 ep2 [FAIL] ft=✗ R2-run-migrate           att=4 m=0/1 events=[] $=0.0081
+  rep1 ep3 [OK ] ft=✗ R3-run-seed              att=2 m=1/1 events=[] $=0.0041
+  rep1 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0025
+  rep1 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0022
+  rep2 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=['derived:project_run'] $=0.0144
+  rep2 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0020
+  rep2 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0020
+  rep2 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0020
+  rep2 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0020
+
+  → runner/promotion-llm: 9/15 (60%) cost=$0.0790
+
+================================================================================================
+MODE: runner  CONDITION: description-augment
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=['augment:bash'] $=0.0087
+  rep0 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0019
+  rep0 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0019
+  rep0 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0019
+  rep0 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0019
+  rep1 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=['augment:bash'] $=0.0087
+  rep1 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0019
+  rep1 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0019
+  rep1 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0019
+  rep1 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0019
+  rep2 ep1 [OK ] ft=✗ R1-run-build             att=3 m=1/1 events=['augment:bash'] $=0.0088
+  rep2 ep2 [OK ] ft=✓ R2-run-migrate           att=1 m=1/1 events=[] $=0.0019
+  rep2 ep3 [OK ] ft=✓ R3-run-seed              att=1 m=1/1 events=[] $=0.0019
+  rep2 ep4 [OK ] ft=✓ R4-run-lint              att=1 m=1/1 events=[] $=0.0019
+  rep2 ep5 [OK ] ft=✓ R5-run-deploy            att=1 m=1/1 events=[] $=0.0019
+
+  → runner/description-augment: 12/15 (80%) cost=$0.0492
+
+================================================================================================
+DONE in 402s, grand cost $0.5227
+
+  verify   baseline               ft=  0/15 (0%)  $=0.0827
+  verify   lessons-only           ft=  4/15 (27%)  $=0.0771
+  verify   promotion-llm          ft=  8/15 (53%)  $=0.0816
+  verify   description-augment    ft= 12/15 (80%)  $=0.0492
+  runner   baseline               ft=  0/15 (0%)  $=0.0667
+  runner   lessons-only           ft= 12/15 (80%)  $=0.0372
+  runner   promotion-llm          ft=  9/15 (60%)  $=0.0790
+  runner   description-augment    ft= 12/15 (80%)  $=0.0492

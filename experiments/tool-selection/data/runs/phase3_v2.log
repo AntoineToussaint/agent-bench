@@ -1,0 +1,40 @@
+Phase 3 experiment: 3 conditions × 5 episodes
+
+================================================================================================
+CONDITION: baseline
+================================================================================================
+  ep1 [OK ] first_try=✗ V1-verify-auth                 attempts=3 matched=1/1 errors=['wrong-state'] new_lessons=0 promoted=[] cost=$0.0058 wall=8.6s
+  ep2 [FAIL] first_try=✗ V2-verify-parser               attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0082 wall=8.3s
+  ep3 [OK ] first_try=✗ V3-verify-client               attempts=3 matched=1/1 errors=['wrong-state'] new_lessons=0 promoted=[] cost=$0.0061 wall=4.2s
+  ep4 [OK ] first_try=✗ V4-verify-config               attempts=2 matched=1/1 errors=['wrong-state'] new_lessons=0 promoted=[] cost=$0.0041 wall=3.0s
+  ep5 [OK ] first_try=✗ V5-verify-db                   attempts=2 matched=1/1 errors=['wrong-state'] new_lessons=0 promoted=[] cost=$0.0040 wall=2.8s
+
+  → first-try success: 0/5, cost $0.0282
+
+================================================================================================
+CONDITION: lessons-only
+================================================================================================
+  ep1 [OK ] first_try=✗ V1-verify-auth                 attempts=3 matched=1/1 errors=['wrong-state'] new_lessons=1 promoted=[] cost=$0.0067 wall=4.9s
+  ep2 [OK ] first_try=✓ V2-verify-parser               attempts=1 matched=1/1 errors=[] new_lessons=0 promoted=[] cost=$0.0019 wall=1.3s
+  ep3 [FAIL] first_try=✗ V3-verify-client               attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=5.3s
+  ep4 [FAIL] first_try=✗ V4-verify-config               attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=5.9s
+  ep5 [FAIL] first_try=✗ V5-verify-db                   attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=8.8s
+
+  → first-try success: 1/5, cost $0.0322
+
+================================================================================================
+CONDITION: lessons-plus-promotion
+================================================================================================
+  ep1 [OK ] first_try=✗ V1-verify-auth                 attempts=3 matched=1/1 errors=['wrong-state'] new_lessons=1 promoted=[] cost=$0.0067 wall=3.8s
+  ep2 [OK ] first_try=✓ V2-verify-parser               attempts=1 matched=1/1 errors=[] new_lessons=0 promoted=[] cost=$0.0019 wall=1.2s
+  ep3 [FAIL] first_try=✗ V3-verify-client               attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=5.6s
+  ep4 [FAIL] first_try=✗ V4-verify-config               attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=4.6s
+  ep5 [FAIL] first_try=✗ V5-verify-db                   attempts=4 matched=0/1 errors=[] new_lessons=0 promoted=[] cost=$0.0079 wall=5.1s
+
+  → first-try success: 1/5, cost $0.0322
+
+================================================================================================
+DONE in 76s
+  baseline                       first_try=0/5  cost=$0.0282
+  lessons-only                   first_try=1/5  cost=$0.0322
+  lessons-plus-promotion         first_try=1/5  cost=$0.0322

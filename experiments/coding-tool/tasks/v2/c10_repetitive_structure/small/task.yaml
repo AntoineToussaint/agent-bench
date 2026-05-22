@@ -1,0 +1,16 @@
+task_id: c10_repetitive_structure__small
+language: python
+category: repetitive_structure
+instructions: |
+  In `handlers.py` there are ten near-identical handler functions, one per
+  HTTP status code. They share the same shape and most of them share the same
+  body string.
+
+  Modify ONLY `handle_404` so that its `body` is `"resource missing"` instead
+  of `"not found"`. No other handler may be changed in any way — `handle_200`,
+  `handle_201`, `handle_204`, `handle_301`, `handle_302`, `handle_400`,
+  `handle_401`, `handle_403`, and `handle_500` must remain byte-for-byte the
+  same.
+files_in_context:
+  - handlers.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "_overlay/tests/"]

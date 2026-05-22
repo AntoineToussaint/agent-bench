@@ -1,0 +1,16 @@
+task_id: c03_xfile_rename__large
+language: python
+category: cross_file_rename
+instructions: |
+  Rename the function `compute_total` to `calculate_order_total` everywhere it
+  appears in the `ecom` package — including its definition, all call sites,
+  all imports, and all references in tests. The behavior must be unchanged.
+
+  Other functions (`apply_discount`, `apply_tax`, `apply_shipping`,
+  `estimate_savings`, `apply_coupon`, etc.) must not be renamed.
+
+  This is a larger codebase — use `list_files` to inventory all `.py` files
+  and grep across them before claiming you've found every reference.
+files_in_context:
+  - ecom/pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

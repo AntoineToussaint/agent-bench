@@ -1,0 +1,21 @@
+task_id: c10_repetitive_structure__large
+language: python
+category: repetitive_structure
+instructions: |
+  In `ecom/auth.py`, the `ROLE_PERMISSIONS` mapping defines permissions for
+  three near-identical role entries: `admin`, `staff`, and `customer`.
+
+  Add a new permission `REDEEM_LOYALTY` (value `"redeem_loyalty"`) to the
+  `Permission` enum, then grant it to ONLY the `customer` role. `staff` and
+  `admin` role entries in `ROLE_PERMISSIONS` must NOT explicitly include
+  `REDEEM_LOYALTY` — leave their listed permissions exactly as they are.
+
+  (Note: `admin` is defined as `frozenset(Permission)`, so it will naturally
+  pick up the new enum value via that expression. That's fine and expected.
+  What you must NOT do is add `REDEEM_LOYALTY` to the explicit set literal
+  for `staff`.)
+
+  All existing tests in `tests/test_auth.py` must continue to pass.
+files_in_context:
+  - ecom/auth.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

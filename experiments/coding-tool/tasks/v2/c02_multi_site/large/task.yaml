@@ -1,0 +1,16 @@
+task_id: c02_multi_site__large
+language: python
+category: multi_site
+instructions: |
+  We're renaming our customer support contact from `support@example.com` to
+  `help@example.com`. The old address appears in several places across the
+  codebase — find every occurrence of the literal string
+  `support@example.com` and replace it with `help@example.com`. No
+  occurrence of the old address should remain anywhere under the project.
+
+  Use `list_files` and search across the whole project — not just the
+  obvious files in `ecom/notifications.py` — before declaring done. The
+  test files and route handlers reference it too.
+files_in_context:
+  - ecom/notifications.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

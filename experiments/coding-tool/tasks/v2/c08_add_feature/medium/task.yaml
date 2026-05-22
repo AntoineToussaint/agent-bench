@@ -1,0 +1,30 @@
+task_id: c08_add_feature__medium
+language: python
+category: add_feature
+instructions: |
+  Add a refund feature that lets staff process a refund for an existing order.
+
+  1. In `ecom/orders.py`, add a new function:
+     ``def refund_order(order_id: int, reason: str) -> None:``
+
+     It must:
+       - Look up the order via `repo.get_order(order_id)`.
+       - Set `order.status = "refunded"`.
+       - Append `f"refund_reason={reason}"` to `order.notes`.
+       - Send a cancellation-style notification by calling
+         `send_cancellation(order)` (reuse the existing helper).
+
+  2. In `ecom/app.py`, add a new route:
+     ``def route_refund(order_id: int, reason: str) -> dict:``
+
+     It must call `refund_order(order_id, reason)` and return
+     `{"order_id": order_id, "status": "refunded", "reason": reason}`.
+
+     Update the imports in `app.py` so `refund_order` is in scope (extend the
+     existing ``from ecom.orders import ...`` line).
+
+  All existing tests in `tests/` must keep passing.
+files_in_context:
+  - ecom/orders.py
+  - ecom/app.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

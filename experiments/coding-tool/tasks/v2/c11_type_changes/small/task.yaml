@@ -1,0 +1,19 @@
+task_id: c11_type_changes__small
+language: python
+category: type_changes
+instructions: |
+  Add complete type annotations to every function in `parsers.py`:
+
+    - `parse_int(s: str) -> int`
+    - `parse_floats(items: list[str]) -> list[float]`
+    - `parse_pair(text: str, sep: str) -> tuple[str, str]`
+    - `parse_kv(lines: list[str]) -> dict[str, str]`
+
+  Add `from __future__ import annotations` at the top of the file so the
+  PEP 604 / built-in generic syntax (`list[str]`, `tuple[str, str]`, etc.)
+  works correctly on all supported Python versions.
+
+  Behavior must be unchanged — runtime semantics of each function stay the same.
+files_in_context:
+  - parsers.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "_overlay/tests/"]

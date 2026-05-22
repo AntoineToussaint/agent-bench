@@ -1,0 +1,19 @@
+task_id: c07_inline_function__small
+language: python
+category: inline_function
+instructions: |
+  In `geometry.py`, the private helper `_square(x)` simply returns `x * x`.
+  It is too trivial to be worth its own function.
+
+  Inline it: replace each call `_square(<expr>)` with the expression
+  `(<expr> * <expr>)` directly, and then DELETE the `_square` definition.
+
+  Behavior must be unchanged — the existing tests in
+  `tests/test_geometry.py` must keep passing. After the edit, the literal
+  text `_square(` must NOT appear anywhere in `geometry.py`.
+
+  Do not introduce new helpers, do not change public function signatures,
+  and do not modify any other file.
+files_in_context:
+  - geometry.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

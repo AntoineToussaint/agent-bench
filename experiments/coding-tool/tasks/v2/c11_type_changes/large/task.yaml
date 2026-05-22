@@ -1,0 +1,31 @@
+task_id: c11_type_changes__large
+language: python
+category: type_changes
+instructions: |
+  `ecom/reports.py` has weak / missing type annotations on most of its
+  functions. Add full type annotations to every top-level function in
+  `ecom/reports.py` — including the private helpers `_order_date` and
+  `_is_billable`.
+
+  Use `from __future__ import annotations` at the top of the module so
+  built-in generics (`list[X]`, `dict[X, Y]`) and `X | None` style unions
+  work uniformly.
+
+  Required signatures (parameter names already exist — don't rename them):
+
+    - `_order_date(order: Order) -> date | None`
+    - `_is_billable(order: Order) -> bool`
+    - `daily_sales(orders: Iterable[Order], on_date: date) -> DailySales`
+    - `top_products(orders: Iterable[Order], n: int = 5) -> list[ProductRanking]`
+    - `revenue_by_user(orders: Iterable[Order]) -> dict[int, float]`
+    - `status_breakdown(orders: Iterable[Order]) -> dict[str, int]`
+    - `average_order_value(orders: Iterable[Order]) -> float`
+    - `total_units_sold(orders: Iterable[Order]) -> int`
+    - `revenue_in_range(orders: Iterable[Order], start: date, end: date) -> float`
+    - `biggest_spender(orders: Iterable[Order]) -> int | None`
+
+  Behavior must be unchanged. All existing tests in `tests/test_reports.py`
+  must continue to pass.
+files_in_context:
+  - ecom/reports.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

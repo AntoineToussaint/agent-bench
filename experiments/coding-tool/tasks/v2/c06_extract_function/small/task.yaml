@@ -1,0 +1,26 @@
+task_id: c06_extract_function__small
+language: python
+category: extract_function
+instructions: |
+  In `stats.py`, the three public functions `mean`, `median`, and `range_`
+  each begin with the same 3-line preamble that validates the input and
+  coerces it to a list of floats:
+
+      if not values:
+          raise ValueError("values must not be empty")
+      nums = [float(v) for v in values]
+
+  Extract this preamble into a private helper
+
+      def _validate_and_coerce(values) -> list[float]:
+          ...
+
+  defined at module scope, and rewrite `mean`, `median`, and `range_` to
+  call it instead of repeating the preamble. Behavior must be identical —
+  the existing tests in `tests/test_stats.py` must keep passing, and the
+  helper must raise `ValueError` on empty input.
+
+  Do not change the public function signatures or their return values.
+files_in_context:
+  - stats.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

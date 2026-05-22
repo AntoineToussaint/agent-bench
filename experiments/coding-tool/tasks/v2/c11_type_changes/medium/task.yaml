@@ -1,0 +1,25 @@
+task_id: c11_type_changes__medium
+language: python
+category: type_changes
+instructions: |
+  Tighten the type annotations and the behavior of `ecom/repository.py`.
+
+  Currently `get_user`, `get_product`, and `get_order` raise `KeyError` when
+  the requested entry is missing. Change them to instead return `None` if the
+  entry is missing, and update their return annotations to `Optional[T]`
+  accordingly (i.e. `Optional[User]`, `Optional[Product]`, `Optional[Order]`).
+  Use `dict.get(...)` instead of `dict[...]` indexing.
+
+  Also:
+    - Keep `save_order` returning `None` (its annotation is already `-> None`;
+      ensure that stays).
+    - Change `delete_order` to return `bool` — return `True` if the order was
+      deleted, `False` if it was not present. Implement it with
+      `self.orders.pop(order_id, None) is not None`. Update the return
+      annotation to `bool`.
+
+  The existing regression tests under `tests/` always pre-populate the
+  repository before calling these methods, so they should continue to pass.
+files_in_context:
+  - ecom/repository.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

@@ -1,0 +1,41 @@
+Using catalog: narrow-rich
+
+================================================================================================
+ CONDITION: 1phase-baseline
+================================================================================================
+  ep1 [OK ] BT1-bash-run-auth-tests                attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=4.3s
+  ep2 [OK ] BT2-bash-run-parser-tests              attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=2.0s
+  ep3 [OK ] BT3-bash-run-integration               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0167 wall=1.3s
+  ep4 [OK ] BT4-bash-run-single                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=1.3s
+
+================================================================================================
+ CONDITION: 1phase-lessons
+================================================================================================
+  ep1 [OK ] BT1-bash-run-auth-tests                attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=1.4s
+  ep2 [OK ] BT2-bash-run-parser-tests              attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=1.9s
+  ep3 [OK ] BT3-bash-run-integration               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0167 wall=1.4s
+  ep4 [OK ] BT4-bash-run-single                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0168 wall=1.4s
+
+  Lessons saved to data/lessons_bash/1phase-lessons.jsonl (n=0)
+
+================================================================================================
+ CONDITION: 2phase-mixed-baseline
+================================================================================================
+  ep1 [FAIL] BT1-bash-run-auth-tests                attempts=1 matched=0/1 errors=[] new_lessons=0 cost=$0.0061 wall=2.2s
+  ep2 [OK ] BT2-bash-run-parser-tests              attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0053 wall=2.6s
+  ep3 [OK ] BT3-bash-run-integration               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0058 wall=2.6s
+  ep4 [OK ] BT4-bash-run-single                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0056 wall=2.4s
+
+================================================================================================
+ CONDITION: 2phase-mixed-lessons
+================================================================================================
+  ep1 [FAIL] BT1-bash-run-auth-tests                attempts=1 matched=0/1 errors=[] new_lessons=0 cost=$0.0061 wall=2.9s
+  ep2 [OK ] BT2-bash-run-parser-tests              attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0053 wall=2.5s
+  ep3 [OK ] BT3-bash-run-integration               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0055 wall=8.3s
+  ep4 [OK ] BT4-bash-run-single                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0056 wall=2.2s
+
+  Lessons saved to data/lessons_bash/2phase-mixed-lessons.jsonl (n=0)
+
+================================================================================================
+DONE: 16 episodes, 14/16 task_success (88%)
+Total cost $0.1795, 41s

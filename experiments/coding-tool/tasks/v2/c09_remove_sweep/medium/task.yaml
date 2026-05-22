@@ -1,0 +1,31 @@
+task_id: c09_remove_sweep__medium
+language: python
+category: remove_sweep
+instructions: |
+  Shipping cost is being removed from the pricing model entirely. Sweep all
+  shipping logic out of the codebase.
+
+  1. In `ecom/pricing.py`:
+     - Delete the `apply_shipping` function.
+     - Delete the constants `SHIPPING_PER_KG` and `FREE_SHIPPING_THRESHOLD`.
+     - Update `compute_total` to skip the shipping step entirely. The new
+       body should just return `round(apply_tax(after_discount), 2)`.
+     - Update `estimate_savings` so it no longer calls `apply_shipping` — it
+       should compute the un-discounted total with the same (tax-only) recipe.
+
+  2. In `tests/test_pricing.py`:
+     - Remove `apply_shipping` from the import list.
+     - Delete the two `test_apply_shipping_*` tests.
+     - Recompute and update the expectations in `test_compute_total_no_discount`,
+       `test_compute_total_with_discount`, and `test_estimate_savings` so they
+       reflect the new no-shipping behaviour. Their comments should also be
+       updated.
+
+  The strings `apply_shipping`, `SHIPPING_PER_KG`, and `FREE_SHIPPING_THRESHOLD`
+  must not appear anywhere under `ecom/` or `tests/` after your change. The
+  surviving pricing functions (`apply_discount`, `apply_tax`, `compute_total`,
+  `estimate_savings`) must remain defined.
+files_in_context:
+  - ecom/pricing.py
+  - tests/test_pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

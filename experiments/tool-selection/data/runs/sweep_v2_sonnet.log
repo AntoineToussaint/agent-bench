@@ -1,0 +1,224 @@
+Sweep: 3 strategies × 2 granularities × 1 models × 2 phases × 16 tasks = 192 runs
+Phases: ['1phase', '1phase-plan']
+Budget: $6.00
+Out: data/runs/sweep_v2_sonnet.jsonl
+------------------------------------------------------------------------------------------------
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=full phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 39 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0166 lat= 1666ms
+  [OK ] E2-draft-pr                            surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0180 lat= 2712ms
+  [OK ] E3-read-range                          surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0170 lat= 1976ms
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0169 lat= 2174ms
+  [OK ] E5-phantom-tool-rebase                 surf= 39 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0202 lat= 5939ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0209 lat= 3697ms
+  [FAIL] M2-branch-fix-pr                       surf= 39 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0179 lat= 2756ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0194 lat= 3268ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0194 lat= 2960ms
+  [FAIL] M6-wrong-order-temptation              surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0175 lat= 2965ms
+  [FAIL] M7-state-confusion-mkdir               surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0170 lat= 2009ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0198 lat= 3512ms
+  [FAIL] M4-rename-and-commit                   surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0172 lat= 2145ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 39 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0186 lat= 3362ms
+  [FAIL] H1-feature-branch-full-flow            surf= 39 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0180 lat= 2387ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0217 lat= 4091ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=full phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 39 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0180 lat= 2368ms
+  [OK ] E2-draft-pr                            surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0191 lat= 2699ms
+  [FAIL] E3-read-range                          surf= 39 calls= 0 matched= 0/1  sel= 0/1  cost=$0.0192 lat= 5899ms
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0182 lat= 2288ms
+  [OK ] E5-phantom-tool-rebase                 surf= 39 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0205 lat= 6277ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0231 lat= 5087ms
+  [FAIL] M2-branch-fix-pr                       surf= 39 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0203 lat= 3565ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0201 lat= 3254ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0244 lat= 6263ms
+  [FAIL] M6-wrong-order-temptation              surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0184 lat= 2842ms
+  [FAIL] M7-state-confusion-mkdir               surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0193 lat= 3569ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0226 lat= 3935ms
+  [FAIL] M4-rename-and-commit                   surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0192 lat= 3329ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 39 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0214 lat= 3869ms
+  [FAIL] H1-feature-branch-full-flow            surf= 39 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0227 lat= 5021ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0225 lat= 4072ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=tool:llm-haiku phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0090 lat= 2232ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0102 lat= 3119ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0093 lat= 2569ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0094 lat= 2544ms
+  [OK ] E5-phantom-tool-rebase                 surf=  9 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0172 lat=13190ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0136 lat= 4507ms
+  [FAIL] M2-branch-fix-pr                       surf= 10 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0107 lat= 3568ms
+  [OK ] M3-inline-review-comment               surf= 10 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0122 lat= 4588ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0144 lat= 8294ms
+  [FAIL] M6-wrong-order-temptation              surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0102 lat= 5624ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0095 lat= 3272ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0122 lat= 3829ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0094 lat= 2936ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 10 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0104 lat= 3579ms
+  [FAIL] H1-feature-branch-full-flow            surf= 10 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0109 lat= 4354ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0144 lat= 5413ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=tool:llm-haiku phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0106 lat= 3362ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0112 lat= 3512ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0105 lat= 3436ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0103 lat= 3232ms
+  [OK ] E5-phantom-tool-rebase                 surf=  9 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0137 lat= 8306ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0157 lat= 5830ms
+  [FAIL] M2-branch-fix-pr                       surf= 10 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0131 lat= 4216ms
+  [FAIL] M3-inline-review-comment               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0120 lat= 3928ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0174 lat= 7665ms
+  [FAIL] M6-wrong-order-temptation              surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0106 lat= 3221ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0114 lat= 4411ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0151 lat= 4559ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0112 lat= 3989ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 10 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0137 lat= 5060ms
+  [FAIL] H1-feature-branch-full-flow            surf= 10 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0154 lat= 5862ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0165 lat= 7224ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=hybrid:embed-openai-small+llm-haiku phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0084 lat= 3849ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0097 lat= 6444ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0084 lat= 4315ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0086 lat= 3687ms
+  [OK ] E5-phantom-tool-rebase                 surf=  9 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0145 lat=11860ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0101 lat= 4529ms
+  [FAIL] M2-branch-fix-pr                       surf= 10 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0102 lat= 7373ms
+  [OK ] M3-inline-review-comment               surf= 10 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0113 lat= 5692ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 0/3  sel= 0/3  cost=$0.0127 lat= 8638ms
+  [FAIL] M6-wrong-order-temptation              surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0093 lat= 4803ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0091 lat= 4625ms
+  [FAIL] M8-parallel-similar-batched-commit     surf=  9 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0103 lat= 7404ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0090 lat= 3890ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  7 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0093 lat= 8607ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0097 lat= 3940ms
+  [OK ] H2-pr-multi-inline-review              surf= 10 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0162 lat= 8595ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=hybrid:embed-openai-small+llm-haiku phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0099 lat= 4355ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0108 lat= 4520ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0096 lat= 6459ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0098 lat= 4447ms
+  [OK ] E5-phantom-tool-rebase                 surf=  9 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0193 lat=16914ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0252 lat=22397ms
+  [FAIL] M2-branch-fix-pr                       surf= 10 calls= 1 matched= 1/6  sel= 1/6  cost=$0.0133 lat= 6863ms
+  [FAIL] M3-inline-review-comment               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0114 lat= 5852ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 0/3  sel= 0/3  cost=$0.0206 lat=15203ms
+  [FAIL] M6-wrong-order-temptation              surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0100 lat= 9166ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0107 lat= 4863ms
+  [FAIL] M8-parallel-similar-batched-commit     surf=  9 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0109 lat= 4873ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0108 lat=10169ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  7 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0196 lat=15428ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 1/12 sel= 1/12 cost=$0.0137 lat= 7698ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0158 lat= 7905ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=full phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 12 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0116 lat= 1940ms
+  [OK ] E2-draft-pr                            surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0129 lat= 2311ms
+  [OK ] E3-read-range                          surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0117 lat= 3650ms
+  [OK ] E4-pr-conversation-comment             surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0119 lat= 2120ms
+  [OK ] E5-phantom-tool-rebase                 surf= 12 calls= 0 matched= 0/0  sel= 0/0  cost=$0.0206 lat=13577ms
+  [FAIL] M1-version-bump-release                surf= 12 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0162 lat= 3912ms
+  [FAIL] M2-branch-fix-pr                       surf= 12 calls= 1 matched= 0/6  sel= 1/6  cost=$0.0129 lat= 2959ms
+  [OK ] M3-inline-review-comment               surf= 12 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0147 lat= 3673ms
+  [FAIL] M5-argument-coupling                   surf= 12 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0154 lat= 4597ms
+  [FAIL] M6-wrong-order-temptation              surf= 12 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0122 lat= 2890ms
+  [FAIL] M7-state-confusion-mkdir               surf= 12 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0127 lat= 2571ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 12 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0154 lat= 4756ms
+  [FAIL] M4-rename-and-commit                   surf= 12 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0121 lat= 2515ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 12 calls= 2 matched= 2/8  sel= 2/8  cost=$0.0159 lat= 4128ms
+  [FAIL] H1-feature-branch-full-flow            surf= 12 calls= 1 matched= 0/12 sel= 1/12 cost=$0.0130 lat= 2533ms
+  [FAIL] H2-pr-multi-inline-review              surf= 12 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0177 lat= 5832ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=full phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 12 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0130 lat= 2480ms
+  [OK ] E2-draft-pr                            surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0143 lat= 3429ms
+  [OK ] E3-read-range                          surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0129 lat= 2780ms
+  [OK ] E4-pr-conversation-comment             surf= 12 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0132 lat= 2827ms
+  [OK ] E5-phantom-tool-rebase                 surf= 12 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0142 lat= 3814ms
+  [FAIL] M1-version-bump-release                surf= 12 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0189 lat= 4979ms
+  [FAIL] M2-branch-fix-pr                       surf= 12 calls= 1 matched= 0/6  sel= 0/6  cost=$0.0162 lat= 4200ms
+  [FAIL] M3-inline-review-comment               surf= 12 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0152 lat= 3459ms
+  [FAIL] M5-argument-coupling                   surf= 12 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0199 lat= 6666ms
+  [FAIL] M6-wrong-order-temptation              surf= 12 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0135 lat= 3343ms
+  [FAIL] M7-state-confusion-mkdir               surf= 12 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0143 lat= 4258ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 12 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0193 lat= 5605ms
+  [FAIL] M4-rename-and-commit                   surf= 12 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0141 lat= 3756ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf= 12 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0177 lat= 5893ms
+  [FAIL] H1-feature-branch-full-flow            surf= 12 calls= 1 matched= 0/12 sel= 0/12 cost=$0.0192 lat= 6136ms
+  [FAIL] H2-pr-multi-inline-review              surf= 12 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0177 lat= 4455ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=tool:llm-haiku phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0112 lat= 3155ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0131 lat= 3415ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0115 lat= 3958ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0119 lat= 2804ms
+  [OK ] E5-phantom-tool-rebase                 surf= 10 calls= 0 matched= 0/0  sel= 0/0  cost=$0.0201 lat=12085ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0162 lat= 5226ms
+  [FAIL] M2-branch-fix-pr                       surf=  9 calls= 1 matched= 0/6  sel= 1/6  cost=$0.0122 lat= 3423ms
+  [OK ] M3-inline-review-comment               surf= 10 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0144 lat= 4394ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0150 lat= 5345ms
+  [FAIL] M6-wrong-order-temptation              surf=  9 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0121 lat= 4651ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0125 lat= 3734ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0150 lat= 4757ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0117 lat= 3302ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  9 calls= 2 matched= 2/8  sel= 2/8  cost=$0.0161 lat= 7524ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 0/12 sel= 1/12 cost=$0.0122 lat= 3677ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0167 lat= 5565ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=tool:llm-haiku phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0128 lat= 4322ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0145 lat= 5668ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0126 lat= 7275ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0133 lat= 3540ms
+  [OK ] E5-phantom-tool-rebase                 surf= 10 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0139 lat= 4753ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0187 lat= 6084ms
+  [FAIL] M2-branch-fix-pr                       surf=  9 calls= 1 matched= 0/6  sel= 0/6  cost=$0.0158 lat= 7060ms
+  [FAIL] M3-inline-review-comment               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0149 lat= 4323ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0198 lat= 7969ms
+  [FAIL] M6-wrong-order-temptation              surf=  9 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0130 lat= 4921ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0139 lat= 5039ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0189 lat= 6300ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0137 lat= 4401ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  9 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0174 lat= 7150ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 0/12 sel= 0/12 cost=$0.0185 lat= 6739ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0178 lat= 5359ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=hybrid:embed-openai-small+llm-haiku phase=1phase ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0112 lat= 2819ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0131 lat= 3296ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0113 lat= 3539ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0119 lat= 2829ms
+  [OK ] E5-phantom-tool-rebase                 surf= 10 calls= 0 matched= 0/0  sel= 0/0  cost=$0.0192 lat=10555ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0160 lat= 4712ms
+  [FAIL] M2-branch-fix-pr                       surf=  9 calls= 1 matched= 0/6  sel= 1/6  cost=$0.0122 lat= 3678ms
+  [OK ] M3-inline-review-comment               surf= 10 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0144 lat= 4689ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0149 lat= 4807ms
+  [FAIL] M6-wrong-order-temptation              surf=  9 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0114 lat= 3994ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0125 lat= 3876ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0150 lat= 5315ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0117 lat= 3457ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  9 calls= 2 matched= 2/8  sel= 2/8  cost=$0.0156 lat= 5819ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 0/12 sel= 1/12 cost=$0.0122 lat= 3549ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0168 lat= 5494ms
+
+=== granularity=fat model=claude-sonnet-4-6 strategy=hybrid:embed-openai-small+llm-haiku phase=1phase-plan ===
+  [FAIL] E1-stage-and-commit-typo               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0126 lat= 6802ms
+  [OK ] E2-draft-pr                            surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0145 lat= 4359ms
+  [OK ] E3-read-range                          surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0126 lat= 3037ms
+  [OK ] E4-pr-conversation-comment             surf= 10 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0133 lat= 3942ms
+  [OK ] E5-phantom-tool-rebase                 surf= 10 calls= 1 matched= 0/0  sel= 0/0  cost=$0.0138 lat= 5043ms
+  [FAIL] M1-version-bump-release                surf= 10 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0187 lat= 6236ms
+  [FAIL] M2-branch-fix-pr                       surf=  9 calls= 1 matched= 0/6  sel= 0/6  cost=$0.0157 lat= 5743ms
+  [FAIL] M3-inline-review-comment               surf= 10 calls= 1 matched= 1/2  sel= 1/2  cost=$0.0149 lat= 4620ms
+  [FAIL] M5-argument-coupling                   surf= 10 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0196 lat= 8074ms
+  [FAIL] M6-wrong-order-temptation              surf=  9 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0130 lat= 4445ms
+  [FAIL] M7-state-confusion-mkdir               surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0139 lat= 4782ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 10 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0189 lat= 6192ms
+  [FAIL] M4-rename-and-commit                   surf= 10 calls= 1 matched= 0/3  sel= 1/3  cost=$0.0137 lat= 4507ms
+  [FAIL] H3-hotfix-with-cross-step-coupling     surf=  9 calls= 1 matched= 1/8  sel= 1/8  cost=$0.0173 lat=10601ms
+  [FAIL] H1-feature-branch-full-flow            surf=  9 calls= 1 matched= 0/12 sel= 0/12 cost=$0.0186 lat= 7759ms
+  [FAIL] H2-pr-multi-inline-review              surf= 10 calls= 1 matched= 1/5  sel= 1/5  cost=$0.0175 lat= 5243ms
+
+================================================================================================
+DONE: 192 runs, 54/192 succ (28%), total cost $2.8250, 974s

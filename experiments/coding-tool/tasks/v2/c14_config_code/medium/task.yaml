@@ -1,0 +1,31 @@
+task_id: c14_config_code__medium
+language: python
+category: config_code
+instructions: |
+  Extract the pricing-related magic constants from `ecom/pricing.py` into a
+  new `ecom/config.py` module, and rewire `pricing.py` to import them from
+  there.
+
+  Concretely:
+    1. Create `ecom/config.py` defining four module-level constants with their
+       current values from `ecom/pricing.py`:
+
+           TAX_RATE = 0.08
+           SHIPPING_PER_KG = 2.50
+           FREE_SHIPPING_THRESHOLD = 100.0
+           MAX_DISCOUNT_PCT = 50.0
+
+    2. In `ecom/pricing.py`, remove the four constant definitions and import
+       them from `ecom.config` instead.
+
+    3. Do not change any function bodies in `pricing.py`; the constants must
+       still be accessible at their original call sites in the same way.
+
+    4. If `tests/test_pricing.py` (or any other test) imports these constants
+       directly from `ecom.pricing`, update the import. (Check first — the
+       baseline tests don't, so most likely no test edits are needed.)
+
+  All existing tests must keep passing.
+files_in_context:
+  - ecom/pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

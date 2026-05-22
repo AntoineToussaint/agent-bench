@@ -1,0 +1,21 @@
+task_id: c05_api_migration__medium
+language: python
+category: api_migration
+instructions: |
+  Migrate every `print(...)` call in `ecom/notifications.py` to use the
+  standard library `logging` module instead. Specifically:
+
+  1. Add `import logging` to the top of `ecom/notifications.py` and define a
+     module-level `logger = logging.getLogger(__name__)` near the existing
+     imports.
+  2. Replace every `print(<args>)` call with `logger.info(<args>)`. There
+     are three such calls (one per `send_*` handler). The argument
+     expressions must be passed through unchanged.
+
+  Do not modify `ecom/pricing.py`, `ecom/orders.py`, `ecom/app.py`,
+  `ecom/repository.py`, `ecom/models.py`, or any existing tests. The return
+  values of `send_order_confirmation`, `send_shipping_update`, and
+  `send_cancellation` must be identical to today.
+files_in_context:
+  - ecom/notifications.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

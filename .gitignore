@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual envs
+.venv
+
+# Secrets / session (match at any depth)
+**/.env
+**/.env.local
+**/.claude/
+
+# Per-trial transcripts (large, regenerable). Keep sweep.csv + sweep.md.
+**/results/**/transcripts/
+**/results/transcripts/
+**/examples/out/

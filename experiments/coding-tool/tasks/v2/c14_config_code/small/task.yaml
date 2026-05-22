@@ -1,0 +1,27 @@
+task_id: c14_config_code__small
+language: python
+category: config_code
+instructions: |
+  Extract the magic constants from `app.py` into a new `config.py` module and
+  rewire `app.py` to import them from there.
+
+  Concretely:
+    1. Create a new `config.py` at the workdir root that defines three module-
+       level constants with their original values:
+
+           TIMEOUT = 30
+           RETRIES = 3
+           BASE_URL = "https://api.example.com"
+
+    2. Update `app.py` to `from config import TIMEOUT, RETRIES, BASE_URL`
+       (or `import config` and reference `config.TIMEOUT` etc.) and replace
+       every inline literal that maps to one of these constants with a
+       reference to the named constant. After the edit, the string
+       `"https://api.example.com"` and the integer literals `30` and `3`
+       must not appear anywhere in `app.py`.
+
+    3. Behavior must be preserved — `request_url`, `fetch`, and
+       `default_settings` all return the same values they did before.
+files_in_context:
+  - app.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

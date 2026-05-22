@@ -1,0 +1,42 @@
+task_id: c14_config_code__large
+language: python
+category: config_code
+instructions: |
+  Extract magic constants spread across the `ecom` package into a new
+  `ecom/config.py` module, and rewire the callers.
+
+  Concretely:
+    1. Create `ecom/config.py` defining the following module-level constants:
+
+           TAX_RATE = 0.08
+           SHIPPING_PER_KG = 2.50
+           FREE_SHIPPING_THRESHOLD = 100.0
+           MAX_DISCOUNT_PCT = 50.0
+           SUPPORT_EMAIL = "support@example.com"
+           LOW_STOCK_DEFAULT_THRESHOLD = 5
+
+    2. Remove the constant definitions from:
+         - `ecom/pricing.py` (TAX_RATE, SHIPPING_PER_KG, FREE_SHIPPING_THRESHOLD,
+           MAX_DISCOUNT_PCT)
+         - `ecom/notifications.py` (SUPPORT_EMAIL)
+       and replace them with `from ecom.config import ...` imports.
+
+    3. In `ecom/inventory.py`, change the default value of the `threshold`
+       parameter of `low_stock_alerts` from `None` to
+       `LOW_STOCK_DEFAULT_THRESHOLD` (imported from `ecom.config`). The body
+       must still handle the per-stock-reorder-threshold path when the caller
+       passes `threshold=None` explicitly, so leave the existing `if threshold
+       is not None` branch in place.
+
+    4. `ecom/coupons.py` already imports `MAX_DISCOUNT_PCT` from `ecom.pricing`
+       — since `ecom.pricing` will now re-export it (because it imports it),
+       this still works. But for cleanliness, you may update the import to
+       `from ecom.config import MAX_DISCOUNT_PCT` instead. Either choice is
+       acceptable.
+
+  All existing tests must keep passing.
+files_in_context:
+  - ecom/pricing.py
+  - ecom/notifications.py
+  - ecom/inventory.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

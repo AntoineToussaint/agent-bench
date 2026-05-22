@@ -1,0 +1,48 @@
+
+================================================================================================
+ CONDITION: 1phase-baseline
+================================================================================================
+  ep1 [OK ] M2-branch-fix-pr                       attempts=1 matched=6/6 errors=[] new_lessons=0 cost=$0.0197 wall=5.0s
+  ep2 [OK ] M3-inline-review-comment               attempts=1 matched=2/2 errors=[] new_lessons=0 cost=$0.0173 wall=2.4s
+  ep3 [OK ] H1-feature-branch-full-flow            attempts=1 matched=12/12 errors=[] new_lessons=0 cost=$0.0220 wall=6.4s
+  ep4 [FAIL] H3-hotfix-with-cross-step-coupling     attempts=1 matched=6/8 errors=[] new_lessons=0 cost=$0.0201 wall=5.0s
+  ep5 [OK ] H2-pr-multi-inline-review              attempts=1 matched=5/5 errors=[] new_lessons=0 cost=$0.0195 wall=3.7s
+  ep6 [OK ] M4-rename-and-commit                   attempts=1 matched=3/3 errors=[] new_lessons=0 cost=$0.0170 wall=2.2s
+
+================================================================================================
+ CONDITION: 1phase-lessons
+================================================================================================
+  ep1 [OK ] M2-branch-fix-pr                       attempts=1 matched=6/6 errors=[] new_lessons=0 cost=$0.0198 wall=4.8s
+  ep2 [OK ] M3-inline-review-comment               attempts=1 matched=2/2 errors=[] new_lessons=0 cost=$0.0173 wall=2.5s
+  ep3 [OK ] H1-feature-branch-full-flow            attempts=1 matched=12/12 errors=[] new_lessons=0 cost=$0.0220 wall=9.7s
+  ep4 [FAIL] H3-hotfix-with-cross-step-coupling     attempts=1 matched=7/8 errors=[] new_lessons=0 cost=$0.0197 wall=4.6s
+  ep5 [OK ] H2-pr-multi-inline-review              attempts=1 matched=5/5 errors=[] new_lessons=0 cost=$0.0195 wall=3.9s
+  ep6 [OK ] M4-rename-and-commit                   attempts=1 matched=3/3 errors=[] new_lessons=0 cost=$0.0170 wall=2.2s
+
+  Lessons saved to data/lessons/1phase-lessons.jsonl (n=0)
+
+================================================================================================
+ CONDITION: 2phase-mixed-baseline
+================================================================================================
+  ep1 [OK ] M2-branch-fix-pr                       attempts=1 matched=6/6 errors=[] new_lessons=0 cost=$0.0412 wall=8.2s
+  ep2 [OK ] M3-inline-review-comment               attempts=1 matched=2/2 errors=[] new_lessons=0 cost=$0.0137 wall=3.2s
+  ep3 [OK ] H1-feature-branch-full-flow            attempts=1 matched=12/12 errors=[] new_lessons=0 cost=$0.0792 wall=12.1s
+  ep4 [FAIL] H3-hotfix-with-cross-step-coupling     attempts=1 matched=6/8 errors=[] new_lessons=0 cost=$0.0498 wall=9.1s
+  ep5 [OK ] H2-pr-multi-inline-review              attempts=1 matched=5/5 errors=[] new_lessons=0 cost=$0.0343 wall=6.4s
+  ep6 [OK ] M4-rename-and-commit                   attempts=1 matched=3/3 errors=[] new_lessons=0 cost=$0.0155 wall=2.9s
+
+================================================================================================
+ CONDITION: 2phase-mixed-lessons
+================================================================================================
+  ep1 [OK ] M2-branch-fix-pr                       attempts=1 matched=6/6 errors=[] new_lessons=0 cost=$0.0412 wall=8.5s
+  ep2 [OK ] M3-inline-review-comment               attempts=1 matched=2/2 errors=[] new_lessons=0 cost=$0.0138 wall=4.0s
+  ep3 [OK ] H1-feature-branch-full-flow            attempts=1 matched=12/12 errors=[] new_lessons=0 cost=$0.0795 wall=12.4s
+  ep4 [FAIL] H3-hotfix-with-cross-step-coupling     attempts=1 matched=6/8 errors=[] new_lessons=0 cost=$0.0501 wall=9.7s
+  ep5 [OK ] H2-pr-multi-inline-review              attempts=1 matched=5/5 errors=[] new_lessons=0 cost=$0.0346 wall=6.1s
+  ep6 [OK ] M4-rename-and-commit                   attempts=1 matched=3/3 errors=[] new_lessons=0 cost=$0.0157 wall=3.7s
+
+  Lessons saved to data/lessons/2phase-mixed-lessons.jsonl (n=0)
+
+================================================================================================
+DONE: 24 episodes, 20/24 task_success (83%)
+Total cost $0.6995, 139s

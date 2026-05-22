@@ -1,0 +1,104 @@
+Sweep: 1 strategies × 2 granularities × 2 models × 3 phases × 6 tasks = 72 runs
+Phases: ['1phase', '2phase', '2phase-sel-haiku-args-sonnet']
+Budget: $5.00
+Out: data/runs/sweep_rich.jsonl
+------------------------------------------------------------------------------------------------
+
+=== granularity=narrow model=claude-haiku-4-5 strategy=full phase=1phase ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0057 lat= 1025ms
+  [OK ] M1-version-bump-release                surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0078 lat= 2479ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0064 lat= 2084ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 2 matched= 2/3  sel= 2/3  cost=$0.0068 lat= 2033ms
+  [OK ] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0071 lat= 2452ms
+  [OK ] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0081 lat= 2783ms
+
+=== granularity=narrow model=claude-haiku-4-5 strategy=full phase=2phase ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0027 lat= 1618ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 6 matched= 4/5  sel= 5/5  cost=$0.0129 lat= 6865ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0050 lat= 3302ms
+  [OK ] M5-argument-coupling                   surf= 39 calls= 3 matched= 3/3  sel= 3/3  cost=$0.0069 lat= 3902ms
+  [OK ] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0094 lat= 6334ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 3/5  sel= 5/5  cost=$0.0144 lat= 9685ms
+
+=== granularity=narrow model=claude-haiku-4-5 strategy=full phase=2phase-sel-haiku-args-sonnet ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0053 lat= 2908ms
+  [OK ] M1-version-bump-release                surf= 39 calls= 6 matched= 5/5  sel= 5/5  cost=$0.0323 lat=12066ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0115 lat= 4739ms
+  [OK ] M5-argument-coupling                   surf= 39 calls= 3 matched= 3/3  sel= 3/3  cost=$0.0167 lat= 6062ms
+  [OK ] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0240 lat=10658ms
+  [OK ] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0287 lat=10324ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=full phase=1phase ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0169 lat= 1942ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 2 matched= 2/5  sel= 2/5  cost=$0.0209 lat= 3837ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0194 lat= 3516ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 1 matched= 1/3  sel= 1/3  cost=$0.0200 lat= 3828ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0198 lat= 3754ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 3 matched= 3/5  sel= 3/5  cost=$0.0217 lat= 3810ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=full phase=2phase ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0082 lat= 4786ms
+  [OK ] M1-version-bump-release                surf= 39 calls= 6 matched= 5/5  sel= 5/5  cost=$0.0371 lat=16117ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0147 lat= 5720ms
+  [OK ] M5-argument-coupling                   surf= 39 calls= 3 matched= 3/3  sel= 3/3  cost=$0.0206 lat= 7309ms
+  [OK ] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0283 lat= 9630ms
+  [OK ] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0333 lat=11408ms
+
+=== granularity=narrow model=claude-sonnet-4-6 strategy=full phase=2phase-sel-haiku-args-sonnet ===
+  [OK ] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 1/1  sel= 1/1  cost=$0.0053 lat= 2460ms
+  [OK ] M1-version-bump-release                surf= 39 calls= 6 matched= 5/5  sel= 5/5  cost=$0.0323 lat=10471ms
+  [OK ] M3-inline-review-comment               surf= 39 calls= 2 matched= 2/2  sel= 2/2  cost=$0.0115 lat= 4940ms
+  [OK ] M5-argument-coupling                   surf= 39 calls= 3 matched= 3/3  sel= 3/3  cost=$0.0167 lat= 6249ms
+  [OK ] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0240 lat= 8976ms
+  [OK ] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 5/5  sel= 5/5  cost=$0.0287 lat=10874ms
+
+=== granularity=narrow-rich model=claude-haiku-4-5 strategy=full phase=1phase ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0158 lat= 1114ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0179 lat= 2860ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0167 lat= 1911ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 1 matched= 0/3  sel= 0/3  cost=$0.0166 lat= 1473ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0173 lat= 2112ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0182 lat= 3690ms
+
+=== granularity=narrow-rich model=claude-haiku-4-5 strategy=full phase=2phase ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0031 lat= 1725ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 6 matched= 0/5  sel= 0/5  cost=$0.0141 lat=10256ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0058 lat= 3628ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 3 matched= 0/3  sel= 0/3  cost=$0.0078 lat= 3798ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0110 lat= 6086ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0163 lat= 8776ms
+
+=== granularity=narrow-rich model=claude-haiku-4-5 strategy=full phase=2phase-sel-haiku-args-sonnet ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0062 lat= 2309ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 6 matched= 0/5  sel= 0/5  cost=$0.0374 lat=10808ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0137 lat= 4344ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 3 matched= 0/3  sel= 0/3  cost=$0.0193 lat= 5953ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0285 lat= 8661ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0342 lat=10967ms
+
+=== granularity=narrow-rich model=claude-sonnet-4-6 strategy=full phase=1phase ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0466 lat= 1919ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 2 matched= 0/5  sel= 0/5  cost=$0.0507 lat= 5289ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0495 lat= 4358ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 1 matched= 0/3  sel= 0/3  cost=$0.0499 lat= 4262ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 3 matched= 0/5  sel= 0/5  cost=$0.0492 lat= 2757ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 3 matched= 0/5  sel= 0/5  cost=$0.0514 lat= 5637ms
+
+=== granularity=narrow-rich model=claude-sonnet-4-6 strategy=full phase=2phase ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0093 lat= 3352ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 6 matched= 0/5  sel= 0/5  cost=$0.0426 lat=11937ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0172 lat= 5630ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 3 matched= 0/3  sel= 0/3  cost=$0.0233 lat= 7670ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0327 lat=10052ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0391 lat=12002ms
+
+=== granularity=narrow-rich model=claude-sonnet-4-6 strategy=full phase=2phase-sel-haiku-args-sonnet ===
+  [FAIL] E4-pr-conversation-comment             surf= 39 calls= 1 matched= 0/1  sel= 0/1  cost=$0.0062 lat= 2480ms
+  [FAIL] M1-version-bump-release                surf= 39 calls= 6 matched= 0/5  sel= 0/5  cost=$0.0374 lat=11776ms
+  [FAIL] M3-inline-review-comment               surf= 39 calls= 2 matched= 0/2  sel= 0/2  cost=$0.0137 lat= 6261ms
+  [FAIL] M5-argument-coupling                   surf= 39 calls= 3 matched= 0/3  sel= 0/3  cost=$0.0193 lat= 6787ms
+  [FAIL] M8-parallel-similar-batched-commit     surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0285 lat= 8424ms
+  [FAIL] H2-pr-multi-inline-review              surf= 39 calls= 5 matched= 0/5  sel= 0/5  cost=$0.0342 lat=10638ms
+
+================================================================================================
+DONE: 72 runs, 29/72 succ (40%), total cost $1.4917, 265s

@@ -1,0 +1,136 @@
+Phase 3 v4: 2 modes × 3 conds × 3 reps × 5 episodes
+
+================================================================================================
+MODE: verify  CONDITION: baseline
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0058 (synth=$0.0000)
+  rep0 ep2 [FAIL] ft=✗ V2-verify-parser          att=4 m=0/1 err=[] promo=[] $=0.0082 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✗ V3-verify-client          att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0061 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✗ V4-verify-config          att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0041 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✗ V5-verify-db              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0040 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0058 (synth=$0.0000)
+  rep1 ep2 [FAIL] ft=✗ V2-verify-parser          att=4 m=0/1 err=[] promo=[] $=0.0082 (synth=$0.0000)
+  rep1 ep3 [OK ] ft=✗ V3-verify-client          att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0061 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✗ V4-verify-config          att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0041 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✗ V5-verify-db              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0041 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0058 (synth=$0.0000)
+  rep2 ep2 [FAIL] ft=✗ V2-verify-parser          att=4 m=0/1 err=[] promo=[] $=0.0082 (synth=$0.0000)
+  rep2 ep3 [OK ] ft=✗ V3-verify-client          att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0061 (synth=$0.0000)
+  rep2 ep4 [OK ] ft=✗ V4-verify-config          att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0040 (synth=$0.0000)
+  rep2 ep5 [OK ] ft=✗ V5-verify-db              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0040 (synth=$0.0000)
+
+  → mode=verify cond=baseline: first_try=0/15 cost=$0.0847 promotions=0
+
+================================================================================================
+MODE: verify  CONDITION: lessons-only
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0067 (synth=$0.0000)
+  rep0 ep2 [OK ] ft=✓ V2-verify-parser          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✓ V3-verify-client          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✓ V4-verify-config          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✓ V5-verify-db              att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth            att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0049 (synth=$0.0000)
+  rep1 ep2 [OK ] ft=✗ V2-verify-parser          att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0050 (synth=$0.0000)
+  rep1 ep3 [OK ] ft=✗ V3-verify-client          att=4 m=1/1 err=['wrong-state', 'wrong-state', 'wrong-state'] promo=[] $=0.0118 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✗ V4-verify-config          att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0074 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✗ V5-verify-db              att=3 m=1/1 err=['wrong-state', 'wrong-state'] promo=[] $=0.0083 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0067 (synth=$0.0000)
+  rep2 ep2 [OK ] ft=✓ V2-verify-parser          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep2 ep3 [OK ] ft=✓ V3-verify-client          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep2 ep4 [OK ] ft=✓ V4-verify-config          att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep2 ep5 [OK ] ft=✓ V5-verify-db              att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+
+  → mode=verify cond=lessons-only: first_try=8/15 cost=$0.0659 promotions=0
+
+================================================================================================
+MODE: verify  CONDITION: promotion-llm
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=['pytest_run'] $=0.0161 (synth=$0.0093)
+  rep0 ep2 [OK ] ft=✓ V2-verify-parser          att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✓ V3-verify-client          att=1 m=1/1 err=[] promo=[] $=0.0021 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✓ V4-verify-config          att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✓ V5-verify-db              att=1 m=1/1 err=[] promo=[] $=0.0021 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ V1-verify-auth            att=3 m=1/1 err=['wrong-state'] promo=['pytest_run'] $=0.0161 (synth=$0.0093)
+  rep1 ep2 [OK ] ft=✓ V2-verify-parser          att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep1 ep3 [OK ] ft=✓ V3-verify-client          att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✓ V4-verify-config          att=1 m=1/1 err=[] promo=[] $=0.0023 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✓ V5-verify-db              att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ V1-verify-auth            att=2 m=1/1 err=['wrong-state'] promo=['pytest_run'] $=0.0134 (synth=$0.0085)
+  rep2 ep2 [FAIL] ft=✗ V2-verify-parser          att=4 m=0/1 err=[] promo=[] $=0.0078 (synth=$0.0000)
+  rep2 ep3 [FAIL] ft=✗ V3-verify-client          att=4 m=0/1 err=[] promo=[] $=0.0080 (synth=$0.0000)
+  rep2 ep4 [FAIL] ft=✗ V4-verify-config          att=4 m=0/1 err=[] promo=[] $=0.0086 (synth=$0.0000)
+  rep2 ep5 [FAIL] ft=✗ V5-verify-db              att=4 m=0/1 err=[] promo=[] $=0.0080 (synth=$0.0000)
+
+  → mode=verify cond=promotion-llm: first_try=8/15 cost=$0.0954 promotions=3
+
+================================================================================================
+MODE: runner  CONDITION: baseline
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build              att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0057 (synth=$0.0000)
+  rep0 ep2 [OK ] ft=✗ R2-run-migrate            att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✗ R3-run-seed               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0040 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✗ R4-run-lint               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✗ R5-run-deploy             att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0039 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep1 ep2 [OK ] ft=✗ R2-run-migrate            att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep1 ep3 [OK ] ft=✗ R3-run-seed               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0039 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✗ R4-run-lint               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✗ R5-run-deploy             att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0061 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0039 (synth=$0.0000)
+  rep2 ep2 [OK ] ft=✗ R2-run-migrate            att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep2 ep3 [OK ] ft=✗ R3-run-seed               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0039 (synth=$0.0000)
+  rep2 ep4 [OK ] ft=✗ R4-run-lint               att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0037 (synth=$0.0000)
+  rep2 ep5 [OK ] ft=✗ R5-run-deploy             att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0059 (synth=$0.0000)
+
+  → mode=runner cond=baseline: first_try=0/15 cost=$0.0630 promotions=0
+
+================================================================================================
+MODE: runner  CONDITION: lessons-only
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0047 (synth=$0.0000)
+  rep0 ep2 [OK ] ft=✓ R2-run-migrate            att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✓ R3-run-seed               att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=[] $=0.0047 (synth=$0.0000)
+  rep1 ep2 [OK ] ft=✓ R2-run-migrate            att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep1 ep3 [OK ] ft=✓ R3-run-seed               att=1 m=1/1 err=[] promo=[] $=0.0019 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ R1-run-build              att=3 m=1/1 err=['wrong-state'] promo=[] $=0.0064 (synth=$0.0000)
+  rep2 ep2 [OK ] ft=✓ R2-run-migrate            att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep2 ep3 [OK ] ft=✓ R3-run-seed               att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep2 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+  rep2 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0018 (synth=$0.0000)
+
+  → mode=runner cond=lessons-only: first_try=12/15 cost=$0.0379 promotions=0
+
+================================================================================================
+MODE: runner  CONDITION: promotion-llm
+================================================================================================
+  rep0 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=['project_run'] $=0.0127 (synth=$0.0080)
+  rep0 ep2 [OK ] ft=✓ R2-run-migrate            att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep0 ep3 [OK ] ft=✓ R3-run-seed               att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep0 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep0 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep1 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=['project_build'] $=0.0115 (synth=$0.0071)
+  rep1 ep2 [OK ] ft=✗ R2-run-migrate            att=2 m=1/1 err=[] promo=[] $=0.0040 (synth=$0.0000)
+  rep1 ep3 [FAIL] ft=✗ R3-run-seed               att=4 m=0/1 err=[] promo=[] $=0.0082 (synth=$0.0000)
+  rep1 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep1 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0022 (synth=$0.0000)
+  rep2 ep1 [OK ] ft=✗ R1-run-build              att=2 m=1/1 err=['wrong-state'] promo=['project_run'] $=0.0126 (synth=$0.0078)
+  rep2 ep2 [OK ] ft=✓ R2-run-migrate            att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep2 ep3 [OK ] ft=✓ R3-run-seed               att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep2 ep4 [OK ] ft=✓ R4-run-lint               att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+  rep2 ep5 [OK ] ft=✓ R5-run-deploy             att=1 m=1/1 err=[] promo=[] $=0.0020 (synth=$0.0000)
+
+  → mode=runner cond=promotion-llm: first_try=10/15 cost=$0.0694 promotions=3
+
+================================================================================================
+DONE in 317s, grand cost $0.4163
+  verify   baseline           first_try=  0/15 (0%)  $=0.0847  promo=0
+  verify   lessons-only       first_try=  8/15 (53%)  $=0.0659  promo=0
+  verify   promotion-llm      first_try=  8/15 (53%)  $=0.0954  promo=3
+  runner   baseline           first_try=  0/15 (0%)  $=0.0630  promo=0
+  runner   lessons-only       first_try= 12/15 (80%)  $=0.0379  promo=0
+  runner   promotion-llm      first_try= 10/15 (67%)  $=0.0694  promo=3

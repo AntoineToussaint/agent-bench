@@ -1,0 +1,32 @@
+[project]
+name = "codeloc-bench"
+version = "0.1.0"
+description = "File-localization benchmark for code retrievers using SWE-bench gold patches as ground truth."
+requires-python = ">=3.11"
+dependencies = [
+    "datasets>=2.20.0",
+    "unidiff>=0.7.5",
+    "rank-bm25>=0.2.2",
+    "tqdm>=4.66.0",
+]
+
+[project.optional-dependencies]
+embeddings = [
+    "sentence-transformers>=3.0.0",
+]
+semble = [
+    "semble",
+]
+
+[project.scripts]
+codeloc-bench = "codeloc_bench.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/codeloc_bench"]
+
+[tool.uv.sources]
+semble = { git = "https://github.com/MinishLab/semble" }

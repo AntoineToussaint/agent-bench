@@ -1,0 +1,15 @@
+task_id: c01_localized_bug__medium
+language: python
+category: localized_bug
+instructions: |
+  There is an off-by-one bug in `ecom/pricing.py`. The `apply_shipping`
+  function is supposed to grant free shipping when the subtotal hits the
+  `FREE_SHIPPING_THRESHOLD` (i.e. the threshold is inclusive), but the
+  comparison currently uses `>` so orders that land exactly on the threshold
+  get charged shipping incorrectly.
+
+  Fix `apply_shipping` so the threshold is inclusive. Do not modify any
+  other function in `ecom/pricing.py`.
+files_in_context:
+  - ecom/pricing.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

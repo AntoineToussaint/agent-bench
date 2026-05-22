@@ -1,0 +1,19 @@
+task_id: c10_repetitive_structure__medium
+language: python
+category: repetitive_structure
+instructions: |
+  In `ecom/notifications.py` there are three near-identical handler functions:
+  `send_order_confirmation`, `send_shipping_update`, and `send_cancellation`.
+  They all return a dict with the keys `to`, `subject`, `body`, and `reply_to`.
+
+  Modify ONLY `send_cancellation` so that the returned dict also contains a
+  new key `"refund_url"` whose value is
+  `f"https://example.com/refund/{order.order_id}"`.
+
+  `send_order_confirmation` and `send_shipping_update` must NOT be modified —
+  in particular their returned dicts must NOT contain a `refund_url` key.
+  Keep all four existing keys (`to`, `subject`, `body`, `reply_to`) in all
+  three handlers.
+files_in_context:
+  - ecom/notifications.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

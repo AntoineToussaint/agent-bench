@@ -1,0 +1,28 @@
+[project]
+name = "agent-bench"
+version = "0.1.0"
+description = "Research monorepo: agent + LLM evaluation. Shared eval library + per-axis experiments."
+readme = "README.md"
+authors = [
+    { name = "AntoineToussaint", email = "antoine@tensorzero.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "lib/agent-eval-core",
+    "experiments/coding-tool",
+    "experiments/tool-selection",
+    "experiments/codeloc-bench",
+]
+
+[tool.uv.sources]
+agent-eval-core = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.13",
+    "mypy>=2.1.0",
+]

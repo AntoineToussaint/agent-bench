@@ -1,0 +1,28 @@
+task_id: c13_test_work__medium
+language: python
+category: test_work
+instructions: |
+  Extend `tests/test_orders.py` with three new test cases that cover the
+  cancellation behaviour more thoroughly. Follow the existing style — reuse
+  the `_setup()` helper, import `cancel_order` and `create_order` from
+  `ecom.orders`, etc.
+
+  Add the following test functions (names must match exactly):
+
+    - `test_cancel_already_cancelled` — create an order, cancel it twice, and
+      assert the order's status remains `"cancelled"` (idempotent).
+
+    - `test_cancel_sends_cancellation_email` — create an order, cancel it,
+      and assert the call itself does not raise. As a side-effect proxy,
+      assert that calling `send_cancellation` directly on the cancelled order
+      returns a payload whose `subject` contains the word `"cancelled"`.
+
+    - `test_cancel_missing_order_raises` — clear the repo and assert that
+      `cancel_order(999)` raises `KeyError`.
+
+  Do not modify the existing test functions, `ecom/orders.py`, or any other
+  module — only append new test functions to `tests/test_orders.py`.
+files_in_context:
+  - tests/test_orders.py
+  - ecom/orders.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

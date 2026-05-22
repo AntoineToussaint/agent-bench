@@ -1,0 +1,30 @@
+task_id: c06_extract_function__medium
+language: python
+category: extract_function
+instructions: |
+  In `ecom/notifications.py`, the three handlers `send_order_confirmation`,
+  `send_shipping_update`, and `send_cancellation` each build a near-identical
+  payload dict with the same four keys (`to`, `subject`, `body`, `reply_to`).
+  Only the subject and body strings differ.
+
+  Extract that payload-construction into a private helper at module scope:
+
+      def _build_payload(order, subject_template, body_template):
+          return {
+              "to": order.user.email,
+              "subject": subject_template.format(order_id=order.order_id),
+              "body": body_template.format(name=order.user.name),
+              "reply_to": SUPPORT_EMAIL,
+          }
+
+  Then rewrite each `send_*` function to keep its existing `print(...)` line
+  and return the helper's result with the right templates. The templates
+  must produce the exact same subject/body strings as before so the existing
+  payload-shape regression test continues to pass byte-for-byte.
+
+  Do not change the public function signatures. Do not modify any other
+  module. The body of each `send_*` function must end up short (≤ 3
+  statements).
+files_in_context:
+  - ecom/notifications.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

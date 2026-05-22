@@ -1,0 +1,18 @@
+task_id: c02_multi_site__small
+language: python
+category: multi_site
+instructions: |
+  In `formatting.py`, the project uses a four-space indent. We're switching
+  to a two-space indent across the whole project. Do TWO things:
+
+  1. Change the `INDENT` constant from four spaces to two spaces.
+  2. Two of the helper functions (`numbered` and `quoted_block`) hardcode a
+     four-space string literal `"    "` instead of using the `INDENT`
+     constant. Replace those hardcoded literals with `INDENT` so they pick
+     up the new width automatically.
+
+  After your changes, no `"    "` (four-space) literal should remain
+  anywhere in the file.
+files_in_context:
+  - formatting.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

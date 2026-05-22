@@ -1,0 +1,2 @@
+task_id,model,edit_format,passed,turns,tool_calls,invalid_tool_calls,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,latency_seconds,error
+c09_remove_sweep__medium,claude-sonnet-4-6,search_plus,0,1,1,0,4241,1415,1360,0,16.007,

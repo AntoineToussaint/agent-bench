@@ -1,0 +1,15 @@
+task_id: c01_localized_bug__large
+language: python
+category: localized_bug
+instructions: |
+  There is an off-by-one bug in `ecom/coupons.py`. The `_is_expired` helper
+  uses the wrong comparison: a coupon whose `expires_on` is *today* is
+  currently flagged as expired, so customers can't redeem coupons on their
+  last valid day. Coupons should remain valid through the end of their
+  `expires_on` date and only become expired the day after.
+
+  Fix the comparison in `_is_expired`. Do not modify any other code in
+  `coupons.py`.
+files_in_context:
+  - ecom/coupons.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

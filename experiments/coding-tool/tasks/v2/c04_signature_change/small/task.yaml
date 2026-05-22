@@ -1,0 +1,19 @@
+task_id: c04_signature_change__small
+language: python
+category: signature_change
+instructions: |
+  Add a new keyword-only parameter `tax_rate: float = 0.0` to `compute_total`
+  in `billing.py`, positioned AFTER `discount`. When `tax_rate` is non-zero,
+  multiply the post-discount subtotal by `(1 + tax_rate)` so the function
+  returns the taxed amount.
+
+  Update ONLY the `checkout` call site (in `app.py`) to pass `tax_rate=0.1`.
+  Do NOT modify the `quick_total` call site or any call in `report.py` —
+  they must continue to rely on the default `tax_rate=0.0`.
+
+  The existing behaviour with `tax_rate` defaulted to `0.0` must remain
+  identical to today.
+files_in_context:
+  - billing.py
+  - app.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

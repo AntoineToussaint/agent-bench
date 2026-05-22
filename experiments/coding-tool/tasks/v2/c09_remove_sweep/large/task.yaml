@@ -1,0 +1,23 @@
+task_id: c09_remove_sweep__large
+language: python
+category: remove_sweep
+instructions: |
+  Inventory tracking is being removed from the codebase entirely. Sweep all
+  references to the `inventory` module out.
+
+  1. Delete the module file `ecom/inventory.py`.
+  2. Delete the test file `tests/test_inventory.py`.
+  3. In `ecom/orders.py`:
+     - Remove the `from ecom import inventory` import.
+     - Remove the `inventory.reserve(...)` call inside `create_order`.
+     - Remove the `inventory.release(...)` call inside `cancel_order` (along
+       with the surrounding try/except).
+     - Remove the `_ensure_capacity` helper and the `DEFAULT_STOCK_BUFFER`
+       constant — they only existed to support inventory.
+
+  After the change, the substring `inventory.` must not appear anywhere under
+  `ecom/`. The other tests in `tests/` (`test_orders.py`, `test_pricing.py`,
+  `test_coupons.py`, `test_auth.py`, `test_reports.py`) must all keep passing.
+files_in_context:
+  - ecom/orders.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

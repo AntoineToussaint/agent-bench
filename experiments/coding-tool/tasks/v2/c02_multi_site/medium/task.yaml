@@ -1,0 +1,18 @@
+task_id: c02_multi_site__medium
+language: python
+category: multi_site
+instructions: |
+  We want every notification log line in `ecom/notifications.py` to be
+  prefixed with `[outbox] ` so operators can grep their stdout for outbox
+  activity. There are three `print(...)` calls in that file — one in each
+  of `send_order_confirmation`, `send_shipping_update`, and
+  `send_cancellation`. Update all three so the printed message starts with
+  `[outbox] `, e.g.
+
+      print(f"[outbox] sending order confirmation to {order.user.email}")
+
+  Do not change the function signatures or the returned payload dicts —
+  only the `print` calls.
+files_in_context:
+  - ecom/notifications.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

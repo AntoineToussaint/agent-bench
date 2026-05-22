@@ -1,0 +1,41 @@
+Using catalog: narrow
+
+================================================================================================
+ CONDITION: 1phase-baseline
+================================================================================================
+  ep1 [OK ] T1-run-auth-tests                      attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0060 wall=1.7s
+  ep2 [OK ] T2-run-parser-tests                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0064 wall=2.8s
+  ep3 [OK ] T3-run-integration-tests               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0067 wall=2.1s
+  ep4 [OK ] T4-run-single-test                     attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0061 wall=1.4s
+
+================================================================================================
+ CONDITION: 1phase-lessons
+================================================================================================
+  ep1 [OK ] T1-run-auth-tests                      attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0060 wall=1.6s
+  ep2 [OK ] T2-run-parser-tests                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0064 wall=1.7s
+  ep3 [OK ] T3-run-integration-tests               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0067 wall=2.2s
+  ep4 [OK ] T4-run-single-test                     attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0061 wall=1.5s
+
+  Lessons saved to data/lessons_pytest_thin/1phase-lessons.jsonl (n=0)
+
+================================================================================================
+ CONDITION: 2phase-mixed-baseline
+================================================================================================
+  ep1 [OK ] T1-run-auth-tests                      attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0051 wall=2.0s
+  ep2 [OK ] T2-run-parser-tests                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0094 wall=2.8s
+  ep3 [OK ] T3-run-integration-tests               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0051 wall=2.6s
+  ep4 [OK ] T4-run-single-test                     attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0053 wall=2.2s
+
+================================================================================================
+ CONDITION: 2phase-mixed-lessons
+================================================================================================
+  ep1 [OK ] T1-run-auth-tests                      attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0052 wall=2.9s
+  ep2 [OK ] T2-run-parser-tests                    attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0095 wall=3.1s
+  ep3 [OK ] T3-run-integration-tests               attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0054 wall=2.6s
+  ep4 [OK ] T4-run-single-test                     attempts=1 matched=1/1 errors=[] new_lessons=0 cost=$0.0053 wall=2.5s
+
+  Lessons saved to data/lessons_pytest_thin/2phase-mixed-lessons.jsonl (n=0)
+
+================================================================================================
+DONE: 16 episodes, 16/16 task_success (100%)
+Total cost $0.1007, 36s

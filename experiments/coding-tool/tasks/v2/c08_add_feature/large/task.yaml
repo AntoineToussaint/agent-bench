@@ -1,0 +1,39 @@
+task_id: c08_add_feature__large
+language: python
+category: add_feature
+instructions: |
+  Add a loyalty-points feature. This touches three files (`ecom/models.py`,
+  a new `ecom/loyalty.py`, and `ecom/app.py`).
+
+  1. In `ecom/models.py`, add a new dataclass at the end of the file:
+     ```python
+     @dataclass
+     class LoyaltyAccount:
+         user_id: int
+         points: int = 0
+     ```
+
+  2. Create a new module `ecom/loyalty.py` exposing a module-level registry
+     ``_loyalty: dict[int, LoyaltyAccount] = {}`` and three functions:
+       - `get_balance(user_id: int) -> int` — return the account's points
+         (auto-create an account at 0 if one does not exist).
+       - `add_points(user_id: int, n: int) -> int` — add `n` points
+         (auto-create if missing) and return the new balance.
+       - `redeem(user_id: int, n: int) -> int` — subtract `n` points from the
+         account. Raise `ValueError` if the account has fewer than `n` points
+         (or does not yet exist). Returns the number of points redeemed
+         (i.e. `n` on success).
+
+  3. In `ecom/app.py`, add:
+     ``def route_redeem_points(user_id: int, points: int) -> dict:``
+
+     It must call `loyalty.redeem(user_id, points)` and return
+     `{"user_id": user_id, "redeemed": points, "balance": loyalty.get_balance(user_id)}`.
+
+     Import the new module at the top of `app.py` (e.g. `from ecom import loyalty`).
+
+  All existing tests in `tests/` must keep passing.
+files_in_context:
+  - ecom/models.py
+  - ecom/app.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]

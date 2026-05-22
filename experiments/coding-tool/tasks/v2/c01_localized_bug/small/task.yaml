@@ -1,0 +1,13 @@
+task_id: c01_localized_bug__small
+language: python
+category: localized_bug
+instructions: |
+  There is an off-by-one bug in `age.py`. The function `is_adult` uses the
+  wrong comparison operator: someone exactly at `LEGAL_AGE` (18) is currently
+  classified as a minor instead of an adult. Fix `is_adult` so that an age
+  equal to `LEGAL_AGE` returns `True`.
+
+  Do not modify `is_senior` or `is_minor` — they are correct as written.
+files_in_context:
+  - age.py
+oracle_cmd: ["python", "-m", "pytest", "-q", "tests/", "_overlay/tests/"]
