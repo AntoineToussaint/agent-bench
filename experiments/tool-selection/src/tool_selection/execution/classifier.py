@@ -7,13 +7,14 @@ single short rule + a scope indicator (tool / task).
 from __future__ import annotations
 
 import json
-import os
 import re
 import time
 import uuid
 from typing import Any
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from .lessons import Lesson, task_signature
 
@@ -52,19 +53,16 @@ Reply with ONLY a JSON object:
 
 def _call_classifier(prompt: str, model: str = "claude-haiku-4-5") -> tuple[dict, dict]:
     """Returns (parsed_json, telemetry)."""
-    import anthropic
+    client = make_client(model)
+    if hasattr(client, "max_tokens"):
+        client.max_tokens = 200
+    client.reset(CLASSIFIER_SYSTEM)
+    client.add_user_text(prompt)
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     t0 = time.perf_counter()
-    resp = client.messages.create(
-        model=model,
-        max_tokens=200,
-        temperature=0,
-        system=CLASSIFIER_SYSTEM,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = "".join(b.text for b in resp.content if b.type == "text")
+    msg = client.step([])
     latency_ms = (time.perf_counter() - t0) * 1000
+    text = msg.text or ""
 
     # Parse the JSON, with fallback
     try:
@@ -80,8 +78,8 @@ def _call_classifier(prompt: str, model: str = "claude-haiku-4-5") -> tuple[dict
             parsed = {"rule": text.strip()[:200], "scope": "tool"}
 
     return parsed, {
-        "input_tokens": resp.usage.input_tokens,
-        "output_tokens": resp.usage.output_tokens,
+        "input_tokens": msg.usage.input_tokens,
+        "output_tokens": msg.usage.output_tokens,
         "latency_ms": latency_ms,
     }
 
