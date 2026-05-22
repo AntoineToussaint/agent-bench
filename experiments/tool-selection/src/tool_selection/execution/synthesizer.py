@@ -14,14 +14,13 @@ opening an arbitrary-code surface.
 from __future__ import annotations
 
 import json
-import os
 import re
-import time
-import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import Tool
@@ -164,8 +163,6 @@ def synthesize_from_cluster(
     model: str = "claude-sonnet-4-6",
 ) -> SynthesisResult:
     """Ask the LLM to design a derived tool from a cluster of recurring lessons."""
-    import anthropic
-
     if not cluster_lessons:
         return SynthesisResult(derived=None, error="empty cluster")
 
@@ -185,23 +182,19 @@ def synthesize_from_cluster(
         f"Design the derived tool. Output JSON only."
     )
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    t0 = time.perf_counter()
     try:
-        resp = client.messages.create(
-            model=model,
-            max_tokens=1500,
-            temperature=0,
-            system=SYNTHESIZER_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        in_tok = resp.usage.input_tokens
-        out_tok = resp.usage.output_tokens
+        client = make_client(model)
+        if hasattr(client, "max_tokens"):
+            client.max_tokens = 1500
+        client.reset(SYNTHESIZER_SYSTEM)
+        client.add_user_text(prompt)
+        msg = client.step([])
+        text = msg.text
+        in_tok = msg.usage.input_tokens
+        out_tok = msg.usage.output_tokens
     except Exception as exc:  # noqa: BLE001
         return SynthesisResult(derived=None, error=f"api error: {exc!r}")
 
-    latency_ms = (time.perf_counter() - t0) * 1000
     cost = cost_for(model, in_tok, out_tok)
 
     # Parse the JSON

@@ -19,14 +19,12 @@ but the synthesis output is a string (text to append) rather than a Tool.
 
 from __future__ import annotations
 
-import json
-import os
-import re
-import time
 from dataclasses import dataclass, field
 from typing import Any
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import Tool
@@ -87,8 +85,6 @@ def synthesize_patch(
     model: str = "claude-sonnet-4-6",
 ) -> AugmentResult:
     """Ask the LLM for a description addendum encoding the recurring lesson."""
-    import anthropic
-
     if not cluster_lessons:
         return AugmentResult(patch=None, error="empty cluster")
 
@@ -105,19 +101,16 @@ def synthesize_patch(
         f"Write the addendum (start with a clear section heading)."
     )
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    t0 = time.perf_counter()
     try:
-        resp = client.messages.create(
-            model=model,
-            max_tokens=400,
-            temperature=0,
-            system=AUGMENT_SYSTEM,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = "".join(b.text for b in resp.content if b.type == "text").strip()
-        in_tok = resp.usage.input_tokens
-        out_tok = resp.usage.output_tokens
+        client = make_client(model)
+        if hasattr(client, "max_tokens"):
+            client.max_tokens = 400
+        client.reset(AUGMENT_SYSTEM)
+        client.add_user_text(prompt)
+        msg = client.step([])
+        text = msg.text.strip()
+        in_tok = msg.usage.input_tokens
+        out_tok = msg.usage.output_tokens
     except Exception as exc:  # noqa: BLE001
         return AugmentResult(patch=None, error=f"api error: {exc!r}")
 

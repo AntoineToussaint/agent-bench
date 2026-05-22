@@ -12,12 +12,12 @@ OnePhaseConfusabilityAware     — OnePhase + an auto-generated disambiguation
 
 from __future__ import annotations
 
-import json
-import os
 import time
 from typing import Any
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import PipelineStep, Task, Tool
@@ -115,86 +115,43 @@ def _build_confusability_section(surfaced: list[Tool]) -> str:
     return "\n".join(lines)
 
 
-def _anthropic_call(
+def _call(
     system: str, user: str, tools: list[Tool], model: str, max_tokens: int = 4096
 ) -> tuple[list[dict[str, Any]], str, PipelineStep]:
-    import anthropic
+    """Run the single-shot tool-calling final shot through agent-eval-core's
+    `ModelClient`. Provider routing is handled inside `make_client(model)`
+    (Anthropic, OpenAI, OpenRouter).
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    Tool schemas are passed in Anthropic shape uniformly; the OpenAI client
+    inside agent-eval-core converts them internally.
+    """
+    client = make_client(model)
+    # Match the legacy max_tokens budget (previously hard-coded on both
+    # provider branches). agent-eval-core's clients expose `max_tokens` as a
+    # dataclass field; the factory doesn't take it directly.
+    if hasattr(client, "max_tokens"):
+        client.max_tokens = max_tokens
+    client.reset(system)
+    client.add_user_text(user)
+
     t0 = time.perf_counter()
-    resp = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        temperature=0,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-        tools=[t.to_anthropic() for t in tools],
-    )
+    msg = client.step([t.to_anthropic() for t in tools])
     latency_ms = (time.perf_counter() - t0) * 1000
-    calls: list[dict[str, Any]] = []
-    text_parts: list[str] = []
-    for block in resp.content:
-        if block.type == "tool_use":
-            calls.append({"name": block.name, "input": dict(block.input)})
-        elif block.type == "text":
-            text_parts.append(block.text)
-    usage = resp.usage
+
+    calls: list[dict[str, Any]] = [
+        {"name": tc.name, "input": dict(tc.arguments)} for tc in msg.tool_calls
+    ]
+    in_tok = msg.usage.input_tokens
+    out_tok = msg.usage.output_tokens
     step = PipelineStep(
         kind="final_shot",
         model=model,
-        input_tokens=usage.input_tokens,
-        output_tokens=usage.output_tokens,
-        cost_usd=cost_for(model, usage.input_tokens, usage.output_tokens),
+        input_tokens=in_tok,
+        output_tokens=out_tok,
+        cost_usd=cost_for(model, in_tok, out_tok),
         latency_ms=latency_ms,
-        note=f"stop_reason={resp.stop_reason}",
     )
-    return calls, "\n".join(text_parts), step
-
-
-def _openai_call(
-    system: str, user: str, tools: list[Tool], model: str, max_tokens: int = 4096
-) -> tuple[list[dict[str, Any]], str, PipelineStep]:
-    from openai import OpenAI
-
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    t0 = time.perf_counter()
-    resp = client.chat.completions.create(
-        model=model,
-        max_completion_tokens=max_tokens,
-        temperature=0,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        tools=[t.to_openai() for t in tools],
-        parallel_tool_calls=True,
-    )
-    latency_ms = (time.perf_counter() - t0) * 1000
-    choice = resp.choices[0]
-    calls: list[dict[str, Any]] = []
-    for tc in choice.message.tool_calls or []:
-        try:
-            args = json.loads(tc.function.arguments)
-        except json.JSONDecodeError:
-            args = {"__raw__": tc.function.arguments}
-        calls.append({"name": tc.function.name, "input": args})
-    text = choice.message.content or ""
-    usage = resp.usage
-    step = PipelineStep(
-        kind="final_shot",
-        model=model,
-        input_tokens=usage.prompt_tokens,
-        output_tokens=usage.completion_tokens,
-        cost_usd=cost_for(model, usage.prompt_tokens, usage.completion_tokens),
-        latency_ms=latency_ms,
-        note=f"finish_reason={choice.finish_reason}",
-    )
-    return calls, text, step
-
-
-def _call(system: str, user: str, tools: list[Tool], model: str) -> tuple[list[dict[str, Any]], str, PipelineStep]:
-    if model.startswith("claude"):
-        return _anthropic_call(system, user, tools, model)
-    if model.startswith("gpt"):
-        return _openai_call(system, user, tools, model)
-    raise ValueError(f"unknown model: {model}")
+    return calls, msg.text, step
 
 
 class OnePhase(Phase):

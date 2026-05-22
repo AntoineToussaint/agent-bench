@@ -23,12 +23,13 @@ from __future__ import annotations
 
 import concurrent.futures as cf
 import json
-import os
 import re
 import time
 from typing import Any
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import PipelineStep, Task, Tool
@@ -136,39 +137,23 @@ def _parse_plan(text: str, valid_names: set[str]) -> list[dict[str, str]]:
 def _llm_text_call(
     system: str, user: str, model: str, max_tokens: int = 1024
 ) -> tuple[str, PipelineStep]:
-    """Call without tools — just get text back. Used for phase 1."""
+    """Call without tools — just get text back. Used for phase 1.
+
+    Routes through agent-eval-core's `ModelClient`; provider dispatch is
+    handled inside `make_client(model)`.
+    """
+    client = make_client(model)
+    if hasattr(client, "max_tokens"):
+        client.max_tokens = max_tokens
+    client.reset(system)
+    client.add_user_text(user)
+
     t0 = time.perf_counter()
-    if model.startswith("claude"):
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-        resp = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=0,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        )
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        inp = resp.usage.input_tokens
-        out = resp.usage.output_tokens
-    elif model.startswith("gpt"):
-        from openai import OpenAI
-
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        resp = client.chat.completions.create(
-            model=model,
-            max_completion_tokens=max_tokens,
-            temperature=0,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        )
-        text = resp.choices[0].message.content or ""
-        inp = resp.usage.prompt_tokens
-        out = resp.usage.completion_tokens
-    else:
-        raise ValueError(f"unknown model: {model}")
-
+    msg = client.step([])
     latency_ms = (time.perf_counter() - t0) * 1000
+
+    inp = msg.usage.input_tokens
+    out = msg.usage.output_tokens
     step = PipelineStep(
         kind="llm_router",
         model=model,
@@ -178,61 +163,38 @@ def _llm_text_call(
         latency_ms=latency_ms,
         note="2phase:select",
     )
-    return text, step
+    return msg.text, step
 
 
 def _llm_tool_call(
     system: str, user: str, tool: Tool, model: str, max_tokens: int = 1024
 ) -> tuple[dict[str, Any] | None, PipelineStep]:
-    """Call with exactly one tool available. Used for phase 2."""
+    """Call with exactly one tool available. Used for phase 2.
+
+    Note: agent-eval-core's `ModelClient.step` doesn't expose the provider's
+    forced `tool_choice` knob. With a single-tool input the practical effect
+    is the same — the model has no other tool to call — and the prompt
+    already instructs it to emit that one call. We just take the first
+    tool_use matching the requested tool name (or None).
+    """
+    client = make_client(model)
+    if hasattr(client, "max_tokens"):
+        client.max_tokens = max_tokens
+    client.reset(system)
+    client.add_user_text(user)
+
     t0 = time.perf_counter()
-    if model.startswith("claude"):
-        import anthropic
-
-        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-        resp = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=0,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-            tools=[tool.to_anthropic()],
-            tool_choice={"type": "tool", "name": tool.name},
-        )
-        result: dict[str, Any] | None = None
-        for block in resp.content:
-            if block.type == "tool_use" and block.name == tool.name:
-                result = dict(block.input)
-                break
-        inp = resp.usage.input_tokens
-        out = resp.usage.output_tokens
-    elif model.startswith("gpt"):
-        from openai import OpenAI
-
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        resp = client.chat.completions.create(
-            model=model,
-            max_completion_tokens=max_tokens,
-            temperature=0,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            tools=[tool.to_openai()],
-            tool_choice={"type": "function", "function": {"name": tool.name}},
-        )
-        choice = resp.choices[0]
-        result = None
-        for tc in choice.message.tool_calls or []:
-            if tc.function.name == tool.name:
-                try:
-                    result = json.loads(tc.function.arguments)
-                except json.JSONDecodeError:
-                    result = {"__raw__": tc.function.arguments}
-                break
-        inp = resp.usage.prompt_tokens
-        out = resp.usage.completion_tokens
-    else:
-        raise ValueError(f"unknown model: {model}")
-
+    msg = client.step([tool.to_anthropic()])
     latency_ms = (time.perf_counter() - t0) * 1000
+
+    result: dict[str, Any] | None = None
+    for tc in msg.tool_calls:
+        if tc.name == tool.name:
+            result = dict(tc.arguments)
+            break
+
+    inp = msg.usage.input_tokens
+    out = msg.usage.output_tokens
     step = PipelineStep(
         kind="final_shot",
         model=model,

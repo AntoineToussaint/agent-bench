@@ -10,11 +10,12 @@ is small enough to fit easily in input.
 from __future__ import annotations
 
 import json
-import os
 import re
 import time
 
 from dotenv import load_dotenv
+
+from agent_eval import make_client
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import PipelineStep
@@ -81,36 +82,25 @@ class LLMSelector(Selector):
     def select(self, query: str, candidates: list[Selectable], k: int) -> Selection:
         prompt = _build_prompt(query, candidates, k)
         valid = {c.name for c in candidates}
+
+        # The legacy code sent no system prompt for the Anthropic branch and
+        # used `""` as the system for OpenAI (no system message at all).
+        # `ModelClient.reset("")` reproduces both: Anthropic accepts an empty
+        # system, OpenAI inserts an empty `system` chat message which behaves
+        # identically to none for ranking-style prompts.
+        client = make_client(self.model)
+        if hasattr(client, "max_tokens"):
+            client.max_tokens = 512
+        client.reset("")
+        client.add_user_text(prompt)
+
         t0 = time.perf_counter()
-
-        if self.model.startswith("claude"):
-            import anthropic
-
-            client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-            resp = client.messages.create(
-                model=self.model,
-                max_tokens=512,
-                temperature=0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            text = "".join(b.text for b in resp.content if b.type == "text")
-            inp_tok = resp.usage.input_tokens
-            out_tok = resp.usage.output_tokens
-        else:
-            from openai import OpenAI
-
-            client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-            resp = client.chat.completions.create(
-                model=self.model,
-                max_completion_tokens=512,
-                temperature=0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            text = resp.choices[0].message.content or ""
-            inp_tok = resp.usage.prompt_tokens
-            out_tok = resp.usage.completion_tokens
-
+        msg = client.step([])
         latency_ms = (time.perf_counter() - t0) * 1000
+
+        text = msg.text
+        inp_tok = msg.usage.input_tokens
+        out_tok = msg.usage.output_tokens
         ids = _parse_response(text, valid, k)
 
         return Selection(
