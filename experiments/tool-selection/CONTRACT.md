@@ -125,16 +125,45 @@ calling scales nearly flat with catalog size while one-phase scales 2.5–4×
 worse. See also the cross-experiment writeup at
 [`notes/tool-use-vs-structured-output.md`](../../notes/tool-use-vs-structured-output.md).
 
-## Refactor status
+## Migration status
 
 - ✅ `tool_selection.contract` re-exports canonical types as the standard import path.
 - ✅ `tool_selection.adapters.local_hand_authored` is the local task adapter.
-- ✅ `tool_selection.pricing` now delegates to `agent_eval.pricing` (the
-  pricing YAML); a small fallback table covers embeddings + research
+- ✅ `tool_selection.pricing` delegates to `agent_eval.pricing` (the
+  pricing YAML); small local fallback covers embeddings + research
   placeholders.
-- ⏳ `tool_selection.runner` still uses its own sweep loop. Migration to
-  `agent_eval.Sweep` is the next step — needs a `trial = (ModelClient,
-  approach_str, Task) -> RunRecord` wrapper around the existing
-  approach/phase pipeline.
-- ⏳ `tool_selection.scorer.ScoreCard` → embed into `RunRecord.extra` once
-  the runner moves to `agent_eval.Sweep`.
+- ✅ `tool_selection.trial.make_trial(approach, catalog, phase)` returns
+  a `Trial = (ModelClient, condition, Task) -> RunRecord` compatible with
+  `agent_eval.Sweep`. The existing approach/phase pipeline runs unchanged;
+  the wrapper handles `(CallTrace, ScoreCard) -> RunRecord` conversion.
+- ➡ Phases still make their own provider SDK calls (Anthropic / OpenAI /
+  OpenRouter). The `ModelClient` arg is used only for `.name`. Migrating
+  phases to consume `ModelClient` is a deeper refactor that's not blocking
+  shared-sweep use.
+
+### Using the trial with agent-eval-core
+
+```python
+from agent_eval import Sweep
+from tool_selection.approaches.full import FullApproach
+from tool_selection.phases.one_phase import OnePhase
+from tool_selection.adapters import all_tasks
+from tool_selection.catalogs import get_catalog
+from tool_selection.trial import make_trial
+
+trial = make_trial(FullApproach(), get_catalog("narrow"), OnePhase())
+
+sweep = Sweep(
+    models=["claude-haiku-4-5", "claude-sonnet-4-6"],
+    conditions=["full|1phase"],
+    tasks=list(all_tasks()),
+    trial=trial,
+)
+records = sweep.run()
+```
+
+Each `RunRecord` carries the ScoreCard fields in `extra`:
+`selection_matched`, `selection_accuracy`, `args_accuracy_given_selection`,
+`required_total`/`required_matched`, `missing_required`, `hallucinated`,
+`forbidden_called`, `schema_invalid`, plus `approach_id`, `granularity`,
+`surfaced_count`, `n_calls`.
