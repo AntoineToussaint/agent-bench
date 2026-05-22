@@ -1,0 +1,4 @@
+task_id,model,condition,replicate,passed,turns,tool_calls,invalid_tool_calls,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,cost_usd,latency_seconds,error
+astropy__astropy-12907,claude-haiku-4-5,one-shot,0,1,1,0,0,552,52,0,0,0.000812,1.803,
+astropy__astropy-12907,claude-haiku-4-5,turn-loop,0,1,14,14,0,33619,1617,104081,19764,0.076817,21.481,
+astropy__astropy-12907,claude-haiku-4-5,claude-code,0,1,1,0,0,0,0,0,0,0.000000,20.635,

@@ -190,22 +190,28 @@ TOOLS: list[dict[str, Any]] = [
 
 
 SYSTEM_PROMPT = """\
-You investigate a code repository to identify the files that must be edited \
-(and the tests that must be added/updated) to fix a given GitHub issue.
+Your job is LOCALIZATION ONLY: identify which files need editing for a given \
+issue. You are NOT writing the fix or analyzing root causes in detail.
 
-You have these tools:
+Tools:
   - list_files(path?)         → list paths
   - grep(pattern, glob?)      → search file contents
   - view_file(path, range?)   → read file (or a slice)
   - done(files=[...])         → submit final ranked list and exit
 
-Work like an engineer: skim the repo structure, grep for relevant symbols, \
-read the most promising files, then call `done` with a ranked list (highest \
-relevance first). Include both source files (where the bug lives) and test \
-files (where regression tests would go).
+Workflow:
+  1. Skim the repo top-level structure (one `list_files`).
+  2. Grep for symbols / phrases mentioned in the issue.
+  3. View the most-likely candidate file(s) to confirm.
+  4. Call `done` with a SHORT ranked list (most relevant first).
 
-Be selective — only include files that genuinely matter. Spurious files hurt \
-your score.\
+Budget: target 3-6 tool calls TOTAL before calling `done`. Each extra \
+exploration call costs you tokens with diminishing return — once you have \
+3-5 plausible files, SUBMIT. You can be wrong; you cannot retract.
+
+Include source files (where the fix would go) AND test files (where a \
+regression test would land). Be selective: spurious files hurt your score \
+via the false-positive penalty.\
 """
 
 
@@ -226,7 +232,7 @@ with the ranked list.\
 
 @dataclass
 class _Limits:
-    max_turns: int = 12
+    max_turns: int = 15
     max_consecutive_errors: int = 3
     max_no_progress_turns: int = 4
 
@@ -275,8 +281,26 @@ def _apply(call: ToolCall, repo: RepoView) -> ToolResult:
 
 
 def _snapshot(submitted: list[str]) -> tuple[str, ...]:
-    """Detect "no-progress" turns by tracking the submitted file list."""
+    """Legacy snapshot — kept for structured-loop reuse. Returns the
+    current submitted file list as a hashable tuple."""
     return tuple(submitted)
+
+
+def _signature(call: ToolCall) -> tuple[str, str]:
+    """Stable hashable key for one tool call: (name, json-args).
+
+    Used to detect "no progress" — a turn that emits only signatures the
+    model has already used is wasted. In a turn-loop, exploration IS the
+    work, so we measure progress by "did the model try anything new",
+    not by "did the submitted answer change."
+    """
+    import json as _json
+
+    try:
+        args = _json.dumps(call.arguments, sort_keys=True, default=str)
+    except (TypeError, ValueError):
+        args = str(call.arguments)
+    return (call.name, args)
 
 
 def make_turn_loop_trial(
@@ -285,6 +309,7 @@ def make_turn_loop_trial(
     limits: _Limits | None = None,
     fp_penalty: float = 0.05,
     top_k: int | None = None,
+    transcripts_dir: "Path | None" = None,
 ):
     """Factory: returns a Trial that uses an agent loop against `repo_view_for(task)`.
 
@@ -295,6 +320,7 @@ def make_turn_loop_trial(
         limits: turn / error / no-progress caps. Defaults are conservative.
         fp_penalty: scorer's false-positive penalty.
         top_k: if set, only the top-k files in the final `done(files=...)` are scored.
+        transcripts_dir: optional directory to dump per-trial JSON transcripts.
     """
     limits = limits or _Limits()
 
@@ -311,12 +337,12 @@ def make_turn_loop_trial(
         transcript.add_user_text(user_text)
 
         submitted: list[str] = []
+        seen_signatures: set[tuple[str, str]] = set()
         turns = 0
         tool_calls = 0
         invalid = 0
         consecutive_errors = 0
         no_progress_turns = 0
-        last_snapshot: tuple[str, ...] | None = None
         error: str | None = None
         done_flag = False
 
@@ -346,8 +372,14 @@ def make_turn_loop_trial(
 
             results: list[ToolResult] = []
             turn_all_errors = True
+            turn_added_signature = False
             for tc in msg.tool_calls:
                 tool_calls += 1
+                # Track exploration "progress" by unique (name, args) signature.
+                sig = _signature(tc)
+                if sig not in seen_signatures:
+                    seen_signatures.add(sig)
+                    turn_added_signature = True
                 res = _apply(tc, repo)
                 if res.status == "ok":
                     turn_all_errors = False
@@ -371,14 +403,17 @@ def make_turn_loop_trial(
                 error = f"aborted: {consecutive_errors} consecutive error turns"
                 break
 
-            snap = _snapshot(submitted)
-            if snap == last_snapshot:
+            # No-progress: a turn that emitted ONLY signatures already seen
+            # (i.e. nothing the model hasn't tried before).
+            if not done_flag and not turn_added_signature:
                 no_progress_turns += 1
             else:
                 no_progress_turns = 0
-            last_snapshot = snap
             if not done_flag and no_progress_turns >= limits.max_no_progress_turns:
-                error = f"aborted: {no_progress_turns} no-progress turns"
+                error = (
+                    f"aborted: {no_progress_turns} turns without trying a new "
+                    f"(tool, args) signature"
+                )
                 break
 
         latency = time.monotonic() - t0
@@ -392,7 +427,7 @@ def make_turn_loop_trial(
             cache_read_tokens=cache_r,
             cache_creation_tokens=cache_w,
         )
-        return RunRecord(
+        rec = RunRecord(
             task_id=task.task_id,
             model=client.name,
             condition=condition,
@@ -408,7 +443,13 @@ def make_turn_loop_trial(
                 **s.as_extra(),
                 "submitted": submitted,
                 "done_called": done_flag,
+                "unique_signatures": len(seen_signatures),
             },
         )
+        if transcripts_dir:
+            from agent_eval import dump_transcript as _dump
+
+            rec.transcript_path = str(_dump(transcripts_dir, rec, transcript))
+        return rec
 
     return trial

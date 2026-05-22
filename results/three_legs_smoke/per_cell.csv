@@ -1,0 +1,4 @@
+model,condition,task_id,n,n_passed,pass_rate,turns_p25,turns_p50,turns_p75,tool_calls_p25,tool_calls_p50,tool_calls_p75,cost_p25,cost_p50,cost_p75,latency_p25,latency_p50,latency_p75,tokens_p25,tokens_p50,tokens_p75
+claude-haiku-4-5,claude-code,astropy__astropy-12907,1,1,1.000,1.00,1.00,1.00,0.00,0.00,0.00,0.000000,0.000000,0.000000,20.635,20.635,20.635,0,0,0
+claude-haiku-4-5,one-shot,astropy__astropy-12907,1,1,1.000,1.00,1.00,1.00,0.00,0.00,0.00,0.000812,0.000812,0.000812,1.803,1.803,1.803,604,604,604
+claude-haiku-4-5,turn-loop,astropy__astropy-12907,1,1,1.000,14.00,14.00,14.00,14.00,14.00,14.00,0.076817,0.076817,0.076817,21.481,21.481,21.481,35236,35236,35236
