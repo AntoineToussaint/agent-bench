@@ -168,11 +168,14 @@ def _summarize(records: list[RunRecord], label: str) -> str:
     extras = [r.extra or {} for r in records]
     wasted = [e["wasted_turn_fraction"] for e in extras if "wasted_turn_fraction" in e]
     batch = [e["batch_efficiency"] for e in extras if "batch_efficiency" in e and e["batch_efficiency"] > 0]
+    # Context observation: peak input tokens (see HARNESS.md).
+    peak_in = [e["peak_input_tokens"] for e in extras if e.get("peak_input_tokens")]
     wasted_str = f"{statistics.mean(wasted):>5.0%}" if wasted else "—"
     batch_str = f"{statistics.mean(batch):>4.1f}" if batch else "—"
+    peak_str = f"{statistics.mean(peak_in):>5,.0f}" if peak_in else "—"
     return (
         f"| {label:<22} | {n} | {pass_rate:>5.0%} | ${mean_cost:>6.4f} | "
-        f"{mean_lat:>5.1f}s | {wasted_str} | {batch_str} |"
+        f"{mean_lat:>5.1f}s | {wasted_str} | {batch_str} | {peak_str} |"
     )
 
 
@@ -251,9 +254,10 @@ def main() -> int:
         "Step-level columns (only for turn-loop trials):",
         "- **wasted%**: fraction of turns that didn't make progress (re-tried same call, or all calls errored)",
         "- **batch**: mean actions per active turn — higher = better batching, lower = chatty",
+        "- **peak in**: max input_tokens any single turn used (proxy for context bloat — see HARNESS.md)",
         "",
-        "| capability             |  n | pass | cost     | latency | wasted% | batch |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| capability             |  n | pass | cost     | latency | wasted% | batch | peak in |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for label, recs in all_records:
         lines.append(_summarize(recs, label))

@@ -147,6 +147,8 @@ def run_trial(
     # the workdir (model re-edited the same lines, or every call errored).
     wasted_turns = 0
     actions_per_active_turn: list[int] = []  # for batch_efficiency
+    # Context-engineering observation: input_tokens per turn. See HARNESS.md.
+    input_tokens_per_turn: list[int] = []
     done = False
     error: str | None = None
 
@@ -189,6 +191,7 @@ def run_trial(
             total_usage.output_tokens += msg_usage.output_tokens
             total_usage.cache_read_tokens += msg_usage.cache_read_tokens
             total_usage.cache_creation_tokens += msg_usage.cache_creation_tokens
+            input_tokens_per_turn.append(msg_usage.input_tokens)
             turn_sp.set_attribute("agent_eval.turn.n_actions", len(msg_calls))
             turn_sp.set_attribute(
                 "agent_eval.turn.tool_names",
@@ -334,6 +337,19 @@ def run_trial(
                 if actions_per_active_turn else 0.0
             ),
             "active_turns": len(actions_per_active_turn),
+            # Context-engineering observation (see HARNESS.md). With
+            # our keep-everything policy these grow monotonically.
+            "peak_input_tokens": (
+                max(input_tokens_per_turn) if input_tokens_per_turn else 0
+            ),
+            "input_tokens_at_done": (
+                input_tokens_per_turn[-1] if input_tokens_per_turn else 0
+            ),
+            "context_growth_per_turn": (
+                (input_tokens_per_turn[-1] - input_tokens_per_turn[0])
+                / max(1, len(input_tokens_per_turn) - 1)
+                if len(input_tokens_per_turn) >= 2 else 0.0
+            ),
         },
     )
 

@@ -181,6 +181,10 @@ def make_turn_loop_trial_with_backend(
         # Step-level metrics: aggregated at trial end. See DIMENSIONS.md.
         turns_with_new_signature = 0    # for wasted_turn_fraction
         actions_per_active_turn: list[int] = []  # for batch_efficiency
+        # Context-engineering observation: input_tokens per turn. With
+        # our "keep everything" policy this grows monotonically; under
+        # a future pruning policy it would plateau. See HARNESS.md.
+        input_tokens_per_turn: list[int] = []
         error: str | None = None
         done_flag = False
 
@@ -220,6 +224,7 @@ def make_turn_loop_trial_with_backend(
                 out_tok += response.usage.output_tokens
                 cache_r += response.usage.cache_read_tokens
                 cache_w += response.usage.cache_creation_tokens
+                input_tokens_per_turn.append(response.usage.input_tokens)
                 if response.raw_text:
                     raw_text_chunks.append(response.raw_text)
                 turn_sp.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
@@ -415,6 +420,19 @@ def make_turn_loop_trial_with_backend(
                     if actions_per_active_turn else 0.0
                 ),
                 "active_turns": len(actions_per_active_turn),
+                # Context-engineering observation (see HARNESS.md). With
+                # our keep-everything policy these grow monotonically.
+                "peak_input_tokens": (
+                    max(input_tokens_per_turn) if input_tokens_per_turn else 0
+                ),
+                "input_tokens_at_done": (
+                    input_tokens_per_turn[-1] if input_tokens_per_turn else 0
+                ),
+                "context_growth_per_turn": (
+                    (input_tokens_per_turn[-1] - input_tokens_per_turn[0])
+                    / max(1, len(input_tokens_per_turn) - 1)
+                    if len(input_tokens_per_turn) >= 2 else 0.0
+                ),
             },
         )
         if transcripts_dir:

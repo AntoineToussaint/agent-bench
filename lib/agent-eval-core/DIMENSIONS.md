@@ -3,6 +3,10 @@
 What this bench measures, what it doesn't, and where it sits relative to
 the broader agent-benchmark landscape.
 
+Related: `HARNESS.md` documents the harness itself as a research object
+— the policies (context management, tool-result truncation, retry,
+determinism) that bias every observation here.
+
 ## What we measure today
 
 Three experiments, three dimensions. All scored uniformly via
