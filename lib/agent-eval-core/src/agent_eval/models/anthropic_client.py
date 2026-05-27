@@ -54,7 +54,22 @@ class _AnthropicClient(ModelClient):
         ]
         self.messages.append({"role": "user", "content": content})
 
-    def step(self, tools: list[dict[str, Any]]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, Any] | None = None,
+    ) -> AssistantMessage:
+        """Issue one round-trip against the API.
+
+        Args:
+            tools: Anthropic tool_use schemas (`{name, description, input_schema}`).
+                Pass an empty list to disable tool_use entirely.
+            tool_choice: optional Anthropic tool_choice. None defaults to
+                Anthropic's standard "auto" behavior. Pass `{"type": "any"}`
+                to force the model to call SOME tool (no free-form text or
+                mimicry possible — used by SchemaEnforcedBackend). Pass
+                `{"type": "tool", "name": "<name>"}` to force a specific tool.
+        """
         kwargs: dict[str, Any] = dict(
             model=self.model_id,
             max_tokens=self.max_tokens,
@@ -72,6 +87,8 @@ class _AnthropicClient(ModelClient):
             kwargs["temperature"] = self.temperature
         if tools:
             kwargs["tools"] = tools
+        if tool_choice is not None:
+            kwargs["tool_choice"] = tool_choice
         msg = self.client.messages.create(**kwargs)
         self.messages.append({"role": "assistant", "content": msg.content})
         return _to_assistant_message(msg)

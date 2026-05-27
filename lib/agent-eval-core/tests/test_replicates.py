@@ -108,8 +108,9 @@ def test_summarize_markdown_switches_modes() -> None:
                 )
             )
     md_multi = summarize_markdown(multi)
-    assert "pass-rate" in md_multi
-    assert "reps/task" in md_multi
+    assert "pass" in md_multi
+    assert "tools p50" in md_multi
+    assert "cache_r p50" in md_multi
 
 
 def test_aggregate_csv_writes(tmp_path: Path) -> None:

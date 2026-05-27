@@ -20,3 +20,5 @@ dist/
 **/results/**/transcripts/
 **/results/transcripts/
 **/examples/out/
+# OTEL trace dumps — same logic (large, regenerable, ~100-500KB each).
+**/results/**/traces.jsonl

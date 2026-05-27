@@ -43,4 +43,9 @@ def make_client(model: str) -> ModelClient:
     return client
 
 
-__all__ = ["MODELS", "make_client"]
+# registry depends on this module + on `protocols`, so import last to
+# avoid a circular import at module-load time.
+from agent_eval.models.registry import default_backend_for, make_model  # noqa: E402
+
+
+__all__ = ["MODELS", "make_client", "make_model", "default_backend_for"]

@@ -66,7 +66,11 @@ class _OpenAIClient(ModelClient):
                 }
             )
 
-    def step(self, tools: list[dict[str, Any]]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, Any] | None = None,
+    ) -> AssistantMessage:
         kwargs: dict[str, Any] = dict(
             model=self.model_id,
             messages=self.messages,
@@ -74,6 +78,17 @@ class _OpenAIClient(ModelClient):
         )
         if tools:
             kwargs["tools"] = _convert_tools(tools)
+        if tool_choice is not None and tools:
+            # Translate Anthropic-shape tool_choice to OpenAI's shape.
+            # Anthropic: {"type": "any"} / {"type": "tool", "name": "X"}
+            # OpenAI:    "required" / {"type": "function", "function": {"name": "X"}}
+            if tool_choice.get("type") == "any":
+                kwargs["tool_choice"] = "required"
+            elif tool_choice.get("type") == "tool" and tool_choice.get("name"):
+                kwargs["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": tool_choice["name"]},
+                }
         # GPT-5 family only accepts the default temperature.
         if not self.model_id.startswith("gpt-5"):
             kwargs["temperature"] = self.temperature

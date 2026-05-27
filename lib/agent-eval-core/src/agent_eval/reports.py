@@ -9,6 +9,7 @@ Two views:
 from __future__ import annotations
 
 import csv
+import json as _json
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ CSV_COLUMNS = [
     "condition",
     "replicate",
     "passed",
+    "failure_mode",
+    "submitted",   # JSON-encoded list of predicted files
     "turns",
     "tool_calls",
     "invalid_tool_calls",
@@ -50,6 +53,11 @@ def write_csv(records: list[RunRecord], out: Path) -> None:
                     "condition": r.condition,
                     "replicate": r.replicate,
                     "passed": int(r.passed),
+                    "failure_mode": (r.extra or {}).get("failure_mode") or "",
+                    "submitted": _json.dumps(
+                        (r.extra or {}).get("submitted") or [],
+                        ensure_ascii=False,
+                    ),
                     "turns": r.turns,
                     "tool_calls": r.tool_calls,
                     "invalid_tool_calls": r.invalid_tool_calls,
@@ -224,7 +232,36 @@ def _summarize_means(records: list[RunRecord]) -> str:
                 pr = sum(e.passed for e in entries) / len(entries)
                 row.append(f"{pr:.0%}")
         lines.append("| " + " | ".join(row) + " |")
+    lines.append(_failure_mode_section(records))
     return "\n".join(lines) + "\n"
+
+
+def _failure_mode_section(records: list[RunRecord]) -> str:
+    """Render a failures-by-mode breakdown, scoped to failed trials only."""
+    failed = [r for r in records if not r.passed]
+    if not failed:
+        return ""
+    # Tally (model, condition, mode).
+    tally: dict[tuple[str, str, str], int] = defaultdict(int)
+    for r in failed:
+        mode = (r.extra or {}).get("failure_mode") or "unclassified"
+        tally[(r.model, r.condition, mode)] += 1
+    if not tally:
+        return ""
+    lines = [
+        "",
+        "## Failure modes",
+        "",
+        "Each row is a (model, condition, mode) bucket with N=number of",
+        "failed trials in that bucket. See `lib/agent-eval-core/FAILURE_MODES.md`",
+        "for the taxonomy.",
+        "",
+        "| model | condition | failure_mode | n |",
+        "|---|---|---|---:|",
+    ]
+    for (model, cond, mode), n in sorted(tally.items()):
+        lines.append(f"| {model} | {cond} | `{mode}` | {n} |")
+    return "\n".join(lines)
 
 
 def _summarize_with_replicates(records: list[RunRecord]) -> str:
@@ -234,9 +271,15 @@ def _summarize_with_replicates(records: list[RunRecord]) -> str:
     for c in cells:
         by_mc[(c.model, c.condition)].append(c)
 
+    # Pre-collect raw records per (model, condition) so we can aggregate
+    # token/tool-call metrics that CellStats doesn't already track.
+    raw_by_mc: dict[tuple[str, str], list[RunRecord]] = defaultdict(list)
+    for r in records:
+        raw_by_mc[(r.model, r.condition)].append(r)
+
     lines = [
-        "| model | condition | tasks | reps/task | pass-rate | turns p50 (p25-p75) | cost p50 (p25-p75) | lat p50 (p25-p75) |",
-        "|---|---|---:|---:|---:|---|---|---|",
+        "| model | condition | tasks | reps | pass | turns p50 | tools p50 | cost p50 | in tok p50 | cache_r p50 | lat p50 |",
+        "|---|---|---:|---:|---:|---|---|---|---|---|---|",
     ]
     for (model, cond), cs in sorted(by_mc.items()):
         n_tasks = len(cs)
@@ -245,16 +288,26 @@ def _summarize_with_replicates(records: list[RunRecord]) -> str:
         turn_p50 = statistics.median(c.turns[1] for c in cs)
         turn_p25 = statistics.median(c.turns[0] for c in cs)
         turn_p75 = statistics.median(c.turns[2] for c in cs)
+        tool_p50 = statistics.median(c.tool_calls[1] for c in cs)
+        tool_p25 = statistics.median(c.tool_calls[0] for c in cs)
+        tool_p75 = statistics.median(c.tool_calls[2] for c in cs)
         cost_p50 = statistics.median(c.cost_usd[1] for c in cs)
         cost_p25 = statistics.median(c.cost_usd[0] for c in cs)
         cost_p75 = statistics.median(c.cost_usd[2] for c in cs)
         lat_p50 = statistics.median(c.latency_seconds[1] for c in cs)
         lat_p25 = statistics.median(c.latency_seconds[0] for c in cs)
         lat_p75 = statistics.median(c.latency_seconds[2] for c in cs)
+        # Cached tokens + per-trial input tokens come from the raw records.
+        # CellStats only carries combined (input+output) so we compute fresh.
+        raws = raw_by_mc[(model, cond)]
+        in_p50 = statistics.median(r.usage.input_tokens for r in raws)
+        cache_p50 = statistics.median(r.usage.cache_read_tokens for r in raws)
         lines.append(
-            f"| {model} | {cond} | {n_tasks} | {reps} | {mean_pass:.1%} | "
-            f"{turn_p50:.1f} ({turn_p25:.1f}-{turn_p75:.1f}) | "
+            f"| {model} | {cond} | {n_tasks} | {reps} | {mean_pass:.0%} | "
+            f"{turn_p50:.0f} ({turn_p25:.0f}-{turn_p75:.0f}) | "
+            f"{tool_p50:.0f} ({tool_p25:.0f}-{tool_p75:.0f}) | "
             f"${cost_p50:.4f} (${cost_p25:.4f}-${cost_p75:.4f}) | "
+            f"{in_p50:,.0f} | {cache_p50:,.0f} | "
             f"{lat_p50:.1f}s ({lat_p25:.1f}-{lat_p75:.1f}) |"
         )
 
@@ -279,6 +332,7 @@ def _summarize_with_replicates(records: list[RunRecord]) -> str:
                 else:
                     row.append(f"{min(rates):.0%}-{max(rates):.0%}")
         lines.append("| " + " | ".join(row) + " |")
+    lines.append(_failure_mode_section(records))
     return "\n".join(lines) + "\n"
 
 

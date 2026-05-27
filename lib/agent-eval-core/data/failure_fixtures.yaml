@@ -1,0 +1,205 @@
+# Failure fixtures — observed failures from this repo's runs.
+# See `lib/agent-eval-core/FAILURE_MODES.md` for the taxonomy.
+# Each entry is one observed failure case; downstream tests
+# can run their agent on `task` and check (a) does it succeed,
+# (b) does it exhibit the same `failure_mode`?
+
+- case_id: astropy__astropy-14995-harness_blocked_exploration-one-shot-claude-haiku-4-5
+  task:
+    instance_id: astropy__astropy-14995
+    repo: astropy/astropy
+    base_commit: b16c7d12ccbc7b2d20364b89fb44285bcbfede54
+    gold_edit_files:
+    - astropy/nddata/mixins/ndarithmetic.py
+    issue_text: "In v5.3, NDDataRef mask propagation fails when one of the operand does not have a mask\n### Description\n\
+      \nThis applies to v5.3. \r\n\r\nIt looks like when one of the operand does not have a mask, the mask propagation when\
+      \ doing arithmetic, in particular with `handle_mask=np.bitwise_or` fails.  This is not a problem in v5.2.\r\n\r\nI don't\
+      \ know enough about how all that works, but it seems from the error that the operand without a mask is set as a mask\
+      \ of None's and then the bitwise_or tries to operate on an integer and a None and fails.\n\n### Expected behavior\n\n\
+      When one of the operand does not have mask, the mask that exists should just be copied over to the output.  Or whatever\
+      \ was done in that situation in v5.2 where there's no problem.\n\n### How to Reproduce\n\nThis is with v5.3.   With\
+      \ v5.2, there are no errors.\r\n\r\n```\r\n>>> import numpy as np\r\n>>> from astropy.nddata import NDDataRef\r\n\r\n\
+      >>> array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])\r\n>>> mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])\r\
+      \n\r\n>>> nref_nomask = NDDataRef(array)\r\n>>> nref_mask = NDDataRef(array, mask=mask)\r\n\r\n# multiply no mask by\
+      \ constant (no mask * no mask)\r\n>>> nref_nomask.multiply(1., handle_mask=np.bitwise_or).mask   # returns nothing,\
+      \ no mask,  OK\r\n\r\n# multiply no mask by itself (no mask * no mask)\r\n>>> nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask\
+      \ # return nothing, no mask, OK\r\n\r\n# multiply mask by constant (mask * no mask)\r\n>>> nref_mask.multiply(1., handle_mask=np.bitwise_or).mask\r\
+      \n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n\r\n# multiply mask by itself (mask *\
+      \ mask)\r\n>>> nref_mask.multiply(nref_mask, handle_mask=np.bitwise_or).mask\r\narray([[ 0,  1, 64],\r\n       [ 8,\
+      \  0,  1],\r\n       [ 2,  1,  0]])\r\n\r\n# multiply mask by no mask (mask * no mask)\r\n>>> nref_mask.multiply(nref_nomask,\
+      \ handle_mask=np.bitwise_or).mask\r\n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n```\r\
+      \n\n\n### Versions\n\n>>> import sys; print(\"Python\", sys.version)\r\nPython 3.10.11 | packaged by conda-forge | (main,\
+      \ May 10 2023, 19:07:22) [Clang 14.0.6 ]\r\n>>> import astropy; print(\"astropy\", astropy.__version__)\r\nastropy 5.3\r\
+      \n>>> import numpy; print(\"Numpy\", numpy.__version__)\r\nNumpy 1.24.3\r\n>>> import erfa; print(\"pyerfa\", erfa.__version__)\r\
+      \npyerfa 2.0.0.3\r\n>>> import scipy; print(\"Scipy\", scipy.__version__)\r\nScipy 1.10.1\r\n>>> import matplotlib;\
+      \ print(\"Matplotlib\", matplotlib.__version__)\r\nMatplotlib 3.7.1\r\n\n"
+  observed_when:
+    model: claude-haiku-4-5
+    condition: one-shot
+    backend: ''
+    source_run: results/fixtures_seed
+  failure_mode: harness_blocked_exploration
+  reference_signal:
+    submitted_files:
+    - astropy/nddata/utils/mask.py
+    turns: 1
+    tool_calls: 0
+    cost_usd: 0.014502
+    error: null
+- case_id: astropy__astropy-14995-format_anchoring-turn-loop-structured-claude-haiku-4-5
+  task:
+    instance_id: astropy__astropy-14995
+    repo: astropy/astropy
+    base_commit: b16c7d12ccbc7b2d20364b89fb44285bcbfede54
+    gold_edit_files:
+    - astropy/nddata/mixins/ndarithmetic.py
+    issue_text: "In v5.3, NDDataRef mask propagation fails when one of the operand does not have a mask\n### Description\n\
+      \nThis applies to v5.3. \r\n\r\nIt looks like when one of the operand does not have a mask, the mask propagation when\
+      \ doing arithmetic, in particular with `handle_mask=np.bitwise_or` fails.  This is not a problem in v5.2.\r\n\r\nI don't\
+      \ know enough about how all that works, but it seems from the error that the operand without a mask is set as a mask\
+      \ of None's and then the bitwise_or tries to operate on an integer and a None and fails.\n\n### Expected behavior\n\n\
+      When one of the operand does not have mask, the mask that exists should just be copied over to the output.  Or whatever\
+      \ was done in that situation in v5.2 where there's no problem.\n\n### How to Reproduce\n\nThis is with v5.3.   With\
+      \ v5.2, there are no errors.\r\n\r\n```\r\n>>> import numpy as np\r\n>>> from astropy.nddata import NDDataRef\r\n\r\n\
+      >>> array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])\r\n>>> mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])\r\
+      \n\r\n>>> nref_nomask = NDDataRef(array)\r\n>>> nref_mask = NDDataRef(array, mask=mask)\r\n\r\n# multiply no mask by\
+      \ constant (no mask * no mask)\r\n>>> nref_nomask.multiply(1., handle_mask=np.bitwise_or).mask   # returns nothing,\
+      \ no mask,  OK\r\n\r\n# multiply no mask by itself (no mask * no mask)\r\n>>> nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask\
+      \ # return nothing, no mask, OK\r\n\r\n# multiply mask by constant (mask * no mask)\r\n>>> nref_mask.multiply(1., handle_mask=np.bitwise_or).mask\r\
+      \n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n\r\n# multiply mask by itself (mask *\
+      \ mask)\r\n>>> nref_mask.multiply(nref_mask, handle_mask=np.bitwise_or).mask\r\narray([[ 0,  1, 64],\r\n       [ 8,\
+      \  0,  1],\r\n       [ 2,  1,  0]])\r\n\r\n# multiply mask by no mask (mask * no mask)\r\n>>> nref_mask.multiply(nref_nomask,\
+      \ handle_mask=np.bitwise_or).mask\r\n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n```\r\
+      \n\n\n### Versions\n\n>>> import sys; print(\"Python\", sys.version)\r\nPython 3.10.11 | packaged by conda-forge | (main,\
+      \ May 10 2023, 19:07:22) [Clang 14.0.6 ]\r\n>>> import astropy; print(\"astropy\", astropy.__version__)\r\nastropy 5.3\r\
+      \n>>> import numpy; print(\"Numpy\", numpy.__version__)\r\nNumpy 1.24.3\r\n>>> import erfa; print(\"pyerfa\", erfa.__version__)\r\
+      \npyerfa 2.0.0.3\r\n>>> import scipy; print(\"Scipy\", scipy.__version__)\r\nScipy 1.10.1\r\n>>> import matplotlib;\
+      \ print(\"Matplotlib\", matplotlib.__version__)\r\nMatplotlib 3.7.1\r\n\n"
+  observed_when:
+    model: claude-haiku-4-5
+    condition: turn-loop-structured
+    backend: prompt_json
+    source_run: results/fixtures_seed
+  failure_mode: format_anchoring
+  reference_signal:
+    submitted_files:
+    - astropy/nddata/arithmetic.py
+    turns: 2
+    tool_calls: 2
+    cost_usd: 0.032803
+    error: null
+- case_id: astropy__astropy-12907-step_repetition-turn-loop-schema-claude-sonnet-4-6
+  task:
+    instance_id: astropy__astropy-12907
+    repo: astropy/astropy
+    base_commit: d16bfe05a744909de4b27f5875fe0d4ed41ce607
+    gold_edit_files:
+    - astropy/modeling/separable.py
+    issue_text: "Modeling's `separability_matrix` does not compute separability correctly for nested CompoundModels\nConsider\
+      \ the following model:\r\n\r\n```python\r\nfrom astropy.modeling import models as m\r\nfrom astropy.modeling.separable\
+      \ import separability_matrix\r\n\r\ncm = m.Linear1D(10) & m.Linear1D(5)\r\n```\r\n\r\nIt's separability matrix as you\
+      \ might expect is a diagonal:\r\n\r\n```python\r\n>>> separability_matrix(cm)\r\narray([[ True, False],\r\n       [False,\
+      \  True]])\r\n```\r\n\r\nIf I make the model more complex:\r\n```python\r\n>>> separability_matrix(m.Pix2Sky_TAN() &\
+      \ m.Linear1D(10) & m.Linear1D(5))\r\narray([[ True,  True, False, False],\r\n       [ True,  True, False, False],\r\n\
+      \       [False, False,  True, False],\r\n       [False, False, False,  True]])\r\n```\r\n\r\nThe output matrix is again,\
+      \ as expected, the outputs and inputs to the linear models are separable and independent of each other.\r\n\r\nIf however,\
+      \ I nest these compound models:\r\n```python\r\n>>> separability_matrix(m.Pix2Sky_TAN() & cm)\r\narray([[ True,  True,\
+      \ False, False],\r\n       [ True,  True, False, False],\r\n       [False, False,  True,  True],\r\n       [False, False,\
+      \  True,  True]])\r\n```\r\nSuddenly the inputs and outputs are no longer separable?\r\n\r\nThis feels like a bug to\
+      \ me, but I might be missing something?\n"
+  observed_when:
+    model: claude-sonnet-4-6
+    condition: turn-loop-schema
+    backend: schema_enforced
+    source_run: results/protocol_matrix_v2
+  failure_mode: step_repetition
+  reference_signal:
+    submitted_files: []
+    turns: 14
+    tool_calls: 14
+    cost_usd: 0.086227
+    error: 'aborted: 4 turns without trying a new (tool, args) signature'
+- case_id: astropy__astropy-14995-harness_blocked_exploration-one-shot-claude-haiku-4-5
+  task:
+    instance_id: astropy__astropy-14995
+    repo: astropy/astropy
+    base_commit: b16c7d12ccbc7b2d20364b89fb44285bcbfede54
+    gold_edit_files:
+    - astropy/nddata/mixins/ndarithmetic.py
+    issue_text: "In v5.3, NDDataRef mask propagation fails when one of the operand does not have a mask\n### Description\n\
+      \nThis applies to v5.3. \r\n\r\nIt looks like when one of the operand does not have a mask, the mask propagation when\
+      \ doing arithmetic, in particular with `handle_mask=np.bitwise_or` fails.  This is not a problem in v5.2.\r\n\r\nI don't\
+      \ know enough about how all that works, but it seems from the error that the operand without a mask is set as a mask\
+      \ of None's and then the bitwise_or tries to operate on an integer and a None and fails.\n\n### Expected behavior\n\n\
+      When one of the operand does not have mask, the mask that exists should just be copied over to the output.  Or whatever\
+      \ was done in that situation in v5.2 where there's no problem.\n\n### How to Reproduce\n\nThis is with v5.3.   With\
+      \ v5.2, there are no errors.\r\n\r\n```\r\n>>> import numpy as np\r\n>>> from astropy.nddata import NDDataRef\r\n\r\n\
+      >>> array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])\r\n>>> mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])\r\
+      \n\r\n>>> nref_nomask = NDDataRef(array)\r\n>>> nref_mask = NDDataRef(array, mask=mask)\r\n\r\n# multiply no mask by\
+      \ constant (no mask * no mask)\r\n>>> nref_nomask.multiply(1., handle_mask=np.bitwise_or).mask   # returns nothing,\
+      \ no mask,  OK\r\n\r\n# multiply no mask by itself (no mask * no mask)\r\n>>> nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask\
+      \ # return nothing, no mask, OK\r\n\r\n# multiply mask by constant (mask * no mask)\r\n>>> nref_mask.multiply(1., handle_mask=np.bitwise_or).mask\r\
+      \n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n\r\n# multiply mask by itself (mask *\
+      \ mask)\r\n>>> nref_mask.multiply(nref_mask, handle_mask=np.bitwise_or).mask\r\narray([[ 0,  1, 64],\r\n       [ 8,\
+      \  0,  1],\r\n       [ 2,  1,  0]])\r\n\r\n# multiply mask by no mask (mask * no mask)\r\n>>> nref_mask.multiply(nref_nomask,\
+      \ handle_mask=np.bitwise_or).mask\r\n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n```\r\
+      \n\n\n### Versions\n\n>>> import sys; print(\"Python\", sys.version)\r\nPython 3.10.11 | packaged by conda-forge | (main,\
+      \ May 10 2023, 19:07:22) [Clang 14.0.6 ]\r\n>>> import astropy; print(\"astropy\", astropy.__version__)\r\nastropy 5.3\r\
+      \n>>> import numpy; print(\"Numpy\", numpy.__version__)\r\nNumpy 1.24.3\r\n>>> import erfa; print(\"pyerfa\", erfa.__version__)\r\
+      \npyerfa 2.0.0.3\r\n>>> import scipy; print(\"Scipy\", scipy.__version__)\r\nScipy 1.10.1\r\n>>> import matplotlib;\
+      \ print(\"Matplotlib\", matplotlib.__version__)\r\nMatplotlib 3.7.1\r\n\n"
+  observed_when:
+    model: claude-haiku-4-5
+    condition: one-shot
+    backend: ''
+    source_run: results/protocol_matrix_v2
+  failure_mode: harness_blocked_exploration
+  reference_signal:
+    submitted_files: []
+    turns: 1
+    tool_calls: 0
+    cost_usd: 0.016927
+    error: null
+- case_id: astropy__astropy-14995-format_anchoring-turn-loop-structured-claude-haiku-4-5
+  task:
+    instance_id: astropy__astropy-14995
+    repo: astropy/astropy
+    base_commit: b16c7d12ccbc7b2d20364b89fb44285bcbfede54
+    gold_edit_files:
+    - astropy/nddata/mixins/ndarithmetic.py
+    issue_text: "In v5.3, NDDataRef mask propagation fails when one of the operand does not have a mask\n### Description\n\
+      \nThis applies to v5.3. \r\n\r\nIt looks like when one of the operand does not have a mask, the mask propagation when\
+      \ doing arithmetic, in particular with `handle_mask=np.bitwise_or` fails.  This is not a problem in v5.2.\r\n\r\nI don't\
+      \ know enough about how all that works, but it seems from the error that the operand without a mask is set as a mask\
+      \ of None's and then the bitwise_or tries to operate on an integer and a None and fails.\n\n### Expected behavior\n\n\
+      When one of the operand does not have mask, the mask that exists should just be copied over to the output.  Or whatever\
+      \ was done in that situation in v5.2 where there's no problem.\n\n### How to Reproduce\n\nThis is with v5.3.   With\
+      \ v5.2, there are no errors.\r\n\r\n```\r\n>>> import numpy as np\r\n>>> from astropy.nddata import NDDataRef\r\n\r\n\
+      >>> array = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])\r\n>>> mask = np.array([[0, 1, 64], [8, 0, 1], [2, 1, 0]])\r\
+      \n\r\n>>> nref_nomask = NDDataRef(array)\r\n>>> nref_mask = NDDataRef(array, mask=mask)\r\n\r\n# multiply no mask by\
+      \ constant (no mask * no mask)\r\n>>> nref_nomask.multiply(1., handle_mask=np.bitwise_or).mask   # returns nothing,\
+      \ no mask,  OK\r\n\r\n# multiply no mask by itself (no mask * no mask)\r\n>>> nref_nomask.multiply(nref_nomask, handle_mask=np.bitwise_or).mask\
+      \ # return nothing, no mask, OK\r\n\r\n# multiply mask by constant (mask * no mask)\r\n>>> nref_mask.multiply(1., handle_mask=np.bitwise_or).mask\r\
+      \n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n\r\n# multiply mask by itself (mask *\
+      \ mask)\r\n>>> nref_mask.multiply(nref_mask, handle_mask=np.bitwise_or).mask\r\narray([[ 0,  1, 64],\r\n       [ 8,\
+      \  0,  1],\r\n       [ 2,  1,  0]])\r\n\r\n# multiply mask by no mask (mask * no mask)\r\n>>> nref_mask.multiply(nref_nomask,\
+      \ handle_mask=np.bitwise_or).mask\r\n...\r\nTypeError: unsupported operand type(s) for |: 'int' and 'NoneType'\r\n```\r\
+      \n\n\n### Versions\n\n>>> import sys; print(\"Python\", sys.version)\r\nPython 3.10.11 | packaged by conda-forge | (main,\
+      \ May 10 2023, 19:07:22) [Clang 14.0.6 ]\r\n>>> import astropy; print(\"astropy\", astropy.__version__)\r\nastropy 5.3\r\
+      \n>>> import numpy; print(\"Numpy\", numpy.__version__)\r\nNumpy 1.24.3\r\n>>> import erfa; print(\"pyerfa\", erfa.__version__)\r\
+      \npyerfa 2.0.0.3\r\n>>> import scipy; print(\"Scipy\", scipy.__version__)\r\nScipy 1.10.1\r\n>>> import matplotlib;\
+      \ print(\"Matplotlib\", matplotlib.__version__)\r\nMatplotlib 3.7.1\r\n\n"
+  observed_when:
+    model: claude-haiku-4-5
+    condition: turn-loop-structured
+    backend: prompt_json
+    source_run: results/protocol_matrix_v2
+  failure_mode: format_anchoring
+  reference_signal:
+    submitted_files:
+    - astropy/nddata/arithmetic.py
+    - astropy/nddata/core.py
+    turns: 2
+    tool_calls: 2
+    cost_usd: 0.009884
+    error: null

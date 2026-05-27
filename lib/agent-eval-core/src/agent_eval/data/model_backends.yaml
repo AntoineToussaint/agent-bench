@@ -1,0 +1,53 @@
+# Default tool-use backend per model.
+#
+# Each entry maps a model id (as understood by `make_client`) to the
+# ToolBackend that is recommended FOR PRODUCTION USE of that model.
+# Recommendations are empirical — derived from comparison runs in this
+# repo. When a future run contradicts one, update both the YAML and the
+# citation comment below it.
+#
+# Allowed backend names:
+#   - native       NativeToolUseBackend       (provider tool_use API, tool_choice=auto)
+#   - schema       SchemaEnforcedBackend      (provider tool_use API, tool_choice=any)
+#   - prompt_json  PromptJSONBackend          (text-only fenced JSON + mimicry detection)
+#
+# Lookup falls back to `default` for unknown model ids.
+
+defaults:
+  # Anthropic
+  # ---------
+  # Empirical recommendations from results/protocol_matrix_v2/ (5 astropy
+  # SWE-Bench Lite tasks, source-files-only scoring, 2026-05-26).
+  #
+  # Per-cell pass-rate (5 tasks each):
+  #   model       | one-shot | native | schema | prompt-json
+  #   haiku-4-5   |   80%    |  100%  |  100%  |   80%
+  #   sonnet-4-6  |  100%    |  100%  |   80%  |  100%
+  #
+  # Cost-per-correct ($) at 100% accuracy:
+  #   sonnet one-shot:    $0.003  ← winner if task fits one-shot
+  #   sonnet prompt-json: $0.027
+  #   sonnet native:      $0.044
+  #   haiku native:       $0.044  ← cheapest 100% for haiku
+  #   haiku schema:       $0.068  ← never the best choice
+  #
+  # Failure modes seen:
+  #   - schema  : Sonnet trapped in exploration (`tool_choice=any` blocks
+  #               `done`). Best-of-class for Haiku but costliest cell.
+  #   - prompt: Haiku <function_calls> mimicry; detection catches it but
+  #              recovery wastes budget. ~3x tokens. Don't use on Haiku.
+  #
+  # When the task fits one-shot (single LLM call, no exploration), prefer
+  # that. The recommendations below are for turn-loop deployments.
+  claude-haiku-4-5: native
+  claude-sonnet-4-6: native
+  claude-opus-4-7: native      # untested; inherits from family
+
+  # OpenAI — UNTESTED in protocol_matrix. Defaults are conservative
+  # (Native = function calling is the documented happy path).
+  gpt-5-mini: native
+  gpt-5: native
+  gpt-5-nano: native
+
+  # Fallback for any unknown model.
+  default: native

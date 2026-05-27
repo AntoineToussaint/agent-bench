@@ -16,15 +16,16 @@ What it does NOT give you:
 from agent_eval.types import (
     AssistantMessage,
     ModelClient,
+    ModelHandle,
     RunRecord,
     ToolCall,
     ToolResult,
     Transcript,
     TurnUsage,
 )
-from agent_eval.models import make_client, MODELS
+from agent_eval.models import MODELS, default_backend_for, make_client, make_model
 from agent_eval.pricing import cost_usd, price_table
-from agent_eval.sweep import Sweep, Budget
+from agent_eval.sweep import Budget, Sweep
 from agent_eval.transcripts import dump_transcript, load_transcript, summarize_transcript
 
 __all__ = [
@@ -32,6 +33,7 @@ __all__ = [
     "Budget",
     "MODELS",
     "ModelClient",
+    "ModelHandle",
     "RunRecord",
     "Sweep",
     "ToolCall",
@@ -39,9 +41,11 @@ __all__ = [
     "Transcript",
     "TurnUsage",
     "cost_usd",
+    "default_backend_for",
     "dump_transcript",
     "load_transcript",
     "make_client",
+    "make_model",
     "price_table",
     "summarize_transcript",
 ]

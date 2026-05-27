@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from agent_eval.protocols.types import ToolBackend
 
 
 ToolCallStatus = Literal["ok", "error"]
@@ -126,4 +129,40 @@ class ModelClient(ABC):
     def add_tool_results(self, results: list[ToolResult]) -> None: ...
 
     @abstractmethod
-    def step(self, tools: list[dict[str, Any]]) -> AssistantMessage: ...
+    def step(
+        self,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, Any] | None = None,
+    ) -> AssistantMessage:
+        """Issue one model round-trip.
+
+        Args:
+            tools: provider-native tool schemas (Anthropic shape; clients
+                convert as needed). Pass [] to disable tool_use.
+            tool_choice: optional provider-specific constraint on which tool
+                the model must call. None = "auto" (model decides). For
+                Anthropic: `{"type": "any"}` forces a tool call;
+                `{"type": "tool", "name": "X"}` forces a specific tool.
+                Backends not supporting it can ignore.
+        """
+        ...
+
+
+@dataclass
+class ModelHandle:
+    """A model paired with its tool-use backend.
+
+    This is the unit trials accept. The handle hides whether the backend
+    is provider-native tool_use, schema-enforced, or prompt-based JSON —
+    that's the *model's* preference, not the trial's concern.
+
+    Build with `agent_eval.models.make_model(name)` for the default
+    backend, or `make_model(name, backend=...)` to override (research).
+    """
+
+    client: ModelClient
+    backend: "ToolBackend"
+
+    @property
+    def name(self) -> str:
+        return self.client.name

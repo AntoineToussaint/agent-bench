@@ -89,7 +89,11 @@ class _OpenRouterClient(ModelClient):
                 }
             )
 
-    def step(self, tools: list[dict[str, Any]]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, Any] | None = None,
+    ) -> AssistantMessage:
         kwargs: dict[str, Any] = dict(
             model=self.model_id,
             messages=self.messages,
@@ -98,6 +102,15 @@ class _OpenRouterClient(ModelClient):
         )
         if tools:
             kwargs["tools"] = _convert_tools(tools)
+        if tool_choice is not None and tools:
+            # OpenRouter passes through OpenAI-style tool_choice.
+            if tool_choice.get("type") == "any":
+                kwargs["tool_choice"] = "required"
+            elif tool_choice.get("type") == "tool" and tool_choice.get("name"):
+                kwargs["tool_choice"] = {
+                    "type": "function",
+                    "function": {"name": tool_choice["name"]},
+                }
         resp = self.client.chat.completions.create(**kwargs)
         choice = resp.choices[0].message
 
