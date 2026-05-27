@@ -40,20 +40,24 @@ import time
 from pathlib import Path
 from typing import Callable
 
-from agent_eval.types import ModelClient, RunRecord, TurnUsage
+import json as _json
+
+from agent_eval.failure_modes import classify_output
+from agent_eval.types import ModelHandle, RunRecord, TurnUsage
 
 from file_localization.contract import LocalizationTask, score
+from file_localization.prompts import system_prompt_for, user_message
 
 
 # ---------- prompts ----------
+#
+# Production agent CLIs (Claude Code, codex) take a SINGLE prompt argument
+# — no system/user split. So we render the shared task-class-aware system
+# prompt + user message into one combined prompt, then append a tail that
+# specifies the FILE:-line output contract the parser expects.
 
 
-USER_TEMPLATE = """\
-## Repository
-{repo} @ {commit}
-
-## Issue
-{issue}
+_OUTPUT_FORMAT_TAIL = """\
 
 ## Task
 Identify ALL files that must be edited (source + tests) to fix this issue. \
@@ -137,11 +141,59 @@ def _run_cli(
 
 
 def _build_user_text(task: LocalizationTask) -> str:
-    return USER_TEMPLATE.format(
-        repo=task.repo,
-        commit=task.base_commit[:12] if task.base_commit else "unknown",
-        issue=task.issue_text,
-    )
+    system_part = system_prompt_for(task.task_class)
+    user_part = user_message(task.repo, task.base_commit, task.issue_text)
+    return f"{system_part}\n\n{user_part}\n{_OUTPUT_FORMAT_TAIL}"
+
+
+def _parse_claude_json(stdout: str) -> dict:
+    """Parse Claude Code's `--output-format=json` output.
+
+    Returns a dict with whatever fields we could recover:
+      - result: the final text the CLI emitted (free-text response)
+      - num_turns, total_cost_usd, total_tokens (if present)
+      - tool_uses: list of {name, input} from the message stream
+      - observed_paths: list of paths that appeared as `file_path` /
+        `path` / `pattern` args in any tool_use (used by the
+        failure-mode classifier)
+
+    Returns {} on parse failure; the caller falls back to plain stdout.
+    """
+    try:
+        doc = _json.loads(stdout)
+    except (ValueError, TypeError):
+        return {}
+    if not isinstance(doc, dict):
+        return {}
+    out: dict = {
+        "result": doc.get("result"),
+        "num_turns": doc.get("num_turns"),
+        "total_cost_usd": doc.get("total_cost_usd"),
+    }
+    if "usage" in doc and isinstance(doc["usage"], dict):
+        out["usage"] = doc["usage"]
+    # Walk the messages array if present and collect tool uses.
+    tool_uses: list[dict] = []
+    observed_paths: list[str] = []
+    for msg in doc.get("messages") or []:
+        if not isinstance(msg, dict):
+            continue
+        content = msg.get("content")
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use":
+                    name = block.get("name") or ""
+                    args = block.get("input") if isinstance(block.get("input"), dict) else {}
+                    tool_uses.append({"name": name, "input": args})
+                    for key in ("file_path", "path", "pattern"):
+                        v = args.get(key)
+                        if isinstance(v, str) and v and key != "pattern":
+                            observed_paths.append(v)
+    out["tool_uses"] = tool_uses
+    out["observed_paths"] = observed_paths
+    return out
 
 
 def _resolve_root(repo_view) -> Path:
@@ -162,10 +214,20 @@ def _make_trial(
     timeout: int,
     fp_penalty: float,
     top_k: int | None,
+    parse_json_output: bool = False,
 ):
-    """Internal: returns a Trial that invokes `build_argv(prompt)` as a subprocess."""
+    """Internal: returns a Trial that invokes `build_argv(prompt)` as a subprocess.
 
-    def trial(client: ModelClient, condition: str, task: LocalizationTask) -> RunRecord:
+    Args:
+        parse_json_output: if True, attempt to parse stdout as Claude
+            Code's `--output-format=json` payload. When parsing succeeds
+            we extract num_turns, total_cost_usd, and tool_use signal
+            (observed_paths) for richer failure-mode classification.
+    """
+
+    def trial(handle: ModelHandle, condition: str, task: LocalizationTask) -> RunRecord:
+        # The CLI process owns its own auth + model selection. We only
+        # reach for `handle.client.name` for record-keeping.
         repo_view = repo_view_for(task)
         cwd = _resolve_root(repo_view)
 
@@ -176,23 +238,48 @@ def _make_trial(
         stdout, stderr, err = _run_cli(argv, cwd=cwd, timeout=timeout)
         latency = time.monotonic() - t0
 
-        predicted = _parse_files(stdout)
+        # Try to extract structured signal from Claude Code's JSON output.
+        # If parsing fails, fall back to the plain `FILE: ...` parser
+        # against the raw stdout.
+        json_payload: dict = _parse_claude_json(stdout) if parse_json_output else {}
+        text_for_parsing = json_payload.get("result") or stdout
+        if not isinstance(text_for_parsing, str):
+            text_for_parsing = stdout
+
+        predicted = _parse_files(text_for_parsing)
         s = score(predicted, task.gold_all, k=top_k, fp_penalty=fp_penalty)
 
         # If we errored, force passed=False regardless of what we parsed.
         passed = s.passed and err is None
 
+        # Structured signal for classification, when available.
+        num_turns = json_payload.get("num_turns") or 1
+        tool_uses = json_payload.get("tool_uses") or []
+        observed_paths = json_payload.get("observed_paths") or []
+        total_cost = json_payload.get("total_cost_usd") or 0.0
+        # CLI agents always have a tool channel (Read/Grep/etc.).
+        failure_mode = classify_output(
+            predicted_files=predicted,
+            gold_files=task.gold_all,
+            observed_paths=observed_paths if observed_paths else None,
+            issue_text=task.issue_text,
+            raw_response_text=text_for_parsing,
+            turn_count=int(num_turns),
+            tool_call_count=len(tool_uses),
+            has_tool_channel=True,
+        )
+
         return RunRecord(
             task_id=task.task_id,
-            model=client.name if client is not None else "unknown",
+            model=handle.client.name if handle is not None else "unknown",
             condition=condition,
             passed=passed,
-            turns=1,
-            tool_calls=0,
+            turns=int(num_turns),
+            tool_calls=len(tool_uses),
             invalid_tool_calls=0,
             usage=TurnUsage(),
             latency_seconds=latency,
-            cost_usd=0.0,
+            cost_usd=float(total_cost),
             stdout=stdout,
             stderr=stderr,
             error=err,
@@ -200,6 +287,9 @@ def _make_trial(
                 **s.as_extra(),
                 "submitted": predicted,
                 "cli_argv": argv,
+                "failure_mode": failure_mode,
+                "observed_paths": observed_paths,
+                "tool_uses_count": len(tool_uses),
             },
         )
 
@@ -247,12 +337,18 @@ def make_claude_code_trial(
 
     def build_argv(prompt: str) -> list[str]:
         # `-p / --print`: one-shot non-interactive print mode.
+        # `--output-format=json`: structured payload includes num_turns,
+        # total_cost_usd, and a messages array with tool_use blocks.
+        # That lets the trial recover turn-count, cost, and observed
+        # paths (for the failure-mode classifier).
         # `--permission-mode bypassPermissions`: don't prompt during a
         # benchmark run.
         return [
             cli_path,
             "-p",
             prompt,
+            "--output-format",
+            "json",
             "--permission-mode",
             "bypassPermissions",
             *extra_flags,
@@ -264,6 +360,7 @@ def make_claude_code_trial(
         timeout=timeout,
         fp_penalty=fp_penalty,
         top_k=top_k,
+        parse_json_output=True,
     )
 
 

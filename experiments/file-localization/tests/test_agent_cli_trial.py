@@ -13,6 +13,9 @@ from pathlib import Path
 
 import pytest
 
+from agent_eval.protocols import NativeToolUseBackend
+from agent_eval.types import ModelHandle
+
 from file_localization.agent_cli_trial import (
     _parse_files,
     is_available,
@@ -35,7 +38,12 @@ class _StubClient:
     def reset(self, system: str) -> None: ...
     def add_user_text(self, text: str) -> None: ...
     def add_tool_results(self, results) -> None: ...
-    def step(self, tools): raise AssertionError("should not be called")
+    def step(self, tools, tool_choice=None): raise AssertionError("should not be called")
+
+
+def _handle(name: str = "claude-sonnet-4-6") -> ModelHandle:
+    """Wrap a stub client in a handle. Agent-CLI trials only read .name."""
+    return ModelHandle(client=_StubClient(name=name), backend=NativeToolUseBackend())
 
 
 def _task() -> LocalizationTask:
@@ -121,7 +129,7 @@ def test_claude_trial_parses_stdout_and_scores(
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     trial = make_claude_code_trial(repo_view_for=lambda t: view, cli_path="claude")
-    rec = trial(_StubClient(name="claude-sonnet-4-6"), "agent-cli-claude-code", task)
+    rec = trial(_handle("claude-sonnet-4-6"), "agent-cli-claude-code", task)
 
     # wiring
     assert captured["argv"][0] == "claude"
@@ -143,10 +151,13 @@ def test_claude_trial_parses_stdout_and_scores(
     assert rec.condition == "agent-cli-claude-code"
     assert rec.model == "claude-sonnet-4-6"
     assert rec.task_id == "demo-1"
+    # Test file is filtered out before scoring (localization scores
+    # source files only), so n_predicted=1 (just src/foo.py).
     assert rec.extra["recall"] == 1.0
     assert rec.extra["precision"] == 1.0
-    assert rec.extra["n_predicted"] == 2
+    assert rec.extra["n_predicted"] == 1
     assert rec.extra["n_false_positives"] == 0
+    # `submitted` keeps the model's full raw list — we don't rewrite it.
     assert rec.extra["submitted"] == ["src/foo.py", "tests/test_foo.py"]
     assert rec.stdout == fake_stdout
 
@@ -171,7 +182,7 @@ def test_codex_trial_parses_stdout_and_scores(
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     trial = make_codex_trial(repo_view_for=lambda t: view, cli_path="codex")
-    rec = trial(_StubClient(name="gpt-5"), "agent-cli-codex", task)
+    rec = trial(_handle("gpt-5"), "agent-cli-codex", task)
 
     assert captured["argv"][0] == "codex"
     assert captured["argv"][1] == "exec"
@@ -196,7 +207,7 @@ def test_trial_handles_zero_file_lines(
     )
 
     trial = make_claude_code_trial(repo_view_for=lambda t: view)
-    rec = trial(_StubClient(), "agent-cli-claude-code", task)
+    rec = trial(_handle(), "agent-cli-claude-code", task)
     assert rec.passed is False
     assert rec.extra["submitted"] == []
     assert rec.extra["n_predicted"] == 0
@@ -216,7 +227,7 @@ def test_trial_timeout_sets_error_and_does_not_pass(
     monkeypatch.setattr(subprocess, "run", fake_run)
 
     trial = make_claude_code_trial(repo_view_for=lambda t: view, timeout=5)
-    rec = trial(_StubClient(), "agent-cli-claude-code", task)
+    rec = trial(_handle(), "agent-cli-claude-code", task)
 
     assert rec.error == "cli_timeout"
     assert rec.passed is False
@@ -242,7 +253,7 @@ def test_trial_nonzero_exit_records_error_but_still_parses(
         ),
     )
     trial = make_codex_trial(repo_view_for=lambda t: view)
-    rec = trial(_StubClient(), "agent-cli-codex", task)
+    rec = trial(_handle(), "agent-cli-codex", task)
 
     assert rec.error is not None and rec.error.startswith("cli_failed")
     assert rec.passed is False  # forced False due to error
@@ -264,7 +275,7 @@ def test_trial_filenotfound_sets_error(
     trial = make_claude_code_trial(
         repo_view_for=lambda t: view, cli_path="not-a-real-binary"
     )
-    rec = trial(_StubClient(), "agent-cli-claude-code", task)
+    rec = trial(_handle(), "agent-cli-claude-code", task)
     assert rec.error == "cli_not_found"
     assert rec.passed is False
 
@@ -276,4 +287,4 @@ def test_trial_rejects_repo_view_without_root(tmp_path: Path) -> None:
     task = _task()
     trial = make_claude_code_trial(repo_view_for=lambda t: _Bogus())
     with pytest.raises(TypeError, match="\\.root"):
-        trial(_StubClient(), "agent-cli-claude-code", task)
+        trial(_handle(), "agent-cli-claude-code", task)

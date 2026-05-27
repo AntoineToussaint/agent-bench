@@ -31,10 +31,16 @@ from dotenv import load_dotenv
 
 from agent_eval import Sweep, dump_transcript
 from agent_eval.reports import write_aggregate_csv, write_csv, write_markdown
+from agent_eval.tracing import setup_tracing, shutdown_tracing
 
 from file_localization.adapters import load_swebench, to_localization_tasks
 from file_localization.llm_trial import make_llm_trial
-from file_localization.turn_loop_trial import LocalRepoView, make_turn_loop_trial
+from file_localization.turn_loop_trial import (
+    LocalRepoView,
+    make_schema_enforced_turn_loop_trial,
+    make_structured_turn_loop_trial,
+    make_turn_loop_trial,
+)
 from file_localization.agent_cli_trial import (
     CLAUDE_CODE_READONLY_TOOLS,
     is_available,
@@ -70,13 +76,30 @@ def _build_repo_view_for():
     return repo_view_for
 
 
-def _smoke_subset(n: int, *, only_repo: str | None = None) -> list[LocalizationTask]:
-    """Pick the first N SWE-Bench Lite tasks (optionally filtered by repo)."""
+def _smoke_subset(
+    n: int,
+    *,
+    only_repo: str | None = None,
+    instance_ids: list[str] | None = None,
+) -> list[LocalizationTask]:
+    """Pick SWE-Bench Lite tasks.
+
+    Selection priority:
+      - If `instance_ids` is given, pick exactly those (in order).
+      - Else, take the first `n` tasks, optionally filtered by `only_repo`.
+    """
     print(f"loading SWE-Bench Lite (split=test)...", flush=True)
     raw = load_swebench("lite", split="test")
-    if only_repo:
-        raw = [r for r in raw if r.repo == only_repo]
-    raw = raw[:n]
+    if instance_ids:
+        by_id = {r.instance_id: r for r in raw}
+        missing = [i for i in instance_ids if i not in by_id]
+        if missing:
+            print(f"  WARNING: instance(s) not found: {missing}", file=sys.stderr)
+        raw = [by_id[i] for i in instance_ids if i in by_id]
+    else:
+        if only_repo:
+            raw = [r for r in raw if r.repo == only_repo]
+        raw = raw[:n]
     print(f"  using {len(raw)} task(s)")
     for r in raw:
         print(f"    - {r.instance_id} ({r.repo})")
@@ -87,7 +110,19 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n-tasks", type=int, default=1, help="how many SWE-Bench Lite tasks to use")
     parser.add_argument("--only-repo", default=None, help="restrict to one repo (e.g. 'astropy/astropy')")
-    parser.add_argument("--model", default="claude-haiku-4-5", help="model for one-shot and turn-loop legs")
+    parser.add_argument(
+        "--instance",
+        action="append",
+        default=None,
+        help="pin to specific instance_id(s); repeatable. Overrides --n-tasks/--only-repo.",
+    )
+    parser.add_argument(
+        "--model",
+        action="append",
+        default=None,
+        help="model for one-shot and turn-loop legs. Repeat to sweep multiple "
+        "models in one run (single trace file). Default: claude-haiku-4-5.",
+    )
     parser.add_argument("--repetitions", type=int, default=1, help="repeat each cell N times (averages)")
     parser.add_argument("--out-dir", default="results/three_legs", help="output directory under repo root")
     parser.add_argument("--skip-claude-code", action="store_true", help="skip the claude-code leg")
@@ -102,11 +137,18 @@ def main() -> int:
     out_dir = Path(args.out_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     transcripts_dir = out_dir / "transcripts"
+    # One JSONL file per run with the full sweep/trial/turn/llm.request/tool_call
+    # span tree. Inspect with scripts/show_traces.py.
+    setup_tracing(out_path=out_dir / "traces.jsonl")
 
     have_claude_code = is_available("claude") and not args.skip_claude_code
     print(f"claude-code CLI available: {have_claude_code}")
 
-    tasks = _smoke_subset(args.n_tasks, only_repo=args.only_repo)
+    tasks = _smoke_subset(
+        args.n_tasks,
+        only_repo=args.only_repo,
+        instance_ids=args.instance,
+    )
     if not tasks:
         print("No tasks matched. Try --n-tasks 1 (no filter) or pick a valid --only-repo.", file=sys.stderr)
         return 2
@@ -117,6 +159,16 @@ def main() -> int:
     # the sweep can route to whichever leg the cell names.
     one_shot = make_llm_trial(top_k=20)
     turn_loop = make_turn_loop_trial(
+        repo_view_for=repo_view_for,
+        top_k=20,
+        transcripts_dir=transcripts_dir,
+    )
+    turn_loop_structured = make_structured_turn_loop_trial(
+        repo_view_for=repo_view_for,
+        top_k=20,
+        transcripts_dir=transcripts_dir,
+    )
+    turn_loop_schema = make_schema_enforced_turn_loop_trial(
         repo_view_for=repo_view_for,
         top_k=20,
         transcripts_dir=transcripts_dir,
@@ -144,6 +196,10 @@ def main() -> int:
             return one_shot(client, condition, task)
         if condition == "turn-loop":
             return turn_loop(client, condition, task)
+        if condition == "turn-loop-structured":
+            return turn_loop_structured(client, condition, task)
+        if condition == "turn-loop-schema":
+            return turn_loop_schema(client, condition, task)
         if condition == "claude-code":
             assert claude_code_full is not None
             return claude_code_full(client, condition, task)
@@ -152,12 +208,23 @@ def main() -> int:
             return claude_code_readonly(client, condition, task)
         raise ValueError(f"unknown condition: {condition}")
 
-    conditions = ["one-shot", "turn-loop"]
+    conditions = [
+        "one-shot",
+        "turn-loop",            # NativeToolUseBackend
+        "turn-loop-schema",     # SchemaEnforcedBackend
+        "turn-loop-structured", # PromptJSONBackend
+    ]
     if have_claude_code:
         conditions += ["claude-code", "claude-code-readonly"]
 
-    print(f"\nrunning {len(tasks)} task(s) x {len(conditions)} condition(s) "
-          f"x {args.repetitions} replicate(s)... ({len(tasks)*len(conditions)*args.repetitions} trials)")
+    models = args.model or ["claude-haiku-4-5"]
+    print(
+        f"\nrunning {len(models)} model(s) x {len(tasks)} task(s) x "
+        f"{len(conditions)} condition(s) x {args.repetitions} replicate(s)... "
+        f"({len(models)*len(tasks)*len(conditions)*args.repetitions} trials)"
+    )
+    print(f"  models:     {models}")
+    print(f"  conditions: {conditions}")
 
     def on_progress(i, total, rec):
         score_extra = rec.extra or {}
@@ -172,7 +239,7 @@ def main() -> int:
         )
 
     sweep = Sweep(
-        models=[args.model],
+        models=models,
         conditions=conditions,
         tasks=tasks,
         trial=trial,
@@ -184,6 +251,7 @@ def main() -> int:
     write_csv(records, out_dir / "per_trial.csv")
     write_aggregate_csv(records, out_dir / "per_cell.csv")
     write_markdown(records, out_dir / "summary.md")
+    shutdown_tracing()
 
     # Persist transcripts for offline inspection. The trials build them
     # internally but don't currently surface them on the RunRecord; for now

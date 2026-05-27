@@ -10,9 +10,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent_eval.protocols import NativeToolUseBackend
 from agent_eval.types import (
     AssistantMessage,
     ModelClient,
+    ModelHandle,
     ToolCall,
     ToolResult,
     TurnUsage,
@@ -24,6 +26,16 @@ from file_localization.turn_loop_trial import (
     _Limits,
     make_turn_loop_trial,
 )
+
+
+def _handle(client: ModelClient) -> ModelHandle:
+    """Wrap a stub client in a ModelHandle for the trial signature.
+
+    Tests don't care which backend is on the handle when they construct
+    the trial with an explicit factory — the factory closes over its own
+    backend. Native is a safe default to attach to the handle.
+    """
+    return ModelHandle(client=client, backend=NativeToolUseBackend())
 
 
 # ---------- repo fixture ----------
@@ -74,7 +86,11 @@ class _StubClient(ModelClient):
     def add_user_text(self, text: str) -> None: pass
     def add_tool_results(self, results: list[ToolResult]) -> None: pass
 
-    def step(self, tools: list[dict]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict],
+        tool_choice: dict | None = None,
+    ) -> AssistantMessage:
         if self._i >= len(self.script):
             raise RuntimeError("stub script exhausted")
         msg = self.script[self._i]
@@ -131,7 +147,7 @@ def test_turn_loop_passes_when_done_returns_gold_files(tmp_path: Path) -> None:
     ]
     client = _StubClient(name="claude-sonnet-4-6", script=script)
     trial = make_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
-    rec = trial(client, "turn-loop-tool_use", task)
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
     assert rec.passed
     assert rec.turns == 3
     assert rec.tool_calls == 3
@@ -143,18 +159,35 @@ def test_turn_loop_passes_when_done_returns_gold_files(tmp_path: Path) -> None:
     assert rec.usage.output_tokens > 0
 
 
-def test_turn_loop_fails_when_missing_gold_file(tmp_path: Path) -> None:
+def test_turn_loop_fails_when_missing_source_file(tmp_path: Path) -> None:
+    # Localization scores source files only. Submitting just the test
+    # file (no source) must fail because the source file is the gold.
     _build_repo(tmp_path)
     task = _task(tmp_path)
     script = [
-        _call("done", files=["src/pricing/calc.py"]),  # missing tests/test_calc.py
+        _call("done", files=["tests/test_calc.py"]),  # missing src/pricing/calc.py
     ]
     client = _StubClient(name="claude-haiku-4-5", script=script)
     trial = make_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
-    rec = trial(client, "turn-loop-tool_use", task)
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
     assert not rec.passed
-    assert rec.extra["recall"] == 0.5
+    assert rec.extra["recall"] == 0.0  # zero gold sources found
     assert rec.extra["done_called"] is True
+
+
+def test_turn_loop_passes_when_only_source_file_submitted(tmp_path: Path) -> None:
+    # Inverse: submitting just the source file (no test) must PASS,
+    # because test files are ignored in scoring.
+    _build_repo(tmp_path)
+    task = _task(tmp_path)
+    script = [
+        _call("done", files=["src/pricing/calc.py"]),  # no test file at all
+    ]
+    client = _StubClient(name="claude-haiku-4-5", script=script)
+    trial = make_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
+    assert rec.passed
+    assert rec.extra["recall"] == 1.0
 
 
 def test_turn_loop_aborts_on_consecutive_errors(tmp_path: Path) -> None:
@@ -172,7 +205,7 @@ def test_turn_loop_aborts_on_consecutive_errors(tmp_path: Path) -> None:
         repo_view_for=lambda t: LocalRepoView(tmp_path),
         limits=_Limits(max_consecutive_errors=3),
     )
-    rec = trial(client, "turn-loop-tool_use", task)
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
     assert rec.error is not None
     assert "consecutive error" in rec.error
     assert not rec.passed
@@ -188,7 +221,7 @@ def test_turn_loop_respects_max_turns(tmp_path: Path) -> None:
         repo_view_for=lambda t: LocalRepoView(tmp_path),
         limits=_Limits(max_turns=5, max_no_progress_turns=999),
     )
-    rec = trial(client, "turn-loop-tool_use", task)
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
     assert rec.turns == 5
     assert not rec.extra["done_called"]
     assert not rec.passed

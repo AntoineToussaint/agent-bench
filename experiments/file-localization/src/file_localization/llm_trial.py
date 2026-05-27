@@ -8,7 +8,7 @@ ranked list of FILE: lines, one per file. The trial parses the response
 and scores it against the gold patch via `contract.score`.
 
 Plugs into `agent_eval.Sweep` via the standard Trial signature:
-    (ModelClient, condition: str, LocalizationTask) -> RunRecord
+    (ModelHandle, condition: str, LocalizationTask) -> RunRecord
 """
 
 from __future__ import annotations
@@ -16,40 +16,23 @@ from __future__ import annotations
 import re
 import time
 
-from agent_eval.types import ModelClient, RunRecord, TurnUsage
+from agent_eval.failure_modes import classify_output
+from agent_eval.pricing import cost_usd
+from agent_eval.types import ModelHandle, RunRecord, TurnUsage
 
 from file_localization.contract import LocalizationTask, score
+from file_localization.prompts import system_prompt_for, user_message
 
 
-SYSTEM_PROMPT = """\
-You are a precise code-localization assistant. Given a GitHub issue and a \
-repository's file listing, you identify the files that must be examined and \
-edited to investigate and fix the bug.
-
+_OUTPUT_FORMAT_BLOCK = """\
+## Output format
 Output strictly one path per line, in this format:
 
   FILE: path/to/source.py
   FILE: tests/test_source.py
 
 Most likely / most important files first. No prose, no explanations, no \
-markdown — just FILE: lines.\
-"""
-
-USER_TEMPLATE = """\
-## Repository
-{repo} @ {commit}
-
-## Issue
-{issue}
-
-## Files in repository
-{file_list}
-
-## Task
-List every file needed to investigate and fix this issue, ranked by \
-relevance. Include source files (where the bug likely lives) AND test files \
-(where regression tests should be added or updated). Be selective — include \
-only files that genuinely matter for this issue.
+markdown — just `FILE:` lines.\
 """
 
 _FILE_LINE = re.compile(r"^\s*FILE:\s*(\S+)\s*$", re.MULTILINE)
@@ -76,17 +59,22 @@ def make_llm_trial(top_k: int | None = None, fp_penalty: float = 0.05):
         fp_penalty: false-positive penalty in the composite score
     """
 
-    def trial(client: ModelClient, condition: str, task: LocalizationTask) -> RunRecord:
+    def trial(handle: ModelHandle, condition: str, task: LocalizationTask) -> RunRecord:
+        # One-shot doesn't use a backend — no tools are involved. We
+        # accept a ModelHandle for signature uniformity and reach for
+        # `handle.client` directly.
+        client = handle.client
         file_list = (
             "\n".join(task.repo_file_list) if task.repo_file_list else "(not provided)"
         )
-        user_text = USER_TEMPLATE.format(
-            repo=task.repo,
-            commit=task.base_commit[:12] if task.base_commit else "unknown",
-            issue=task.issue_text,
-            file_list=file_list,
+        system_prompt = system_prompt_for(
+            task.task_class, extra_tools_block=_OUTPUT_FORMAT_BLOCK
         )
-        client.reset(SYSTEM_PROMPT)
+        user_text = (
+            user_message(task.repo, task.base_commit, task.issue_text)
+            + f"\n\n## Files in repository\n{file_list}"
+        )
+        client.reset(system_prompt)
         client.add_user_text(user_text)
 
         t0 = time.monotonic()
@@ -109,6 +97,18 @@ def make_llm_trial(top_k: int | None = None, fp_penalty: float = 0.05):
 
         predicted = parse_file_list(msg.text)
         s = score(predicted, task.gold_all, k=top_k, fp_penalty=fp_penalty)
+        # One-shot has no tool channel → classify will return
+        # `harness_blocked_exploration` for any failure, which is the
+        # accurate diagnosis (no exploration is possible).
+        failure_mode = classify_output(
+            predicted_files=predicted,
+            gold_files=task.gold_all,
+            issue_text=task.issue_text,
+            raw_response_text=msg.text or "",
+            turn_count=1,
+            tool_call_count=0,
+            has_tool_channel=False,
+        )
 
         return RunRecord(
             task_id=task.task_id,
@@ -120,7 +120,11 @@ def make_llm_trial(top_k: int | None = None, fp_penalty: float = 0.05):
             invalid_tool_calls=0,
             usage=msg.usage,
             latency_seconds=latency,
-            extra=s.as_extra(),
+            extra={
+                **s.as_extra(),
+                "submitted": predicted,
+                "failure_mode": failure_mode,
+            },
         )
 
     return trial

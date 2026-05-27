@@ -115,5 +115,7 @@ def test_swebench_adapter_smoke() -> None:
     assert isinstance(task, LocalizationTask)
     assert task.gold_edit_files == frozenset({"src/foo.py"})
     assert task.gold_test_files == frozenset({"tests/test_foo.py"})
-    assert task.gold_all == frozenset({"src/foo.py", "tests/test_foo.py"})
+    # gold_all = source files only (localization scores against source,
+    # not tests — see contract.py docstring on `gold_all`).
+    assert task.gold_all == frozenset({"src/foo.py"})
     assert task.task_id == "test__test-1"

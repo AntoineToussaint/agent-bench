@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from agent_eval.protocols import ToolSpec
 from agent_eval.types import ToolCall, ToolResult
 
 from file_localization.repo_view import RepoView
@@ -89,7 +90,10 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "path": {"type": "string"},
+                "path": {
+                    "type": "string",
+                    "description": "Path of the file to read (relative to repo root).",
+                },
                 "line_range": {
                     "type": "array",
                     "items": {"type": "integer"},
@@ -123,6 +127,16 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 ]
 
 
+TOOL_SPECS: list[ToolSpec] = [
+    ToolSpec(
+        name=t["name"],
+        description=t["description"],
+        input_schema=t["input_schema"],
+    )
+    for t in TOOL_SCHEMAS
+]
+
+
 TOOL_NAMES: frozenset[str] = frozenset(t["name"] for t in TOOL_SCHEMAS)
 READ_ONLY_TOOLS: frozenset[str] = frozenset({"list_files", "grep", "view_file"})
 TERMINAL_TOOL: str = "done"
@@ -145,13 +159,31 @@ def render_op_descriptions() -> str:
             req = " (required)" if arg_name in required else ""
             arg_type = arg_schema.get("type", "")
             arg_desc = arg_schema.get("description", "")
-            arg_lines.append(f"    - {arg_name}: {arg_type}{req} — {arg_desc}")
+            head = f"    - {arg_name}: {arg_type}{req}"
+            arg_lines.append(f"{head} — {arg_desc}" if arg_desc else head)
         args_block = "\n".join(arg_lines) if arg_lines else "    (no args)"
         lines.append(f"### `{name}`\n{desc}\n\n  args:\n{args_block}")
     return "\n\n".join(lines)
 
 
 OP_DESCRIPTIONS: str = render_op_descriptions()
+
+
+# --- workflow hint (shared across loops) ----------------------------------
+#
+# The same exploration recipe applies whether the harness is talking to
+# the model via tool_use blocks or via a structured-JSON protocol — so it
+# belongs with the ops, not with either loop. Both turn-loops slot this
+# into their system prompt verbatim.
+
+
+WORKFLOW_HINT: str = """\
+## Workflow
+  1. Skim the repo top-level structure (one `list_files`).
+  2. Grep for symbols / phrases mentioned in the issue.
+  3. View the most-likely candidate file(s) to confirm.
+  4. Call `done` with a SHORT ranked list (most relevant first).\
+"""
 
 
 # --- executor -------------------------------------------------------------

@@ -11,19 +11,27 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from agent_eval.protocols import PromptJSONBackend
 from agent_eval.types import (
     AssistantMessage,
     ModelClient,
+    ModelHandle,
     ToolResult,
     TurnUsage,
 )
 
 from file_localization.contract import LocalizationTask
-from file_localization.turn_loop_structured_trial import (
+from file_localization.turn_loop_trial import (
     LocalRepoView,
     _Limits,
     make_structured_turn_loop_trial,
 )
+
+
+def _handle(client: ModelClient) -> ModelHandle:
+    """Wrap a stub in a ModelHandle. The structured factory pins its own
+    backend, so the handle's backend is only used as a fallback (not here)."""
+    return ModelHandle(client=client, backend=PromptJSONBackend())
 
 
 # ---------- repo fixture ----------
@@ -88,7 +96,11 @@ class _StubClient(ModelClient):
         # catch protocol regressions.
         self.tool_results_in.append(results)
 
-    def step(self, tools: list[dict]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict],
+        tool_choice: dict | None = None,
+    ) -> AssistantMessage:
         if self._i >= len(self.script):
             raise RuntimeError("stub script exhausted")
         msg = self.script[self._i]
@@ -138,7 +150,7 @@ def test_structured_turn_loop_passes_when_done_returns_gold_files(tmp_path: Path
     ]
     client = _StubClient(name="claude-sonnet-4-6", script=script)
     trial = make_structured_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
 
     assert rec.passed
     assert rec.turns == 3
@@ -165,7 +177,9 @@ def test_structured_turn_loop_passes_when_done_returns_gold_files(tmp_path: Path
         assert parsed["results"][0]["status"] == "ok"
 
 
-def test_structured_turn_loop_fails_when_missing_gold_file(tmp_path: Path) -> None:
+def test_structured_turn_loop_fails_when_missing_source_file(tmp_path: Path) -> None:
+    # Submitting only a test file (no source) must fail — test files
+    # are ignored in scoring, so the model effectively submitted nothing.
     _build_repo(tmp_path)
     task = _task(tmp_path)
     script = [
@@ -173,17 +187,17 @@ def test_structured_turn_loop_fails_when_missing_gold_file(tmp_path: Path) -> No
             {
                 "thought": "done early",
                 "done": True,
-                "files": ["src/pricing/calc.py"],  # missing tests/test_calc.py
+                "files": ["tests/test_calc.py"],  # missing src/pricing/calc.py
             }
         ),
     ]
     client = _StubClient(name="claude-haiku-4-5", script=script)
     trial = make_structured_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
     assert not rec.passed
-    assert rec.extra["recall"] == 0.5
+    assert rec.extra["recall"] == 0.0
     assert rec.extra["done_called"] is True
-    assert rec.extra["submitted"] == ["src/pricing/calc.py"]
+    assert rec.extra["submitted"] == ["tests/test_calc.py"]
 
 
 def test_structured_turn_loop_parse_error_counts_as_invalid(tmp_path: Path) -> None:
@@ -206,7 +220,7 @@ def test_structured_turn_loop_parse_error_counts_as_invalid(tmp_path: Path) -> N
         repo_view_for=lambda t: LocalRepoView(tmp_path),
         limits=_Limits(max_consecutive_errors=5, max_no_progress_turns=999),
     )
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
 
     assert rec.passed
     assert rec.turns == 2
@@ -233,7 +247,7 @@ def test_structured_turn_loop_respects_max_turns(tmp_path: Path) -> None:
         repo_view_for=lambda t: LocalRepoView(tmp_path),
         limits=_Limits(max_turns=5, max_no_progress_turns=999),
     )
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
     assert rec.turns == 5
     assert not rec.extra["done_called"]
     assert not rec.passed
@@ -264,7 +278,7 @@ def test_structured_turn_loop_multiple_actions_in_one_turn(tmp_path: Path) -> No
     ]
     client = _StubClient(name="claude-haiku-4-5", script=script)
     trial = make_structured_turn_loop_trial(repo_view_for=lambda t: LocalRepoView(tmp_path))
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
 
     assert rec.passed
     assert rec.turns == 2
@@ -297,7 +311,7 @@ def test_structured_turn_loop_aborts_on_consecutive_errors(tmp_path: Path) -> No
         repo_view_for=lambda t: LocalRepoView(tmp_path),
         limits=_Limits(max_consecutive_errors=3),
     )
-    rec = trial(client, "turn-loop-structured", task)
+    rec = trial(_handle(client), "turn-loop-structured", task)
     assert rec.error is not None
     assert "consecutive error" in rec.error
     assert not rec.passed
