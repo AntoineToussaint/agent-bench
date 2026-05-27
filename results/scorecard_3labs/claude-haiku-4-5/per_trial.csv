@@ -1,0 +1,7 @@
+task_id,model,condition,replicate,passed,failure_mode,submitted,turns,tool_calls,invalid_tool_calls,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,cost_usd,latency_seconds,error
+astropy__astropy-12907,claude-haiku-4-5,localize,0,1,,"[""astropy/modeling/separable.py""]",9,10,0,18709,1292,62802,3825,0.036230,21.871,
+astropy__astropy-14182,claude-haiku-4-5,localize,0,1,,"[""astropy/io/ascii/rst.py""]",6,8,1,15967,821,5892,12013,0.035677,9.517,
+E1-stage-and-commit-typo,claude-haiku-4-5,select,0,1,,[],1,2,0,453,105,0,0,0.000978,1.424,
+E2-draft-pr,claude-haiku-4-5,select,0,1,,[],1,1,0,427,157,0,0,0.001212,1.399,
+c01_localized_bug__large,claude-haiku-4-5,edit,0,1,,[],3,3,0,8670,604,0,5286,0.018298,5.538,
+c01_localized_bug__medium,claude-haiku-4-5,edit,0,1,,[],3,3,0,7733,543,0,0,0.010448,5.424,

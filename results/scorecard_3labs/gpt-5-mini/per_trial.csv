@@ -1,0 +1,7 @@
+task_id,model,condition,replicate,passed,failure_mode,submitted,turns,tool_calls,invalid_tool_calls,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,cost_usd,latency_seconds,error
+astropy__astropy-12907,gpt-5-mini,localize,0,1,,"[""astropy/modeling/separable.py""]",8,8,0,44558,1327,0,0,0.013794,32.363,
+astropy__astropy-14182,gpt-5-mini,localize,0,1,,"[""astropy/io/ascii/rst.py""]",8,8,0,27629,841,0,0,0.008589,22.460,
+E1-stage-and-commit-typo,gpt-5-mini,select,0,0,missing_required_call,[],1,1,0,2712,153,0,0,0.000984,3.735,
+E2-draft-pr,gpt-5-mini,select,0,1,,[],1,1,0,2692,393,0,0,0.001459,5.647,
+c01_localized_bug__large,gpt-5-mini,edit,0,1,,[],2,2,0,3995,343,0,0,0.001685,6.834,
+c01_localized_bug__medium,gpt-5-mini,edit,0,1,,[],4,4,0,7386,348,0,0,0.002543,22.513,

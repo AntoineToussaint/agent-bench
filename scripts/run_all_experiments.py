@@ -159,13 +159,20 @@ def _run_edit(model: str, n: int, out_dir: Path) -> list[RunRecord]:
 
 def _summarize(records: list[RunRecord], label: str) -> str:
     if not records:
-        return f"| {label} | n=0 | — | — | — |"
+        return f"| {label} | n=0 | — | — | — | — | — |"
     n = len(records)
     pass_rate = sum(r.passed for r in records) / n
     mean_cost = statistics.mean(r.cost_usd for r in records)
     mean_lat = statistics.mean(r.latency_seconds for r in records)
+    # Step-level metrics — present on records from turn-loop trials.
+    extras = [r.extra or {} for r in records]
+    wasted = [e["wasted_turn_fraction"] for e in extras if "wasted_turn_fraction" in e]
+    batch = [e["batch_efficiency"] for e in extras if "batch_efficiency" in e and e["batch_efficiency"] > 0]
+    wasted_str = f"{statistics.mean(wasted):>5.0%}" if wasted else "—"
+    batch_str = f"{statistics.mean(batch):>4.1f}" if batch else "—"
     return (
-        f"| {label:<22} | {n} | {pass_rate:>5.0%} | ${mean_cost:>6.4f} | {mean_lat:>5.1f}s |"
+        f"| {label:<22} | {n} | {pass_rate:>5.0%} | ${mean_cost:>6.4f} | "
+        f"{mean_lat:>5.1f}s | {wasted_str} | {batch_str} |"
     )
 
 
@@ -241,8 +248,12 @@ def main() -> int:
         f"N={args.n} tasks per experiment. Smoke run, not a benchmark.",
         "Each experiment uses its default backend from `data/model_backends.yaml`.",
         "",
-        "| capability             |  n | pass | cost     | latency |",
-        "|---|---:|---:|---:|---:|",
+        "Step-level columns (only for turn-loop trials):",
+        "- **wasted%**: fraction of turns that didn't make progress (re-tried same call, or all calls errored)",
+        "- **batch**: mean actions per active turn — higher = better batching, lower = chatty",
+        "",
+        "| capability             |  n | pass | cost     | latency | wasted% | batch |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for label, recs in all_records:
         lines.append(_summarize(recs, label))

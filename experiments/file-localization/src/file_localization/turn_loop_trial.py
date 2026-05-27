@@ -178,6 +178,9 @@ def make_turn_loop_trial_with_backend(
         consecutive_errors = 0
         no_progress_turns = 0
         mimicry_total = 0
+        # Step-level metrics: aggregated at trial end. See DIMENSIONS.md.
+        turns_with_new_signature = 0    # for wasted_turn_fraction
+        actions_per_active_turn: list[int] = []  # for batch_efficiency
         error: str | None = None
         done_flag = False
 
@@ -314,6 +317,16 @@ def make_turn_loop_trial_with_backend(
                             submitted = [str(f) for f in files]
                         done_flag = True
 
+                # Step-level accumulators: this turn made progress?
+                if turn_added_signature:
+                    turns_with_new_signature += 1
+                # Batch efficiency tracks active turns (turns that actually
+                # dispatched non-`done` actions) — `done`-only turns
+                # shouldn't pollute the mean.
+                non_done_actions = sum(1 for c in dispatched_calls if c.name != "done")
+                if non_done_actions > 0:
+                    actions_per_active_turn.append(non_done_actions)
+
                 transcript.add_tool_results(results)
                 turn_sp.set_attribute("agent_eval.turn.added_new_signature", turn_added_signature)
                 turn_sp.set_attribute("agent_eval.turn.done_called", done_flag)
@@ -393,6 +406,15 @@ def make_turn_loop_trial_with_backend(
                 "backend": bk.name,
                 "failure_mode": failure_mode,
                 "observed_paths": observed_paths,
+                # Step-level metrics (see DIMENSIONS.md).
+                "wasted_turn_fraction": (
+                    (turns - turns_with_new_signature) / turns if turns > 0 else 0.0
+                ),
+                "batch_efficiency": (
+                    sum(actions_per_active_turn) / len(actions_per_active_turn)
+                    if actions_per_active_turn else 0.0
+                ),
+                "active_turns": len(actions_per_active_turn),
             },
         )
         if transcripts_dir:

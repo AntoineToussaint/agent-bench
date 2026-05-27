@@ -142,6 +142,11 @@ def run_trial(
     consecutive_error_turns = 0
     no_progress_turns = 0
     last_workdir_state: tuple[tuple[str, int, float], ...] | None = None
+    # Step-level metrics: aggregated at trial end. See DIMENSIONS.md.
+    # `wasted_turns` here = turns that attempted writes but didn't change
+    # the workdir (model re-edited the same lines, or every call errored).
+    wasted_turns = 0
+    actions_per_active_turn: list[int] = []  # for batch_efficiency
     done = False
     error: str | None = None
 
@@ -225,6 +230,11 @@ def run_trial(
                 "agent_eval.turn.outcome",
                 "done" if done else ("dispatched" if not turn_had_only_errors else "all_errors"),
             )
+            # Step-level: batch efficiency counts non-`done` actions per
+            # active turn (turns that dispatched anything).
+            non_done = sum(1 for c in msg_calls if c.name != "done")
+            if non_done > 0:
+                actions_per_active_turn.append(non_done)
 
         # --- escape valves to prevent runaway loops ---
         # (a) consecutive turns where every tool call errored
@@ -245,6 +255,7 @@ def run_trial(
         state = _snapshot(workdir)
         if turn_had_write_attempt and state == last_workdir_state:
             no_progress_turns += 1
+            wasted_turns += 1
         elif turn_had_write_attempt:
             no_progress_turns = 0
         last_workdir_state = state
@@ -308,7 +319,22 @@ def run_trial(
         stderr=oracle.stderr[-2000:],
         error=error,
         transcript_path=transcript_path,
-        extra={"failure_mode": failure_mode, "write_attempts": write_attempts},
+        extra={
+            "failure_mode": failure_mode,
+            "write_attempts": write_attempts,
+            # Step-level metrics (see DIMENSIONS.md). For code-editing:
+            # `wasted_turn_fraction` = turns where the model wrote but
+            # the workdir didn't actually change (re-edited the same
+            # lines / every call errored).
+            "wasted_turn_fraction": (
+                wasted_turns / turns if turns > 0 else 0.0
+            ),
+            "batch_efficiency": (
+                sum(actions_per_active_turn) / len(actions_per_active_turn)
+                if actions_per_active_turn else 0.0
+            ),
+            "active_turns": len(actions_per_active_turn),
+        },
     )
 
 
