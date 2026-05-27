@@ -1,0 +1,10 @@
+task_id,model,condition,replicate,passed,failure_mode,submitted,turns,tool_calls,invalid_tool_calls,input_tokens,output_tokens,cache_read_tokens,cache_creation_tokens,cost_usd,latency_seconds,error
+astropy__astropy-12907,claude-haiku-4-5,keep_everything,0,1,,"[""astropy/modeling/separable.py""]",8,9,0,50265,1128,10345,10413,0.069956,15.368,
+astropy__astropy-14182,claude-haiku-4-5,keep_everything,0,1,,"[""astropy/io/ascii/rst.py""]",6,8,1,15967,821,5892,12013,0.035677,9.779,
+astropy__astropy-14365,claude-haiku-4-5,keep_everything,0,1,,"[""astropy/io/ascii/qdp.py""]",7,8,0,22395,1228,18359,19021,0.054147,15.200,
+astropy__astropy-12907,claude-haiku-4-5,tool_result_elision_2,0,1,,"[""astropy/modeling/separable.py"", ""astropy/modeling/core.py""]",6,7,0,16175,740,13209,0,0.021196,9.718,
+astropy__astropy-14182,claude-haiku-4-5,tool_result_elision_2,0,1,,"[""astropy/io/ascii/rst.py""]",7,9,1,27880,985,0,0,0.032805,11.119,
+astropy__astropy-14365,claude-haiku-4-5,tool_result_elision_2,0,1,,"[""astropy/io/ascii/qdp.py""]",6,7,0,28870,901,0,0,0.033375,10.692,
+astropy__astropy-12907,claude-haiku-4-5,sliding_window_5,0,1,,"[""astropy/modeling/separable.py""]",15,16,0,78564,1692,32919,0,0.090316,21.936,
+astropy__astropy-14182,claude-haiku-4-5,sliding_window_5,0,1,,"[""astropy/io/ascii/rst.py""]",6,8,1,8730,821,24490,652,0.016099,9.603,
+astropy__astropy-14365,claude-haiku-4-5,sliding_window_5,0,1,,"[""astropy/io/ascii/qdp.py""]",8,9,0,24201,1188,33020,631,0.034232,16.375,

@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
+    from agent_eval.context.types import ContextPolicy
     from agent_eval.protocols.types import ToolBackend
 
 
@@ -153,15 +154,17 @@ class ModelHandle:
     """A model paired with its tool-use backend.
 
     This is the unit trials accept. The handle hides whether the backend
-    is provider-native tool_use, schema-enforced, or prompt-based JSON —
-    that's the *model's* preference, not the trial's concern.
+    is provider-native tool_use, schema-enforced, or prompt-based JSON,
+    and whether the context policy is keep-everything or pruning — those
+    are configuration of the trial, not the trial's concern.
 
-    Build with `agent_eval.models.make_model(name)` for the default
-    backend, or `make_model(name, backend=...)` to override (research).
+    Build with `agent_eval.models.make_model(name)` for the defaults, or
+    `make_model(name, backend=..., context_policy=...)` to override.
     """
 
     client: ModelClient
     backend: "ToolBackend"
+    context_policy: "ContextPolicy | None" = None
 
     @property
     def name(self) -> str:

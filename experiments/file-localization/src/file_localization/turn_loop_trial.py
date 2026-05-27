@@ -93,6 +93,21 @@ class _Limits:
     max_no_progress_turns: int = 4
 
 
+def _provider_of(model_name: str) -> str:
+    """Map a model id to the provider tag a ContextPolicy expects.
+
+    Keep in sync with `agent_eval.context.types.Provider`.
+    """
+    n = model_name.lower()
+    if "claude" in n or "anthropic" in n:
+        return "anthropic"
+    if "gpt" in n or n.startswith("o1") or n.startswith("o3") or "openai" in n:
+        return "openai"
+    if "gemini" in n or "google" in n:
+        return "google"
+    return "unknown"
+
+
 def _signature(call: ToolCall) -> tuple[str, str]:
     """Hashable key for one tool call: (name, json-args).
 
@@ -200,6 +215,17 @@ def make_turn_loop_trial_with_backend(
                 # produce an answer at all.
                 forced_terminal = turns == limits.max_turns
                 turn_sp.set_attribute("agent_eval.turn.forced_terminal", forced_terminal)
+                # Apply the context policy: replace client's history with
+                # whatever the policy returns. KeepEverything is a no-op;
+                # other policies prune / elide. See HARNESS.md.
+                if handle.context_policy is not None and hasattr(client, "messages"):
+                    provider = _provider_of(client.name)
+                    client.messages = handle.context_policy.prepare(
+                        client.messages, provider=provider, turn_idx=turns
+                    )
+                    turn_sp.set_attribute(
+                        "agent_eval.context_policy", handle.context_policy.name
+                    )
                 try:
                     with span_llm_request(model=client.name, backend=bk.name) as llm_sp:
                         if forced_terminal:
@@ -432,6 +458,12 @@ def make_turn_loop_trial_with_backend(
                     (input_tokens_per_turn[-1] - input_tokens_per_turn[0])
                     / max(1, len(input_tokens_per_turn) - 1)
                     if len(input_tokens_per_turn) >= 2 else 0.0
+                ),
+                "context_policy": (
+                    handle.context_policy.name if handle.context_policy else "none"
+                ),
+                "cache_hit_rate": (
+                    cache_r / (in_tok + cache_r) if (in_tok + cache_r) > 0 else 0.0
                 ),
             },
         )

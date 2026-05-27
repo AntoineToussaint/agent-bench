@@ -64,20 +64,50 @@ These are *observation* metrics, not knobs — we still keep everything.
 The goal is: if Haiku at turn 8 starts misbehaving when input_tokens
 crosses 5000, we'd see that in the data.
 
-### What we don't yet do (proposals)
+### Multi-tier roadmap
 
-Three policies worth ablating later:
+The plan is to turn context engineering into a research dimension
+parallel to `ToolBackend`. A `ContextPolicy` abstraction with several
+implementations, selected per-trial; the same task can be run under
+multiple policies to compare effects.
 
-1. **Tool-result truncation after N turns** — keep the most recent tool
-   result verbatim, replace older ones with a summary placeholder. Production
-   default in most agents. Probably saves 30-70% of tokens on long trials.
-2. **Sliding-window context** — drop turns older than N. Crude but cheap.
-3. **Summarization** — replace pruned turns with an LLM-generated summary.
-   Adds cost but preserves more info.
+Tiered scope so we don't gold-plate:
 
-Each could become a `ContextPolicy` abstraction analogous to `ToolBackend`,
-selectable per trial. Same shape: bundle a strategy onto `ModelHandle`,
-let the trial loop call `policy.prepare(messages)` before each `step()`.
+**Tier 1 — abstraction + cheap policies (in flight as of this section).**
+- `ContextPolicy` Protocol; bundled onto `ModelHandle` alongside `ToolBackend`.
+- Three implementations: `KeepEverything` (baseline = current behavior),
+  `ToolResultElision(keep_recent=N)`, `SlidingWindow(n_turns=N)`.
+- Derived metric: `cache_hit_rate` = `cache_read_tokens / (input_tokens + cache_read_tokens)`.
+- Small ablation sweep: 3 policies × 1 model × 3 tasks on file-localization.
+
+**Tier 2 — summarization + cache-friendly design.**
+- `Summarize(after_n_turns=N, summarizer="haiku")` — LLM-compress old turns.
+- `StablePrefixDynamicTail(prune_after=N)` — keep system+tools+initial-user
+  byte-identical to preserve Anthropic cache; summarize only the tail.
+- Summary-fidelity metric: re-expand the summary with the summarizer and
+  semantic-match against the original turns.
+- Cross-experiment ablation on find + edit.
+
+**Tier 3 — sub-agent handoff (separate experiment).**
+- Parent does multi-turn exploration; child gets a brief and completes a
+  focused task. Compare brief shapes: subset-of-history /
+  LLM-summary / structured-template.
+- Score child success conditional on the brief.
+- Failure labels from [AgentAsk (2025)](https://arxiv.org/html/2510.07593):
+  Data Gap, Signal Corruption, Referential Drift, Capability Gap.
+
+### SOTA references
+
+The published work that motivated this scope:
+
+- [Anthropic, "Effective context engineering for AI agents"](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — compaction; their own pattern.
+- [SWE-Pruner (Jan 2026)](https://arxiv.org/pdf/2601.16746) — 23-54% token reduction *with* success-rate improvement on SWE-Bench. The first evidence that compression and capability aren't zero-sum.
+- ["Don't Break the Cache" (Jan 2026)](https://arxiv.org/html/2601.06007v2) — explicit cache-policy ablation on DeepResearch Bench; measures cost + TTFT but NOT task success. Gap we'd close.
+- [LOCA-bench (Feb 2026)](https://arxiv.org/pdf/2602.07962), [SWE-ContextBench](https://arxiv.org/abs/2602.08316) — the only published artifacts varying context policy on agentic tasks. Neither has failure-mode classification.
+- [AgentAsk (Oct 2025)](https://arxiv.org/html/2510.07593) — 4 handoff failure modes. Production multi-agent systems exist; the *evaluation* of handoff quality is genuinely underserved.
+
+Our differentiator: combine policy-ablation with our existing failure-mode
+classifier. Nobody else has *failure-mode shifts under context policy*.
 
 ## Other harness dimensions worth naming
 

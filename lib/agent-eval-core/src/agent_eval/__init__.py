@@ -13,6 +13,12 @@ What it does NOT give you:
   - You bring your own Trial function — (model, condition, task) -> RunRecord
 """
 
+from agent_eval.context import (
+    ContextPolicy,
+    KeepEverything,
+    SlidingWindow,
+    ToolResultElision,
+)
 from agent_eval.types import (
     AssistantMessage,
     ModelClient,
@@ -31,13 +37,17 @@ from agent_eval.transcripts import dump_transcript, load_transcript, summarize_t
 __all__ = [
     "AssistantMessage",
     "Budget",
+    "ContextPolicy",
+    "KeepEverything",
     "MODELS",
     "ModelClient",
     "ModelHandle",
     "RunRecord",
+    "SlidingWindow",
     "Sweep",
     "ToolCall",
     "ToolResult",
+    "ToolResultElision",
     "Transcript",
     "TurnUsage",
     "cost_usd",

@@ -20,6 +20,7 @@ from importlib import resources
 
 import yaml
 
+from agent_eval.context import ContextPolicy, KeepEverything
 from agent_eval.models import make_client
 from agent_eval.protocols import (
     NativeToolUseBackend,
@@ -80,6 +81,7 @@ def make_model(
     model: str,
     *,
     backend: ToolBackend | None = None,
+    context_policy: ContextPolicy | None = None,
 ) -> ModelHandle:
     """Build a `ModelHandle` for `model`.
 
@@ -87,11 +89,16 @@ def make_model(
         model: identifier understood by `make_client`.
         backend: optional override. None = use the recommended default
             from `data/model_backends.yaml`.
+        context_policy: optional context-engineering policy. None =
+            KeepEverything (full-history replay; the existing behavior).
+            See `lib/agent-eval-core/HARNESS.md` for the rationale.
     """
     client = make_client(model)
     if backend is None:
         backend = default_backend_for(model)
-    return ModelHandle(client=client, backend=backend)
+    if context_policy is None:
+        context_policy = KeepEverything()
+    return ModelHandle(client=client, backend=backend, context_policy=context_policy)
 
 
 __all__ = ["default_backend_for", "make_model"]
