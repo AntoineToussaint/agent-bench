@@ -7,6 +7,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from agent_eval.types import ModelHandle
+
 from .approaches.base import Approach
 from .phases.base import Phase
 from .phases.one_phase import OnePhase
@@ -20,11 +22,17 @@ def run_one(
     model: str,
     task: Task,
     phase: Phase | None = None,
+    handle: ModelHandle | None = None,
 ) -> tuple[CallTrace, ScoreCard]:
     """Run one (approach × catalog × model × task) and produce (CallTrace, ScoreCard).
 
     `phase` defaults to OnePhase (the original behavior). Pass PlanFirstPhase,
     OnePhaseConfusabilityAware, or TwoPhase to evaluate other final-shot variants.
+
+    `handle`, when supplied, drives the final-shot through its bundled
+    `ToolBackend` (and is needed for OTEL trace nesting under the sweep's
+    trial span). When None, phases fall back to `make_client(model)` with
+    the default backend — preserves legacy CLI / notebook usage.
     """
     if phase is None:
         phase = OnePhase()
@@ -33,7 +41,7 @@ def run_one(
     surfaced = result.surfaced_tools
     surfaced_names = [t.name for t in surfaced]
 
-    phase_result = phase.execute(task, surfaced, model)
+    phase_result = phase.execute(task, surfaced, model, handle=handle)
 
     trace = CallTrace(
         task_id=task.id,

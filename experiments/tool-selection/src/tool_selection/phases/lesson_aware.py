@@ -25,6 +25,8 @@ import concurrent.futures as cf
 from dataclasses import replace
 from typing import Any
 
+from agent_eval.types import ModelHandle
+
 from tool_selection.execution.lessons import Lesson, LessonStore, task_signature
 from tool_selection.types import PipelineStep, Task, Tool
 
@@ -67,7 +69,13 @@ class LessonAwareOnePhase(Phase):
         self.plan_first = plan_first
         self.id = "1phase-plan-lessons" if plan_first else "1phase-lessons"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         # Gather all relevant lessons
         task_lessons = self.store.for_task(task_signature(task), top_k=self.k_per_task)
         tool_lessons = self.store.all_for_tools(
@@ -90,7 +98,7 @@ class LessonAwareOnePhase(Phase):
         system = BASE_SYSTEM_PROMPT + (PLAN_FIRST_ADDENDUM if self.plan_first else "")
 
         try:
-            calls, text, step = _call(system, user_msg, surfaced_tools, model)
+            calls, text, step = _call(system, user_msg, surfaced_tools, model, handle=handle)
             step.note = (step.note or "") + f" [lessons:{len(all_lessons)} plan_first:{self.plan_first}]"
             return PhaseResult(final_calls=calls, final_text=text, steps=[step])
         except Exception as exc:  # noqa: BLE001
@@ -126,9 +134,18 @@ class LessonAwareTwoPhase(Phase):
         args_tag = (args_model or "$").split("-")[1] if args_model else "$"
         self.id = f"2phase-lessons:{sel_tag}+{args_tag}"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         sel_model = self.selection_model or model
         args_model = self.args_model or model
+        # Same as TwoPhase: phase 1 can use the handle (single call);
+        # phase 2 spawns parallel make_client calls.
+        sel_handle = handle if (handle is not None and self.selection_model is None) else None
 
         # --- Phase 1: selection, augmented with task-level lessons only ---
         task_lessons = self.store.for_task(task_signature(task), top_k=self.k_per_task)
@@ -147,7 +164,9 @@ class LessonAwareTwoPhase(Phase):
         )
 
         try:
-            text, sel_step = _llm_text_call(PHASE1_SYSTEM, phase1_user, sel_model)
+            text, sel_step = _llm_text_call(
+                PHASE1_SYSTEM, phase1_user, sel_model, handle=sel_handle
+            )
             sel_step.note = (sel_step.note or "") + f" [task_lessons:{len(task_lessons)}]"
             plan = _parse_plan(text, {t.name for t in surfaced_tools})
         except Exception as exc:  # noqa: BLE001

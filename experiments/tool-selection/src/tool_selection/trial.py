@@ -2,13 +2,13 @@
 
 The original `tool_selection.runner.run_one()` returns
 `(CallTrace, ScoreCard)`. This module wraps it into a Trial function
-`(ModelClient, condition_str, Task) -> RunRecord` so trials plug straight
+`(ModelHandle, condition_str, Task) -> RunRecord` so trials plug straight
 into `agent_eval.Sweep`.
 
-The phases themselves still make their own provider SDK calls (Anthropic /
-OpenAI / OpenRouter — by model name). The `ModelClient` arg is used only
-for its `.name`; we don't currently route phase calls through it. Migrating
-phases to consume `ModelClient` is a larger refactor we're not doing here.
+Trials route the LLM call through the `ModelHandle`'s bundled `ToolBackend`
+(by default the YAML-configured one per model). For one-shot tool-selection
+the default is "native" tool_use — schema-enforced is a sensible
+research override when you want to compare format constraints.
 
 Usage:
 
@@ -33,7 +33,8 @@ from __future__ import annotations
 import time
 from typing import Callable
 
-from agent_eval.types import ModelClient, RunRecord, TurnUsage
+from agent_eval.failure_modes import classify_tool_selection
+from agent_eval.types import ModelHandle, RunRecord, TurnUsage
 
 from tool_selection.approaches.base import Approach
 from tool_selection.phases.base import Phase
@@ -42,7 +43,7 @@ from tool_selection.runner import run_one
 from tool_selection.types import Catalog, Task
 
 
-Trial = Callable[[ModelClient, str, Task], RunRecord]
+Trial = Callable[[ModelHandle, str, Task], RunRecord]
 
 
 def make_trial(
@@ -59,20 +60,21 @@ def make_trial(
     """
     phase = phase or OnePhase()
 
-    def trial(client: ModelClient, condition: str, task: Task) -> RunRecord:
+    def trial(handle: ModelHandle, condition: str, task: Task) -> RunRecord:
         t0 = time.monotonic()
         try:
             trace, sc = run_one(
                 approach=approach,
                 catalog=catalog,
-                model=client.name,
+                model=handle.client.name,
                 task=task,
                 phase=phase,
+                handle=handle,
             )
         except Exception as e:  # noqa: BLE001
             return RunRecord(
                 task_id=task.id,
-                model=client.name,
+                model=handle.client.name,
                 condition=condition,
                 passed=False,
                 turns=1,
@@ -87,13 +89,26 @@ def make_trial(
         if latency_s == 0:
             latency_s = time.monotonic() - t0
 
+        # `invalid_tool_calls` on RunRecord is an int (count). The three
+        # ScoreCard fields are lists of call ids/names — sum their lengths.
+        # The full lists are preserved in `extra` below for debugging.
         invalid = (
-            sc.schema_invalid_calls
-            + sc.hallucinated_calls
-            + sc.forbidden_called
+            len(sc.schema_invalid_calls)
+            + len(sc.hallucinated_calls)
+            + len(sc.forbidden_called)
+        )
+
+        failure_mode = classify_tool_selection(
+            hallucinated_calls=list(sc.hallucinated_calls),
+            missing_required=list(sc.missing_required),
+            forbidden_called=list(sc.forbidden_called),
+            schema_invalid_calls=list(sc.schema_invalid_calls),
+            selection_matched=bool(sc.selection_matched),
+            passed=bool(sc.task_success),
         )
 
         extra: dict[str, object] = {
+            "failure_mode": failure_mode,
             # Selection
             "selection_matched": sc.selection_matched,
             "selection_accuracy": sc.selection_accuracy,
@@ -117,7 +132,7 @@ def make_trial(
 
         return RunRecord(
             task_id=task.id,
-            model=client.name,
+            model=handle.client.name,
             condition=condition,
             passed=sc.task_success,
             turns=1,

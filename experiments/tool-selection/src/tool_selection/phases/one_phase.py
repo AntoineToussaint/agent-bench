@@ -18,6 +18,9 @@ from typing import Any
 from dotenv import load_dotenv
 
 from agent_eval import make_client
+from agent_eval.protocols import ToolSpec
+from agent_eval.tracing import record_llm_usage, span_llm_request
+from agent_eval.types import ModelHandle
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import PipelineStep, Task, Tool
@@ -116,33 +119,81 @@ def _build_confusability_section(surfaced: list[Tool]) -> str:
 
 
 def _call(
-    system: str, user: str, tools: list[Tool], model: str, max_tokens: int = 4096
+    system: str,
+    user: str,
+    tools: list[Tool],
+    model: str,
+    max_tokens: int = 4096,
+    handle: ModelHandle | None = None,
 ) -> tuple[list[dict[str, Any]], str, PipelineStep]:
-    """Run the single-shot tool-calling final shot through agent-eval-core's
-    `ModelClient`. Provider routing is handled inside `make_client(model)`
-    (Anthropic, OpenAI, OpenRouter).
+    """Run the single-shot tool-calling final shot.
 
-    Tool schemas are passed in Anthropic shape uniformly; the OpenAI client
-    inside agent-eval-core converts them internally.
+    Args:
+        system: system prompt
+        user: user message
+        tools: surfaced tool list
+        model: model id (used for routing when handle is None, and for
+            recording in PipelineStep regardless)
+        max_tokens: response budget
+        handle: optional ModelHandle bundling (client, backend). When
+            provided, drives the call through `handle.backend.request(...)`
+            so the choice of tool-use protocol (native / schema-enforced
+            / prompt-JSON) is configurable. Falls back to make_client
+            with the default backend when None — preserves legacy
+            behavior for callers that haven't migrated.
     """
-    client = make_client(model)
-    # Match the legacy max_tokens budget (previously hard-coded on both
-    # provider branches). agent-eval-core's clients expose `max_tokens` as a
-    # dataclass field; the factory doesn't take it directly.
+    if handle is not None:
+        client = handle.client
+        backend = handle.backend
+        backend_name = backend.name
+    else:
+        client = make_client(model)
+        backend = None
+        backend_name = "native"  # make_client's default behavior
+
     if hasattr(client, "max_tokens"):
         client.max_tokens = max_tokens
-    client.reset(system)
+
+    # Slot the backend's tool description (if any) onto the system prompt.
+    # For native / schema-enforced this is "" (tools are conveyed via API);
+    # for prompt_json it's a fenced description block.
+    tool_specs = [
+        ToolSpec(name=t.name, description=t.description, input_schema=t.json_schema)
+        for t in tools
+    ]
+    addendum = backend.system_prompt_addendum(tool_specs) if backend is not None else ""
+    full_system = system + ("\n\n" + addendum if addendum else "")
+
+    client.reset(full_system)
     client.add_user_text(user)
 
     t0 = time.perf_counter()
-    msg = client.step([t.to_anthropic() for t in tools])
+    with span_llm_request(model=model, backend=backend_name) as llm_sp:
+        if backend is not None:
+            resp = backend.request(client, tool_specs)
+            text = resp.raw_text
+            tool_calls = resp.actions
+            usage = resp.usage
+        else:
+            # Legacy path — direct client.step with Anthropic-shape schemas.
+            msg = client.step([t.to_anthropic() for t in tools])
+            text = msg.text
+            tool_calls = msg.tool_calls
+            usage = msg.usage
+        record_llm_usage(
+            llm_sp,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            cache_read_tokens=usage.cache_read_tokens,
+            cache_creation_tokens=usage.cache_creation_tokens,
+        )
     latency_ms = (time.perf_counter() - t0) * 1000
 
     calls: list[dict[str, Any]] = [
-        {"name": tc.name, "input": dict(tc.arguments)} for tc in msg.tool_calls
+        {"name": tc.name, "input": dict(tc.arguments)} for tc in tool_calls
     ]
-    in_tok = msg.usage.input_tokens
-    out_tok = msg.usage.output_tokens
+    in_tok = usage.input_tokens
+    out_tok = usage.output_tokens
     step = PipelineStep(
         kind="final_shot",
         model=model,
@@ -151,15 +202,23 @@ def _call(
         cost_usd=cost_for(model, in_tok, out_tok),
         latency_ms=latency_ms,
     )
-    return calls, msg.text, step
+    return calls, text, step
 
 
 class OnePhase(Phase):
     id = "1phase"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         try:
-            calls, text, step = _call(BASE_SYSTEM_PROMPT, _user_message(task), surfaced_tools, model)
+            calls, text, step = _call(
+                BASE_SYSTEM_PROMPT, _user_message(task), surfaced_tools, model, handle=handle
+            )
             return PhaseResult(final_calls=calls, final_text=text, steps=[step])
         except Exception as exc:  # noqa: BLE001
             return PhaseResult(
@@ -181,10 +240,18 @@ class PlanFirstPhase(Phase):
 
     id = "1phase-plan"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         system = BASE_SYSTEM_PROMPT + PLAN_FIRST_ADDENDUM
         try:
-            calls, text, step = _call(system, _user_message(task), surfaced_tools, model)
+            calls, text, step = _call(
+                system, _user_message(task), surfaced_tools, model, handle=handle
+            )
             step.note = (step.note or "") + " [plan-first]"
             return PhaseResult(final_calls=calls, final_text=text, steps=[step])
         except Exception as exc:  # noqa: BLE001
@@ -207,11 +274,19 @@ class OnePhaseConfusabilityAware(Phase):
 
     id = "1phase-confuse"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         addendum = _build_confusability_section(surfaced_tools)
         system = BASE_SYSTEM_PROMPT + addendum
         try:
-            calls, text, step = _call(system, _user_message(task), surfaced_tools, model)
+            calls, text, step = _call(
+                system, _user_message(task), surfaced_tools, model, handle=handle
+            )
             step.note = (step.note or "") + (
                 f" [confuse:{len(_detect_confusable_groups(surfaced_tools))}groups]"
             )

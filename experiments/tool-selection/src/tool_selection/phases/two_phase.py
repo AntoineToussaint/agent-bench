@@ -30,6 +30,8 @@ from typing import Any
 from dotenv import load_dotenv
 
 from agent_eval import make_client
+from agent_eval.tracing import record_llm_usage, span_llm_request
+from agent_eval.types import ModelHandle
 
 from tool_selection.pricing import cost_for
 from tool_selection.types import PipelineStep, Task, Tool
@@ -135,21 +137,34 @@ def _parse_plan(text: str, valid_names: set[str]) -> list[dict[str, str]]:
 
 
 def _llm_text_call(
-    system: str, user: str, model: str, max_tokens: int = 1024
+    system: str,
+    user: str,
+    model: str,
+    max_tokens: int = 1024,
+    handle: ModelHandle | None = None,
 ) -> tuple[str, PipelineStep]:
     """Call without tools — just get text back. Used for phase 1.
 
-    Routes through agent-eval-core's `ModelClient`; provider dispatch is
-    handled inside `make_client(model)`.
+    When `handle` is supplied, uses its client (for cache/conversation
+    continuity within the trial); the backend isn't relevant for a
+    no-tools text call. Falls back to `make_client(model)` otherwise.
     """
-    client = make_client(model)
+    client = handle.client if handle is not None else make_client(model)
     if hasattr(client, "max_tokens"):
         client.max_tokens = max_tokens
     client.reset(system)
     client.add_user_text(user)
 
     t0 = time.perf_counter()
-    msg = client.step([])
+    with span_llm_request(model=model, backend="none") as llm_sp:
+        msg = client.step([])
+        record_llm_usage(
+            llm_sp,
+            input_tokens=msg.usage.input_tokens,
+            output_tokens=msg.usage.output_tokens,
+            cache_read_tokens=msg.usage.cache_read_tokens,
+            cache_creation_tokens=msg.usage.cache_creation_tokens,
+        )
     latency_ms = (time.perf_counter() - t0) * 1000
 
     inp = msg.usage.input_tokens
@@ -231,9 +246,20 @@ class TwoPhase(Phase):
         args_tag = (args_model or "$").split("-")[1] if args_model else "$"
         self.id = f"2phase:{sel_tag}+{args_tag}"
 
-    def execute(self, task: Task, surfaced_tools: list[Tool], model: str) -> PhaseResult:
+    def execute(
+        self,
+        task: Task,
+        surfaced_tools: list[Tool],
+        model: str,
+        handle: ModelHandle | None = None,
+    ) -> PhaseResult:
         sel_model = self.selection_model or model
         args_model = self.args_model or model
+        # Use the handle for phase 1 (single call). Phase 2 spawns parallel
+        # calls per tool and uses make_client(args_model) — wiring multiple
+        # handles into a thread pool is more plumbing than this migration
+        # warrants.
+        sel_handle = handle if (handle is not None and self.selection_model is None) else None
 
         # Phase 1 — selection
         try:
@@ -245,7 +271,9 @@ class TwoPhase(Phase):
                 + "\n\n"
                 + "Return the JSON array of {name, intent} calls now."
             )
-            text, sel_step = _llm_text_call(PHASE1_SYSTEM, phase1_user, sel_model)
+            text, sel_step = _llm_text_call(
+                PHASE1_SYSTEM, phase1_user, sel_model, handle=sel_handle
+            )
             plan = _parse_plan(text, {t.name for t in surfaced_tools})
         except Exception as exc:  # noqa: BLE001
             return PhaseResult(

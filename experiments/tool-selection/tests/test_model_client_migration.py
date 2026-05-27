@@ -56,7 +56,11 @@ class _StubClient(ModelClient):
     def add_tool_results(self, results: list[ToolResult]) -> None:
         self.tool_results.append(list(results))
 
-    def step(self, tools: list[dict[str, Any]]) -> AssistantMessage:
+    def step(
+        self,
+        tools: list[dict[str, Any]],
+        tool_choice: dict[str, Any] | None = None,
+    ) -> AssistantMessage:
         self.step_calls.append(list(tools))
         return self.canned
 
