@@ -100,14 +100,16 @@ missing is more coverage (more models, more task types).
 
 ## Concrete next-step proposals, ranked
 
-1. **Coverage of the existing 3 dimensions** — populate `model_backends.yaml` empirically for more models (Opus 4.7, GPT-5-mini, GPT-5). Currently 2 of 6 entries have empirical backing.
-2. **Add `abstain`** to tool-selection — small change to the existing scorer; just need tasks where the right answer is "call nothing." Closes a published gap (MetaTool, BFCL) inside our existing harness.
-3. **Add `consistency`** — derived metric, not a new experiment. Run any cell at `repetitions=5+`, report `pass^k` and `pass@1` side-by-side. Free with what we have.
-4. **Add `clarify`** — new experiment, but reuses everything: a user-simulator (cheap LLM) replies to agent questions; score = ambiguity resolved before acting. Closes a real gap (no `τ-coding` exists).
-5. **Add `review`** — wrap [CodeCriticBench](https://arxiv.org/html/2502.16614v1) tasks as a fourth experiment. Lift their dataset; same `(handle, condition, task) → RunRecord` shape.
+1. **Coverage of the existing 3 dimensions** — populate `model_backends.yaml` empirically for more models (Opus 4.7, GPT-5, plus the now-wired Gemini 2.5 Pro / Flash-Lite). Currently 3 of 9 entries have empirical backing (Haiku, Sonnet, and Flash from the 3-lab smoke).
+2. **Split `latency_seconds` into TTFT + generate** — switch all three model clients (Anthropic, OpenAI, Google) from non-streaming `create` to streaming `stream`, capture monotonic timestamp at first content delta. New `TurnUsage.ttft_seconds` / `generate_seconds` fields. Pairs with `batch_efficiency`: a chatty model with high TTFT pays the start-up cost every turn. ~1-2 hours, all infrastructure already in place.
+3. **Add `abstain`** to tool-selection — small change to the existing scorer; just need tasks where the right answer is "call nothing." Closes a published gap (MetaTool, BFCL) inside our existing harness.
+4. **Add `consistency`** — derived metric, not a new experiment. Run any cell at `repetitions=5+`, report `pass^k` and `pass@1` side-by-side. Free with what we have.
+5. **Add `clarify`** — new experiment, but reuses everything: a user-simulator (cheap LLM) replies to agent questions; score = ambiguity resolved before acting. Closes a real gap (no `τ-coding` exists).
+6. **Add `review`** — wrap [CodeCriticBench](https://arxiv.org/html/2502.16614v1) tasks as a fourth experiment. Lift their dataset; same `(handle, condition, task) → RunRecord` shape.
 
-(1)–(3) are pure data-collection or one-line metric changes — small
-work, real value. (4)–(5) are new experiments — bigger, also novel.
+(1)–(4) are pure data-collection, one-line metric changes, or
+infrastructure refinements — small work, real value. (5)–(6) are new
+experiments — bigger, also novel.
 
 ## References
 
