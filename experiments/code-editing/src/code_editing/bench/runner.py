@@ -8,11 +8,48 @@ from pathlib import Path
 from typing import Any
 
 from agent_eval import ModelClient, RunRecord, ToolCall, ToolResult, Transcript, TurnUsage
+from agent_eval.failure_modes import classify_code_editing
+from agent_eval.pricing import cost_usd
+from agent_eval.protocols import ToolSpec
+from agent_eval.tracing import (
+    record_llm_usage,
+    span_llm_request,
+    span_tool_call,
+    span_turn,
+)
+from agent_eval.types import ModelHandle
 
 from code_editing.bench.oracle import run_oracle
 from code_editing.bench.task import materialize
 from code_editing.formats.base import EditFormat
 from code_editing.types import TaskSpec
+
+
+def _tools_to_specs(tool_dicts: list[dict[str, Any]]) -> list[ToolSpec]:
+    """Convert an EditFormat's `.tools()` (Anthropic shape) into ToolSpec."""
+    return [
+        ToolSpec(
+            name=t["name"],
+            description=t.get("description", ""),
+            input_schema=t.get("input_schema", {}),
+        )
+        for t in tool_dicts
+    ]
+
+
+def _resolve_client_and_backend(
+    model: ModelClient,
+    handle: ModelHandle | None,
+) -> tuple[ModelClient, Any, str]:
+    """Pick (client, backend, backend_name) from either a raw client or a handle.
+
+    Backward-compat: when handle is None, returns the raw client with
+    backend=None and backend_name="legacy". The runner then takes the
+    legacy `model.step(tools)` path.
+    """
+    if handle is not None:
+        return handle.client, handle.backend, handle.backend.name
+    return model, None, "legacy"
 
 
 _READ_ONLY_TOOLS = {"view_file", "list_files", "done"}
@@ -63,25 +100,45 @@ def run_trial(
     transcripts_dir: Path | None = None,
     max_consecutive_errors: int = 3,
     max_no_progress_turns: int = 3,
+    handle: ModelHandle | None = None,
 ) -> RunRecord:
+    """Run one (task, model, format) agent trial.
+
+    `handle`, when supplied, drives the model calls through its bundled
+    `ToolBackend` (so the choice of tool-use protocol — native / schema /
+    prompt-JSON — is configurable) and lets OTEL spans nest under the
+    sweep's trial span. When None, the legacy `model.step()` path is
+    used — preserves direct CLI / notebook usage.
+    """
     materialize(task, workdir)
     # Canonicalize once so symlink-bearing roots (e.g. macOS /var -> /private/var)
     # don't trip path comparisons inside the formats.
     workdir = workdir.resolve()
 
+    client, backend, backend_name = _resolve_client_and_backend(model, handle)
+
     system = SYSTEM_BASE + "\n\n" + fmt.system_prompt()
-    model.reset(system)
+    # Backend may want to slot a tool description into the prompt
+    # (PromptJSON does; Native/Schema return "").
+    tool_dicts = fmt.tools()
+    tool_specs = _tools_to_specs(tool_dicts) if backend is not None else []
+    if backend is not None:
+        addendum = backend.system_prompt_addendum(tool_specs)
+        if addendum:
+            system = system + "\n\n" + addendum
+    client.reset(system)
     transcript = Transcript(system=system)
 
     # Initial user message: instructions + (optional) starter file contents
     user_text = _initial_user_message(task, workdir)
-    model.add_user_text(user_text)
+    client.add_user_text(user_text)
     transcript.add_user_text(user_text)
 
     total_usage = TurnUsage()
     turns = 0
     tool_calls = 0
     invalid_tool_calls = 0
+    write_attempts = 0  # subset of tool_calls that targeted file mutation
     consecutive_error_turns = 0
     no_progress_turns = 0
     last_workdir_state: tuple[tuple[str, int, float], ...] | None = None
@@ -91,43 +148,83 @@ def run_trial(
     t0 = time.monotonic()
     while turns < max_turns and not done:
         turns += 1
-        try:
-            msg = model.step(fmt.tools())
-        except Exception as e:  # noqa: BLE001
-            error = f"model_error: {type(e).__name__}: {e}"
-            break
-        transcript.add_assistant(msg)
-        total_usage.input_tokens += msg.usage.input_tokens
-        total_usage.output_tokens += msg.usage.output_tokens
-        total_usage.cache_read_tokens += msg.usage.cache_read_tokens
-        total_usage.cache_creation_tokens += msg.usage.cache_creation_tokens
+        with span_turn(turn_idx=turns, backend=backend_name) as turn_sp:
+            try:
+                with span_llm_request(model=client.name, backend=backend_name) as llm_sp:
+                    if backend is not None:
+                        resp = backend.request(client, tool_specs)
+                        msg_text = resp.raw_text
+                        msg_calls = resp.actions
+                        msg_usage = resp.usage
+                    else:
+                        msg = model.step(tool_dicts)
+                        msg_text = msg.text
+                        msg_calls = msg.tool_calls
+                        msg_usage = msg.usage
+                    record_llm_usage(
+                        llm_sp,
+                        input_tokens=msg_usage.input_tokens,
+                        output_tokens=msg_usage.output_tokens,
+                        cache_read_tokens=msg_usage.cache_read_tokens,
+                        cache_creation_tokens=msg_usage.cache_creation_tokens,
+                    )
+            except Exception as e:  # noqa: BLE001
+                error = f"model_error: {type(e).__name__}: {e}"
+                turn_sp.set_attribute("agent_eval.turn.error", error)
+                break
 
-        if not msg.tool_calls:
-            # Nudge once if model went silent.
-            model.add_user_text(
-                "You did not call any tools. Use the available tools to make edits, "
-                "or call `done` if you are finished."
+            # Build a synthetic AssistantMessage for the transcript so the
+            # serialization format stays stable across backend / legacy paths.
+            from agent_eval.types import AssistantMessage as _AM
+
+            transcript.add_assistant(
+                _AM(text=msg_text, tool_calls=msg_calls, usage=msg_usage, raw={"backend": backend_name})
             )
-            transcript.add_user_text("(nudge: no tool calls)")
-            continue
+            total_usage.input_tokens += msg_usage.input_tokens
+            total_usage.output_tokens += msg_usage.output_tokens
+            total_usage.cache_read_tokens += msg_usage.cache_read_tokens
+            total_usage.cache_creation_tokens += msg_usage.cache_creation_tokens
+            turn_sp.set_attribute("agent_eval.turn.n_actions", len(msg_calls))
+            turn_sp.set_attribute(
+                "agent_eval.turn.tool_names",
+                json.dumps([a.name for a in msg_calls]),
+            )
 
-        results: list[ToolResult] = []
-        turn_had_only_errors = True
-        turn_had_write_attempt = False
-        for call in msg.tool_calls:
-            tool_calls += 1
-            if call.name not in _READ_ONLY_TOOLS:
-                turn_had_write_attempt = True
-            res = fmt.apply(call, workdir)
-            if res.status == "error":
-                invalid_tool_calls += 1
-            else:
-                turn_had_only_errors = False
-            results.append(res)
-            if call.name == "done":
-                done = True
-        model.add_tool_results(results)
-        transcript.add_tool_results(results)
+            if not msg_calls:
+                # Nudge once if model went silent.
+                client.add_user_text(
+                    "You did not call any tools. Use the available tools to make edits, "
+                    "or call `done` if you are finished."
+                )
+                transcript.add_user_text("(nudge: no tool calls)")
+                turn_sp.set_attribute("agent_eval.turn.outcome", "no_actions")
+                continue
+
+            results: list[ToolResult] = []
+            turn_had_only_errors = True
+            turn_had_write_attempt = False
+            for call in msg_calls:
+                tool_calls += 1
+                if call.name not in _READ_ONLY_TOOLS:
+                    turn_had_write_attempt = True
+                    write_attempts += 1
+                with span_tool_call(call.name, call.arguments) as call_sp:
+                    res = fmt.apply(call, workdir)
+                    call_sp.set_attribute("agent_eval.tool.status", res.status)
+                    call_sp.set_attribute("agent_eval.tool.result_chars", len(res.content or ""))
+                if res.status == "error":
+                    invalid_tool_calls += 1
+                else:
+                    turn_had_only_errors = False
+                results.append(res)
+                if call.name == "done":
+                    done = True
+            client.add_tool_results(results)
+            transcript.add_tool_results(results)
+            turn_sp.set_attribute(
+                "agent_eval.turn.outcome",
+                "done" if done else ("dispatched" if not turn_had_only_errors else "all_errors"),
+            )
 
         # --- escape valves to prevent runaway loops ---
         # (a) consecutive turns where every tool call errored
@@ -165,12 +262,12 @@ def run_trial(
     transcript_path = None
     if transcripts_dir:
         transcripts_dir.mkdir(parents=True, exist_ok=True)
-        tp = transcripts_dir / f"{task.task_id}__{model.name}__{fmt.name}.json"
+        tp = transcripts_dir / f"{task.task_id}__{client.name}__{fmt.name}.json"
         tp.write_text(
             json.dumps(
                 {
                     "task_id": task.task_id,
-                    "model": model.name,
+                    "model": client.name,
                     "format": fmt.name,
                     "system": transcript.system,
                     "entries": transcript.entries,
@@ -188,9 +285,17 @@ def run_trial(
         )
         transcript_path = str(tp)
 
+    failure_mode = classify_code_editing(
+        oracle_passed=bool(oracle.passed),
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid_tool_calls,
+        write_attempts=write_attempts,
+        error=error,
+    )
+
     return RunRecord(
         task_id=task.task_id,
-        model=model.name,
+        model=client.name,
         condition=fmt.name,
         passed=oracle.passed,
         turns=turns,
@@ -198,10 +303,12 @@ def run_trial(
         invalid_tool_calls=invalid_tool_calls,
         usage=total_usage,
         latency_seconds=latency,
+        cost_usd=cost_usd(client.name, total_usage),
         stdout=oracle.stdout[-2000:],
         stderr=oracle.stderr[-2000:],
         error=error,
         transcript_path=transcript_path,
+        extra={"failure_mode": failure_mode, "write_attempts": write_attempts},
     )
 
 
@@ -237,6 +344,7 @@ def run_structured(
     fmt: EditFormat,
     workdir: Path,
     transcripts_dir: Path | None = None,
+    handle: ModelHandle | None = None,
 ) -> RunRecord:
     """One LLM call. Model outputs JSON change-set as text. No tool_use API."""
 
@@ -245,6 +353,8 @@ def run_structured(
 
     materialize(task, workdir)
     workdir = workdir.resolve()
+
+    client, _backend, backend_name = _resolve_client_and_backend(model, handle)
 
     # Serialize the format's tool schemas into the system prompt so the model
     # knows what ops are available.
@@ -258,18 +368,26 @@ def run_structured(
     ])
     user_text = _full_context_message(task, workdir)
 
-    model.reset(system)
-    model.add_user_text(user_text)
+    client.reset(system)
+    client.add_user_text(user_text)
     transcript = Transcript(system=system)
     transcript.add_user_text(user_text)
 
     t0 = time.monotonic()
     try:
-        msg = model.step([])  # empty tools list — model must output text
+        with span_llm_request(model=client.name, backend=backend_name) as llm_sp:
+            msg = client.step([])  # empty tools list — model must output text
+            record_llm_usage(
+                llm_sp,
+                input_tokens=msg.usage.input_tokens,
+                output_tokens=msg.usage.output_tokens,
+                cache_read_tokens=msg.usage.cache_read_tokens,
+                cache_creation_tokens=msg.usage.cache_creation_tokens,
+            )
     except Exception as e:  # noqa: BLE001
         latency = time.monotonic() - t0
         return RunRecord(
-            task_id=task.task_id, model=model.name, condition=fmt.name,
+            task_id=task.task_id, model=client.name, condition=fmt.name,
             passed=False, turns=1, tool_calls=0, invalid_tool_calls=0,
             usage=TurnUsage(), latency_seconds=latency,
             error=f"model_error: {type(e).__name__}: {e}",
@@ -314,11 +432,11 @@ def run_structured(
     transcript_path = None
     if transcripts_dir:
         transcripts_dir.mkdir(parents=True, exist_ok=True)
-        tp = transcripts_dir / f"{task.task_id}__{model.name}__{fmt.name}.json"
+        tp = transcripts_dir / f"{task.task_id}__{client.name}__{fmt.name}.json"
         tp.write_text(
             _json.dumps(
                 {
-                    "task_id": task.task_id, "model": model.name, "format": fmt.name,
+                    "task_id": task.task_id, "model": client.name, "format": fmt.name,
                     "mode": "structured",
                     "system": transcript.system, "entries": transcript.entries,
                     "oracle": {
@@ -332,13 +450,22 @@ def run_structured(
         )
         transcript_path = str(tp)
 
+    failure_mode = classify_code_editing(
+        oracle_passed=bool(oracle.passed),
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid,
+        write_attempts=tool_calls,  # structured mode has no read-only tools
+        error=error,
+    )
     return RunRecord(
-        task_id=task.task_id, model=model.name, condition=fmt.name,
+        task_id=task.task_id, model=client.name, condition=fmt.name,
         passed=oracle.passed, turns=1,
         tool_calls=tool_calls, invalid_tool_calls=invalid,
         usage=msg.usage, latency_seconds=latency,
+        cost_usd=cost_usd(client.name, msg.usage),
         stdout=oracle.stdout[-2000:], stderr=oracle.stderr[-2000:],
         error=error, transcript_path=transcript_path,
+        extra={"failure_mode": failure_mode},
     )
 
 
@@ -447,6 +574,7 @@ def run_single_shot(
     fmt: EditFormat,
     workdir: Path,
     transcripts_dir: Path | None = None,
+    handle: ModelHandle | None = None,
 ) -> RunRecord:
     """One LLM call. Full project context up front. All edits in one response.
 
@@ -459,6 +587,8 @@ def run_single_shot(
     materialize(task, workdir)
     workdir = workdir.resolve()
 
+    client, _backend, backend_name = _resolve_client_and_backend(model, handle)
+
     edit_tools = [t for t in fmt.tools() if t["name"] not in _READ_ONLY_TOOLS]
     system = "\n\n".join([
         SYSTEM_BASE_SINGLE_SHOT,
@@ -467,20 +597,28 @@ def run_single_shot(
     ])
     user_text = _full_context_message(task, workdir)
 
-    model.reset(system)
-    model.add_user_text(user_text)
+    client.reset(system)
+    client.add_user_text(user_text)
     transcript = Transcript(system=system)
     transcript.add_user_text(user_text)
 
     error: str | None = None
     t0 = time.monotonic()
     try:
-        msg = model.step(edit_tools)
+        with span_llm_request(model=client.name, backend=backend_name) as llm_sp:
+            msg = client.step(edit_tools)
+            record_llm_usage(
+                llm_sp,
+                input_tokens=msg.usage.input_tokens,
+                output_tokens=msg.usage.output_tokens,
+                cache_read_tokens=msg.usage.cache_read_tokens,
+                cache_creation_tokens=msg.usage.cache_creation_tokens,
+            )
     except Exception as e:  # noqa: BLE001
         latency = time.monotonic() - t0
         return RunRecord(
             task_id=task.task_id,
-            model=model.name,
+            model=client.name,
             condition=fmt.name,
             passed=False,
             turns=1,
@@ -520,12 +658,12 @@ def run_single_shot(
     transcript_path = None
     if transcripts_dir:
         transcripts_dir.mkdir(parents=True, exist_ok=True)
-        tp = transcripts_dir / f"{task.task_id}__{model.name}__{fmt.name}.json"
+        tp = transcripts_dir / f"{task.task_id}__{client.name}__{fmt.name}.json"
         tp.write_text(
             _json.dumps(
                 {
                     "task_id": task.task_id,
-                    "model": model.name,
+                    "model": client.name,
                     "format": fmt.name,
                     "mode": "single_shot",
                     "system": transcript.system,
@@ -544,9 +682,16 @@ def run_single_shot(
         )
         transcript_path = str(tp)
 
+    failure_mode = classify_code_editing(
+        oracle_passed=bool(oracle.passed),
+        tool_calls=tool_calls,
+        invalid_tool_calls=invalid,
+        write_attempts=tool_calls,  # single_shot uses only edit tools
+        error=error,
+    )
     return RunRecord(
         task_id=task.task_id,
-        model=model.name,
+        model=client.name,
         condition=fmt.name,
         passed=oracle.passed,
         turns=1,
@@ -554,10 +699,12 @@ def run_single_shot(
         invalid_tool_calls=invalid,
         usage=msg.usage,
         latency_seconds=latency,
+        cost_usd=cost_usd(client.name, msg.usage),
         stdout=oracle.stdout[-2000:],
         stderr=oracle.stderr[-2000:],
         error=error,
         transcript_path=transcript_path,
+        extra={"failure_mode": failure_mode},
     )
 
 
