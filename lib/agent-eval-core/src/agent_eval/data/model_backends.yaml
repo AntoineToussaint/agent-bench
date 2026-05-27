@@ -49,5 +49,14 @@ defaults:
   gpt-5: native
   gpt-5-nano: native
 
+  # Google Gemini — UNTESTED. Native = function calling via the
+  # `tools=[Tool(function_declarations=...)]` channel. Worth adding to
+  # the empirical comparison: Gemini's tool-use RL signature is distinct
+  # from Anthropic's and OpenAI's, so format-anchoring behavior is the
+  # most likely to surprise here.
+  gemini-2.5-pro: native
+  gemini-2.5-flash: native
+  gemini-2.5-flash-lite: native
+
   # Fallback for any unknown model.
   default: native

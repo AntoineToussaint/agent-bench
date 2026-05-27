@@ -15,6 +15,7 @@ from agent_eval.models.anthropic_client import (
     ANTHROPIC_MODELS,
     make_anthropic_client,
 )
+from agent_eval.models.google_client import GOOGLE_MODELS, make_google_client
 from agent_eval.models.openai_client import OPENAI_MODELS, make_openai_client
 from agent_eval.models.openrouter_client import (
     OPENROUTER_MODELS,
@@ -23,7 +24,12 @@ from agent_eval.models.openrouter_client import (
 from agent_eval.types import ModelClient
 
 
-MODELS: dict[str, str] = {**ANTHROPIC_MODELS, **OPENAI_MODELS, **OPENROUTER_MODELS}
+MODELS: dict[str, str] = {
+    **ANTHROPIC_MODELS,
+    **OPENAI_MODELS,
+    **GOOGLE_MODELS,
+    **OPENROUTER_MODELS,
+}
 
 
 def make_client(model: str) -> ModelClient:
@@ -35,6 +41,8 @@ def make_client(model: str) -> ModelClient:
         client = make_anthropic_client(ANTHROPIC_MODELS[model])
     elif model in OPENAI_MODELS:
         client = make_openai_client(OPENAI_MODELS[model])
+    elif model in GOOGLE_MODELS:
+        client = make_google_client(GOOGLE_MODELS[model])
     elif model in OPENROUTER_MODELS:
         client = make_openrouter_client(OPENROUTER_MODELS[model])
     else:

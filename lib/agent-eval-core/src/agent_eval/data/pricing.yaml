@@ -27,6 +27,15 @@ providers:
       gpt-5:        { input: 1.25, output: 10.00, cache_read: 0.13, cache_write: 1.25 }
       gpt-5-mini:   { input: 0.25, output:  2.00, cache_read: 0.025, cache_write: 0.25 }
 
+  google:
+    updated: 2026-05
+    source: https://ai.google.dev/gemini-api/docs/pricing
+    # Pro tier prices reflect the ≤200k-token prompt band; >200k is 2x.
+    models:
+      gemini-2.5-pro:        { input: 1.25, output: 10.00, cache_read: 0.125 }
+      gemini-2.5-flash:      { input: 0.30, output:  2.50, cache_read: 0.03 }
+      gemini-2.5-flash-lite: { input: 0.10, output:  0.40 }
+
   openrouter:
     updated: 2026-05
     source: https://openrouter.ai/models
