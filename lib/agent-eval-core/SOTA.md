@@ -62,10 +62,13 @@ under-specified."
   — lazy schema loading + dynamic tool gating; explicitly designs the
   prompt layout (stable prefix vs volatile suffix) to minimize cache
   invalidation when tools rotate.
-- **["Just Ask" (Jan 2026)](https://arxiv.org/pdf/2601.21233)** —
-  documents that Claude Code / Cursor / Copilot system prompts are
-  hand-authored. **Explicit confirmation that scope routing is
-  hand-tuned in production with no published A/B framework.**
+- **["Just Ask" (Jan 2026)](https://arxiv.org/abs/2601.21233)** —
+  system-prompt extraction attack; recovers system prompts from 41
+  frontier commercial code agents using UCB-based strategy selection.
+  Cite carefully: the paper's thesis is a security vulnerability, not
+  an evaluation framework. Our use is *indirect* — that prompts are
+  recoverable as monolithic artifacts is consistent with them being
+  hand-authored with no A/B regime, but the paper doesn't claim this.
 
 ### For cache-aware harness design (cold/observed/warm)
 - **["Don't Break the Cache" (Jan 2026)](https://arxiv.org/html/2601.06007v2)**
@@ -97,8 +100,10 @@ under-specified."
   actively discovers tools mid-task.
 - **[MCPAgentBench (Dec 2025)](https://arxiv.org/html/2512.24565v1)**
   — real-world MCP task benchmark.
-- **[ToolACE-MCP (Jan 2026)](https://arxiv.org/html/2601.08276v1)** —
-  history-aware tool routing.
+- **[ACE-Router (Jan 2026)](https://arxiv.org/abs/2601.08276)** —
+  history-aware routing across MCP tools + the broader agent web;
+  trains a routing agent on multi-turn trajectories synthesized from
+  a dependency graph over the candidate ecosystem.
 
 **Underserved:** cache-invalidation cost when tools change is
 acknowledged but barely measured. No benchmark reports tokens-billed-
@@ -134,15 +139,20 @@ instrument.
 
 ## Verification status
 
-The Jan/Apr 2026 arxiv IDs in this file were returned by a survey
-subagent; the `2601.` / `2604.` YYMM prefixes are plausible for
-papers posted Jan/Apr 2026 but were not independently verified at
-write time. Spot-check before citing in writing:
+All seven 2025-12 / 2026 arxiv IDs were verified against arxiv on
+2026-05-28. Five are clean; two needed correction:
 
-- `2601.16746` (SWE-Pruner)
-- `2601.21233` ("Just Ask")
-- `2604.21816v1` (Tool Attention)
-- `2601.06007v2` ("Don't Break the Cache")
-- `2601.08276v1` (ToolACE-MCP)
-- `2512.24565v1` (MCPAgentBench)
-- `2512.12818` (Hindsight is 20/20)
+Clean:
+- `2601.16746` SWE-Pruner — title + finding accurate
+- `2604.21816` Tool Attention — title + finding accurate
+- `2601.06007` Don't Break the Cache — title + finding accurate
+- `2512.24565` MCPAgentBench — title + finding accurate
+- `2512.12818` Hindsight is 20/20 — title + finding accurate
+
+Corrected:
+- `2601.21233` "Just Ask" — paper is a system-prompt **extraction
+  attack** on 41 commercial code agents, not an evaluation framework.
+  Our use is indirect; description rewritten accordingly.
+- `2601.08276` was cited as "ToolACE-MCP"; actual title is
+  **"ACE-Router"**. Subject matter (history-aware MCP routing) is
+  correct; name updated.
