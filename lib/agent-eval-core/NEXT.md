@@ -1,7 +1,11 @@
 # Next
 
-Open threads from the most recent session. Listed in roughly increasing
-ambition — pick whichever fits the next sitting, not necessarily in order.
+Backlog of open threads. **The plan of record is `STRATEGY.md`** — it
+sequences this work (localization-first) and maps several threads below
+onto concrete steps. Read that first; this file is the menu it draws from.
+
+Listed in roughly increasing ambition — pick whichever fits the next
+sitting, not necessarily in order.
 
 For *what we measure today* see `DIMENSIONS.md`. For *how the harness
 biases observations* see `HARNESS.md`. For *failure taxonomy* see
