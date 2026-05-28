@@ -15,9 +15,12 @@ across the field.
 
 ### For "Generalize ContextPolicy → ContextEngineering"
 
-The Protocol shape we're aiming at has to cover at least the distinct
-families cited below. That breadth is what justifies "deliberately
-under-specified."
+This thread isn't anchored to a single paper — it's the substrate
+that has to subsume all the families below. The breadth across the
+other subsections (distillation, scope routing, atom stores, working
+memory, dynamic tool surfaces) is exactly what justifies a
+"deliberately under-specified" Protocol: no one abstraction in the
+literature covers more than one of them.
 
 ### For LLM-based distillation
 - **[SWE-Pruner (Jan 2026)](https://arxiv.org/pdf/2601.16746)** — 0.6B
@@ -62,13 +65,6 @@ under-specified."
   — lazy schema loading + dynamic tool gating; explicitly designs the
   prompt layout (stable prefix vs volatile suffix) to minimize cache
   invalidation when tools rotate.
-- **["Just Ask" (Jan 2026)](https://arxiv.org/abs/2601.21233)** —
-  system-prompt extraction attack; recovers system prompts from 41
-  frontier commercial code agents using UCB-based strategy selection.
-  Cite carefully: the paper's thesis is a security vulnerability, not
-  an evaluation framework. Our use is *indirect* — that prompts are
-  recoverable as monolithic artifacts is consistent with them being
-  hand-authored with no A/B regime, but the paper doesn't claim this.
 
 ### For cache-aware harness design (cold/observed/warm)
 - **["Don't Break the Cache" (Jan 2026)](https://arxiv.org/html/2601.06007v2)**
@@ -110,6 +106,15 @@ acknowledged but barely measured. No benchmark reports tokens-billed-
 as-cache-write vs cache-read when tool surfaces rotate. Tool Attention
 is the only work that *designs around* it.
 
+### Adjacent (not load-bearing)
+- **["Just Ask" (Jan 2026)](https://arxiv.org/abs/2601.21233)** —
+  system-prompt **extraction attack**; recovers prompts from 41
+  frontier commercial code agents via UCB-based strategy selection.
+  Not an evaluation framework. Listed only as evidence that production
+  system prompts exist as recoverable monolithic artifacts — it does
+  *not* support any claim about A/B testing or hand-authoring, so
+  don't cite it for gap #1.
+
 ---
 
 ## Cross-cutting honest gaps
@@ -117,15 +122,19 @@ is the only work that *designs around* it.
 Five things nobody in published work has done. Each is a position the
 bench can claim.
 
-1. Most production context-engineering wins (Claude Code, Cursor)
-   are **hand-tuned system prompts with no released A/B data.**
+1. Production context-engineering (Claude Code, Cursor) is delivered
+   as **system prompts with no released A/B data** — an observation
+   from the absence of published evaluations, not a cited finding. We
+   have not found a paper that ablates a production prompt; if one
+   exists this gap shrinks.
 2. Memory benchmarks score read-side QA; **write-side correctness,
    contradiction-handling, scratchpad ROI** are unmeasured.
 3. **Cold-start / cache-warmth as a cost dimension** is named in
    blog posts but absent from peer-reviewed eval.
 4. No benchmark systematically ablates **brief shape** for sub-agent
-   handoff; the 3-10× token-overhead figure is widely cited but not
-   decomposed.
+   handoff; the token-overhead multiplier (15× in Anthropic's
+   multi-agent report, line above) is widely cited but never
+   decomposed by what the brief actually contains.
 5. No instruction-gating benchmark with conditional ground truth
    (rule should fire iff predicate X) exists. **The bun-vs-npm
    problem is unmeasured.**
@@ -139,10 +148,19 @@ instrument.
 
 ## Verification status
 
-All seven 2025-12 / 2026 arxiv IDs were verified against arxiv on
-2026-05-28. Five are clean; two needed correction:
+This file cites ~18 arxiv links. Only the seven flagged
+2025-12 / 2026 IDs (the recent-prefix ones most likely to be
+hallucinated) were checked against arxiv on 2026-05-28. Five clean,
+two corrected — below.
 
-Clean:
+**Not yet verified:** the Survey (2507.13334), Agentic Plan Caching
+(2506.14852), AgentAsk (2510.07593), Zep/Graphiti (2501.13956),
+A-MEM (2502.12110), MemTool (2507.21428), MEMTRACK (2510.01353),
+ScaleMCP (2505.06416), MCP-Zero (2506.01056). MetaGPT, AutoGen, and
+Reflexion are well-known and treated as safe. Verify the rest before
+citing externally.
+
+Checked — clean:
 - `2601.16746` SWE-Pruner — title + finding accurate
 - `2604.21816` Tool Attention — title + finding accurate
 - `2601.06007` Don't Break the Cache — title + finding accurate
@@ -152,7 +170,8 @@ Clean:
 Corrected:
 - `2601.21233` "Just Ask" — paper is a system-prompt **extraction
   attack** on 41 commercial code agents, not an evaluation framework.
-  Our use is indirect; description rewritten accordingly.
+  Demoted to the "Adjacent (not load-bearing)" list; no longer
+  supports gap #1.
 - `2601.08276` was cited as "ToolACE-MCP"; actual title is
   **"ACE-Router"**. Subject matter (history-aware MCP routing) is
   correct; name updated.
