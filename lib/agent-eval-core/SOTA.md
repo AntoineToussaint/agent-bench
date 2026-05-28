@@ -148,26 +148,12 @@ instrument.
 
 ## Verification status
 
-This file cites ~18 arxiv links. Only the seven flagged
-2025-12 / 2026 IDs (the recent-prefix ones most likely to be
-hallucinated) were checked against arxiv on 2026-05-28. Five clean,
-two corrected — below.
+All arxiv IDs in this file were verified against arxiv (title + ID
+confirmed) on 2026-05-28. MetaGPT, AutoGen, and Reflexion are
+well-known classics, assumed safe and not re-fetched. Titles and
+findings match the abstracts except for the two corrected below.
 
-**Not yet verified:** the Survey (2507.13334), Agentic Plan Caching
-(2506.14852), AgentAsk (2510.07593), Zep/Graphiti (2501.13956),
-A-MEM (2502.12110), MemTool (2507.21428), MEMTRACK (2510.01353),
-ScaleMCP (2505.06416), MCP-Zero (2506.01056). MetaGPT, AutoGen, and
-Reflexion are well-known and treated as safe. Verify the rest before
-citing externally.
-
-Checked — clean:
-- `2601.16746` SWE-Pruner — title + finding accurate
-- `2604.21816` Tool Attention — title + finding accurate
-- `2601.06007` Don't Break the Cache — title + finding accurate
-- `2512.24565` MCPAgentBench — title + finding accurate
-- `2512.12818` Hindsight is 20/20 — title + finding accurate
-
-Corrected:
+Corrected during verification:
 - `2601.21233` "Just Ask" — paper is a system-prompt **extraction
   attack** on 41 commercial code agents, not an evaluation framework.
   Demoted to the "Adjacent (not load-bearing)" list; no longer
@@ -175,3 +161,7 @@ Corrected:
 - `2601.08276` was cited as "ToolACE-MCP"; actual title is
   **"ACE-Router"**. Subject matter (history-aware MCP routing) is
   correct; name updated.
+
+Minor note: `2501.13956`'s formal title is "Zep: A Temporal Knowledge
+Graph Architecture for Agent Memory" (Graphiti is its open-source
+engine) — our "Zep / Graphiti" label is accurate enough to keep.
