@@ -94,7 +94,7 @@ def _load_instance_universe(split: str) -> list[tuple[str, str]]:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--split", choices=["lite", "verified"], default="lite")
+    p.add_argument("--split", choices=["lite", "verified"], default="verified")
     p.add_argument(
         "--since",
         default=None,

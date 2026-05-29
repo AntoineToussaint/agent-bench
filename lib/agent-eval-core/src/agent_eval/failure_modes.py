@@ -44,6 +44,10 @@ FailureMode = Literal[
     "path_fabrication",
     "superficial_information_matching",
     "context_amnesia",
+    # Tier 1b: Localization-specific (which WAY did localization fail)
+    "localization_missing",        # missed gold files (recall < 1, some right)
+    "localization_irrelevant",     # predicted wrong region entirely (zero hits)
+    "localization_too_many",       # found all gold but buried in false positives
     # Tier 2: Process failures
     "step_repetition",
     "premature_termination",
@@ -63,6 +67,66 @@ FailureMode = Literal[
     "read_only_loop",              # agent only viewed files, never edited
     "edit_apply_error",            # format.apply() returned errors on all attempts
 ]
+
+
+# ============ taxonomy tree ============
+#
+# The failure modes form a tree: a few CATEGORIES, each with leaf modes. The
+# flat `FailureMode` strings stay the wire/return type (lots of code depends on
+# them); this tree is the structure OVER them — for reporting ("group failures
+# by category"), for docs, and so a new leaf has an obvious home.
+# `category_of()` / `taxonomy_path()` look a mode up.
+
+TAXONOMY: dict[str, dict[str, str]] = {
+    "localization": {
+        "localization_missing": "missed gold files (recall < 1; found some)",
+        "localization_irrelevant": "predicted the wrong region entirely (zero gold hits)",
+        "localization_too_many": "found all gold but buried in false positives (low precision)",
+        "path_fabrication": "predicted a path never observed in the repo",
+        "superficial_information_matching": "matched issue keywords to filenames, not semantics",
+    },
+    "memory": {
+        "context_amnesia": "lost earlier context / repeated already-known work",
+    },
+    "process": {
+        "step_repetition": "consecutive turns with no new (tool, args) signature",
+        "premature_termination": "ended with too little exploration",
+        "reasoning_action_mismatch": "stated plan and emitted action disagree",
+        "blind_strategy_switching": "abandoned a working approach without cause",
+    },
+    "protocol": {
+        "format_anchoring": "emitted tool_use syntax inside a non-tool_use protocol",
+        "harness_blocked_termination": "couldn't signal done under a forced-tool constraint",
+        "harness_blocked_exploration": "no tool channel (one-shot) so couldn't explore",
+    },
+    "tool_selection": {
+        "hallucinated_tool": "called a tool not in the surfaced catalog",
+        "wrong_tool_selected": "called a real tool but not the gold one",
+        "missing_required_call": "never made one of the required calls",
+        "forbidden_tool_called": "called a tool the task explicitly forbids",
+    },
+    "code_editing": {
+        "oracle_failed": "edits applied, tests didn't pass",
+        "read_only_loop": "only viewed files, never edited",
+        "edit_apply_error": "edit format failed to apply on all attempts",
+    },
+}
+
+# Reverse index: mode -> category. Built once at import.
+_MODE_CATEGORY: dict[str, str] = {
+    mode: cat for cat, leaves in TAXONOMY.items() for mode in leaves
+}
+
+
+def category_of(mode: str) -> str | None:
+    """Top-level category for a failure mode, or None if unknown."""
+    return _MODE_CATEGORY.get(mode)
+
+
+def taxonomy_path(mode: str) -> tuple[str, str] | None:
+    """(category, mode) path through the tree, or None if unknown."""
+    cat = _MODE_CATEGORY.get(mode)
+    return (cat, mode) if cat else None
 
 
 _MIMICRY_RE = re.compile(r"<function_calls>|<invoke\b", re.IGNORECASE)
@@ -373,6 +437,44 @@ def classify_tool_selection(
         return "missing_required_call"
     if schema_invalid_calls:
         return "edit_apply_error"  # closest generic mode
+    return None
+
+
+def classify_localization(
+    predicted_files: list[str],
+    gold_files: set[str] | frozenset[str],
+    *,
+    too_many_fp_ratio: float = 1.0,
+) -> FailureMode | None:
+    """Diagnose WHICH WAY a localization attempt fell short.
+
+    The localization sub-tree (TAXONOMY["localization"]). Distinguishes the
+    three flavors of getting the file set wrong:
+
+      - localization_irrelevant: zero gold hits — looked in the wrong region.
+      - localization_missing:    found some gold but missed the rest (recall<1).
+      - localization_too_many:   found ALL gold (recall==1) but with excessive
+                                 false positives (fp count / gold count >
+                                 too_many_fp_ratio) — a precision failure that
+                                 the binary `passed` flag hides.
+
+    Returns None when localization is clean (all gold found, FPs within budget).
+    Unlike `classify_output`, this looks only at the predicted-vs-gold sets, so
+    it complements the process/protocol diagnosis rather than replacing it.
+    """
+    pred = {_norm(p) for p in predicted_files}
+    gold = {_norm(g) for g in gold_files}
+    if not gold:
+        return None
+    hits = pred & gold
+    missing = gold - pred
+    fp = len(pred - gold)
+
+    if missing:
+        return "localization_irrelevant" if not hits else "localization_missing"
+    # recall == 1 here; the only remaining failure is too many false positives.
+    if fp > too_many_fp_ratio * len(gold):
+        return "localization_too_many"
     return None
 
 

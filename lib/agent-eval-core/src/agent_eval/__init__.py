@@ -29,6 +29,23 @@ from agent_eval.types import (
     Transcript,
     TurnUsage,
 )
+from agent_eval.difficulty import (
+    BANDS,
+    Band,
+    CsvDifficultySource,
+    DifficultyRecord,
+    DifficultySource,
+    band_for,
+    load_difficulty,
+    sample_band,
+    stratify,
+)
+from agent_eval.failure_modes import (
+    TAXONOMY,
+    category_of,
+    classify_localization,
+    taxonomy_path,
+)
 from agent_eval.models import MODELS, default_backend_for, make_client, make_model
 from agent_eval.pricing import cost_usd, price_table
 from agent_eval.sweep import Budget, Sweep
@@ -44,9 +61,14 @@ from agent_eval.transcripts import dump_transcript, load_transcript, summarize_t
 
 __all__ = [
     "AssistantMessage",
+    "BANDS",
+    "Band",
     "Budget",
     "CANONICAL_PHASES",
     "ContextPolicy",
+    "CsvDifficultySource",
+    "DifficultyRecord",
+    "DifficultySource",
     "KeepEverything",
     "MODELS",
     "ModelClient",
@@ -59,18 +81,26 @@ __all__ = [
     "SlidingWindow",
     "Snapshot",
     "Sweep",
+    "TAXONOMY",
     "ToolCall",
     "ToolResult",
     "ToolResultElision",
     "Transcript",
     "TurnUsage",
+    "band_for",
+    "category_of",
+    "classify_localization",
     "cost_usd",
     "default_backend_for",
     "dump_transcript",
+    "load_difficulty",
     "load_transcript",
     "make_client",
     "make_model",
     "price_table",
+    "sample_band",
+    "stratify",
+    "taxonomy_path",
     "summarize_transcript",
 ]
 

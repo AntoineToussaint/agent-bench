@@ -21,9 +21,41 @@ A named taxonomy lets us:
   Path Fabrication on Haiku × PromptJSON — does YOUR agent fall into
   the same trap?*
 
+## The tree
+
+The taxonomy is an explicit tree in `agent_eval.failure_modes.TAXONOMY`
+(category → {leaf mode: description}). The flat `FailureMode` strings stay the
+return/wire type; the tree is the structure over them. `category_of(mode)` and
+`taxonomy_path(mode)` look a mode up; group failures by category for reporting.
+
+```
+localization     missed/mislocated the files to edit
+  ├── localization_missing       found some gold, missed the rest (recall < 1)
+  ├── localization_irrelevant    zero gold hits — wrong region entirely
+  ├── localization_too_many      found all gold but buried in false positives
+  ├── path_fabrication           predicted a path never observed in the repo
+  └── superficial_information_matching  matched issue keywords to filenames
+memory
+  └── context_amnesia            lost earlier context / repeated known work
+process          had the info, used it wrong
+  ├── step_repetition · premature_termination
+  └── reasoning_action_mismatch · blind_strategy_switching
+protocol         harness/protocol blocked success regardless of model
+  └── format_anchoring · harness_blocked_termination · harness_blocked_exploration
+tool_selection   (catalog tasks)  hallucinated_tool · wrong_tool_selected · missing_required_call · forbidden_tool_called
+code_editing     (edit-until-tests-pass)  oracle_failed · read_only_loop · edit_apply_error
+```
+
+The `localization_*` leaves answer *which way* localization failed — the
+"missing / too many / irrelevant" distinction — via
+`classify_localization(predicted, gold)`. They're localization-specific; the
+rest of the `localization` category and the other categories are shared across
+experiment shapes.
+
 ## Reading guide
 
-The taxonomy has 17 categories grouped into 5 tiers:
+The taxonomy groups leaf modes into the categories above (originally framed as
+5 tiers):
 
 1. **Information failures** (3) — model failed to *acquire* the correct
    information needed to answer.
