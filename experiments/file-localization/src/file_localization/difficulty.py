@@ -72,4 +72,59 @@ def load_swebench_band(
     return to_localization_tasks(raw)
 
 
-__all__ = ["band_instance_ids", "load_swebench_band"]
+def load_verified_enrichment(
+    csv_path: Path | str,
+) -> dict[str, dict]:
+    """Read the SWE-bench Verified enrichment CSV (built by
+    `scripts/build_verified_enrichment.py`) into instance_id -> row.
+
+    Numeric cells are parsed to float/int where possible; blanks become None.
+    Columns: difficulty (str bucket), underspecified / false_negative /
+    other_major_issues (0-3 severity), ref_solve_rate, ref_cost_avg, and per
+    reference model cost_/calls_/resolved_.
+    """
+    import csv as _csv
+
+    def _coerce(v: str):
+        if v == "" or v is None:
+            return None
+        try:
+            f = float(v)
+            return int(f) if f.is_integer() else f
+        except ValueError:
+            return v
+
+    out: dict[str, dict] = {}
+    with open(csv_path, newline="") as fh:
+        for row in _csv.DictReader(fh):
+            iid = row.pop("instance_id")
+            # difficulty stays a string bucket; everything else coerces.
+            parsed = {"difficulty": row.get("difficulty", "")}
+            for k, v in row.items():
+                if k == "difficulty":
+                    continue
+                parsed[k] = _coerce(v)
+            out[iid] = parsed
+    return out
+
+
+def is_clean(enrichment_row: dict, *, severity_threshold: float = 2.0) -> bool:
+    """True if a task is NOT flagged contaminated/contested.
+
+    Drops instances where `underspecified` or `false_negative` severity is at
+    or above `severity_threshold` (OpenAI's ≥2 = "severe"). Use to filter out
+    tasks whose pass/fail signal is untrustworthy before scoring localization.
+    """
+    for flag in ("underspecified", "false_negative"):
+        v = enrichment_row.get(flag)
+        if isinstance(v, (int, float)) and v >= severity_threshold:
+            return False
+    return True
+
+
+__all__ = [
+    "band_instance_ids",
+    "is_clean",
+    "load_swebench_band",
+    "load_verified_enrichment",
+]
