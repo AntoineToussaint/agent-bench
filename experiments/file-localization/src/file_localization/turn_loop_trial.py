@@ -134,6 +134,7 @@ def make_turn_loop_trial_with_backend(
     fp_penalty: float = 0.05,
     top_k: int | None = None,
     transcripts_dir: "Path | None" = None,
+    emit_session_dir: "Path | None" = None,
 ):
     """Factory: build a Trial that drives a turn loop.
 
@@ -416,6 +417,38 @@ def make_turn_loop_trial_with_backend(
             cache_read_tokens=cache_r,
             cache_creation_tokens=cache_w,
         )
+
+        # Emit the phase-trace control object (TRACE.md). Localization is one
+        # phase, read-only, so this is a single `localize` node under a root —
+        # the unit a contextual bandit over PhaseConfig arms will compare
+        # (STRATEGY.md Step 2). Optional: only when a dir is given.
+        session_path: str | None = None
+        if emit_session_dir is not None:
+            from opentelemetry import trace as _otel_trace2
+
+            from file_localization.phase import localization_session
+
+            _ctx = _otel_trace2.get_current_span().get_span_context()
+            _span_id = format(_ctx.span_id, "016x") if _ctx and _ctx.span_id else None
+            _trace_id = format(_ctx.trace_id, "032x") if _ctx and _ctx.trace_id else None
+            sess = localization_session(
+                task=task,
+                model=client.name,
+                prompt_id=bk.name,
+                context_strategy=(
+                    handle.context_policy.name if handle.context_policy else "none"
+                ),
+                backend=bk.name,
+                transcript=transcript,
+                score=s,
+                submitted=submitted,
+                span_id=_span_id,
+                trace_id=_trace_id,
+            )
+            _p = Path(emit_session_dir) / f"{task.task_id}__{client.name}__{condition}.jsonl"
+            sess.to_jsonl(_p)
+            session_path = str(_p)
+
         rec = RunRecord(
             task_id=task.task_id,
             model=client.name,
@@ -465,6 +498,7 @@ def make_turn_loop_trial_with_backend(
                 "cache_hit_rate": (
                     cache_r / (in_tok + cache_r) if (in_tok + cache_r) > 0 else 0.0
                 ),
+                "session_path": session_path,
             },
         )
         if transcripts_dir:
@@ -483,6 +517,7 @@ def make_turn_loop_trial(
     fp_penalty: float = 0.05,
     top_k: int | None = None,
     transcripts_dir: "Path | None" = None,
+    emit_session_dir: "Path | None" = None,
 ):
     """Default factory: use whichever backend the ModelHandle carries.
 
@@ -500,6 +535,7 @@ def make_turn_loop_trial(
         fp_penalty=fp_penalty,
         top_k=top_k,
         transcripts_dir=transcripts_dir,
+        emit_session_dir=emit_session_dir,
     )
 
 

@@ -5,12 +5,17 @@ platform records, scores, debugs, and forks against. Grounded in two
 verified SOTA digs (2026-05-29); sources inline.
 
 > **Status:** the `PhaseNode` / `SessionTrace` data model below is implemented
-> in `src/agent_eval/trace.py` and proven end-to-end on the localization phase
-> in `tests/test_trace.py` (fork into two config arms → per-phase oracle reward
-> → pick the winner → JSONL round-trip), with no model calls and no snapshot
-> infra (localization is read-only). **Next:** wire it into the live
-> localization turn-loop so a real run emits a `SessionTrace`, then add the
-> contextual bandit over `PhaseConfig` arms (STRATEGY.md Step 2).
+> in `src/agent_eval/trace.py` (proven in `tests/test_trace.py`) **and wired
+> into the live localization turn-loop**: pass `emit_session_dir=...` to the
+> localization trial and a real run writes a one-phase `SessionTrace` (root +
+> one `localize` node) whose reward is the localization `composite` score
+> (`kind="oracle"`) and whose config is the `{model, prompt_id,
+> context_strategy}` bundle — the unit the Step-2 bandit compares. The path
+> lands in `RunRecord.extra["session_path"]`. Offline-tested with a stub client
+> (`experiments/file-localization/tests/test_session_emit.py`), no API spend.
+> **Next:** the contextual bandit over `PhaseConfig` arms (STRATEGY.md Step 2) —
+> the first defensible result: does per-phase config selection beat the best
+> single config?
 
 ---
 
