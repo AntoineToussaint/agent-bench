@@ -1,5 +1,9 @@
 # Strategy
 
+> New here or coming back after a break? Read the [root
+> README](../../README.md) first — it explains in plain English *what we're
+> building and why* before this doc gets into the *how*.
+
 The plan of record. `PLATFORM.md` argues the thesis and cites the
 verified landscape; `SOTA.md` anchors the context-engineering
 literature; `NEXT.md` is the backlog. This file says **where we are**,
