@@ -101,7 +101,10 @@ Two coupled pieces of new infra everything needs:
   repo + conversation + tool state at a phase edge. Build cheap first
   (git-state + serialized conversation), adopt Crab-style (`2604.28138`)
   container C/R only if cheap snapshots prove insufficient. Reuse existing
-  OTEL + `ToolBackend`.
+  OTEL + `ToolBackend`. **The interface spec for this is `TRACE.md`** — the
+  `PhaseNode` two-plane (conversation / environment) data model. Localization
+  is read-only so its `env_ref` is null: the whole loop validates on just a
+  serialized conversation, no snapshot infra.
 
 ### Step 1 — End-to-end phased pipeline that solves tasks (platform MVP)
 Full localize → repair → test → verify, running on a real task set, with a

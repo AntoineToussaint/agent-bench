@@ -66,6 +66,7 @@ All in [`lib/agent-eval-core/`](lib/agent-eval-core/), in reading order:
 |---|---|
 | [`STRATEGY.md`](lib/agent-eval-core/STRATEGY.md) | **The plan of record.** Where we are, what we optimize for, the steps. Read first. |
 | [`PLATFORM.md`](lib/agent-eval-core/PLATFORM.md) | The thesis in depth + the verified literature behind it (what's done, what's open). |
+| [`TRACE.md`](lib/agent-eval-core/TRACE.md) | The session-trace interface spec (Step 0): is OTEL enough, the `PhaseNode` data model, the debug story. |
 | [`SOTA.md`](lib/agent-eval-core/SOTA.md) | Context-engineering literature shelf, per topic. Reference, not narrative. |
 | [`NEXT.md`](lib/agent-eval-core/NEXT.md) | Backlog of threads; defers to `STRATEGY.md`. |
 | [`DIMENSIONS.md`](lib/agent-eval-core/DIMENSIONS.md) · [`HARNESS.md`](lib/agent-eval-core/HARNESS.md) · [`FAILURE_MODES.md`](lib/agent-eval-core/FAILURE_MODES.md) | What we measure, how the harness biases it, the failure taxonomy. |
