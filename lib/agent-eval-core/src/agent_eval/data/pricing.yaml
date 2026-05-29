@@ -12,29 +12,41 @@
 
 providers:
   anthropic:
-    updated: 2026-05
+    updated: 2026-05-29   # web-verified against platform.claude.com pricing
     source: https://platform.claude.com/docs/about-claude/pricing
     models:
       claude-haiku-4-5:           { input: 1.00,  output:  5.00, cache_read: 0.10, cache_write:  1.25 }
       claude-haiku-4-5-20251001:  { input: 1.00,  output:  5.00, cache_read: 0.10, cache_write:  1.25 }
       claude-sonnet-4-6:          { input: 3.00,  output: 15.00, cache_read: 0.30, cache_write:  3.75 }
-      claude-opus-4-7:            { input: 15.00, output: 75.00, cache_read: 1.50, cache_write: 18.75 }
+      # Opus 4 family is $5/$25 — NOT the old $15/$75 (Opus dropped at the 4.5/4.6 gen).
+      claude-opus-4-8:            { input: 5.00,  output: 25.00, cache_read: 0.50, cache_write:  6.25 }
+      claude-opus-4-7:            { input: 5.00,  output: 25.00, cache_read: 0.50, cache_write:  6.25 }
 
   openai:
-    updated: 2026-05
-    source: https://platform.openai.com/docs/pricing
+    updated: 2026-05-29   # web-verified against developers.openai.com pricing
+    source: https://developers.openai.com/api/docs/pricing
+    # OpenAI bills cached input but no separate cache-write charge.
     models:
+      gpt-5.5:       { input:  5.00, output:  30.00, cache_read: 0.50 }
+      gpt-5.5-pro:   { input: 30.00, output: 180.00 }
+      gpt-5.4:       { input:  2.50, output:  15.00, cache_read: 0.25 }
+      gpt-5.4-mini:  { input:  0.75, output:   4.50, cache_read: 0.075 }
+      gpt-5.4-nano:  { input:  0.20, output:   1.25, cache_read: 0.02 }
+      # Legacy — no longer on the pricing page; kept so old results still cost.
       gpt-5:        { input: 1.25, output: 10.00, cache_read: 0.13, cache_write: 1.25 }
       gpt-5-mini:   { input: 0.25, output:  2.00, cache_read: 0.025, cache_write: 0.25 }
 
   google:
-    updated: 2026-05
+    updated: 2026-05-29   # web-verified against ai.google.dev pricing
     source: https://ai.google.dev/gemini-api/docs/pricing
-    # Pro tier prices reflect the ≤200k-token prompt band; >200k is 2x.
+    # Pro tier prices reflect the ≤200k-token prompt band; >200k is higher.
     models:
+      gemini-3.5-flash:       { input: 1.50, output:  9.00, cache_read: 0.15 }
+      gemini-3.1-pro-preview: { input: 2.00, output: 12.00, cache_read: 0.20 }
+      gemini-3.1-flash-lite:  { input: 0.25, output:  1.50, cache_read: 0.025 }
       gemini-2.5-pro:        { input: 1.25, output: 10.00, cache_read: 0.125 }
       gemini-2.5-flash:      { input: 0.30, output:  2.50, cache_read: 0.03 }
-      gemini-2.5-flash-lite: { input: 0.10, output:  0.40 }
+      gemini-2.5-flash-lite: { input: 0.10, output:  0.40, cache_read: 0.01 }
 
   openrouter:
     updated: 2026-05

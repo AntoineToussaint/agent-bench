@@ -1,7 +1,8 @@
 """Anthropic Messages API client.
 
 Quirks handled:
-  - Opus 4.7 deprecated `temperature`; skip the param for those models.
+  - The Opus 4 family (4.7, 4.8) deprecated `temperature`; skip the param for
+    those models.
   - System prompt gets ephemeral cache control to enable prompt caching.
   - tool_use blocks are translated into provider-agnostic ToolCall objects.
 """
@@ -18,7 +19,8 @@ from agent_eval.types import AssistantMessage, ModelClient, ToolCall, ToolResult
 
 
 ANTHROPIC_MODELS: dict[str, str] = {
-    "claude-opus-4-7": "claude-opus-4-7",
+    "claude-opus-4-8": "claude-opus-4-8",   # current flagship (2026)
+    "claude-opus-4-7": "claude-opus-4-7",   # legacy, still callable
     "claude-sonnet-4-6": "claude-sonnet-4-6",
     "claude-haiku-4-5": "claude-haiku-4-5-20251001",
 }
@@ -82,8 +84,8 @@ class _AnthropicClient(ModelClient):
             ],
             messages=self.messages,
         )
-        # Opus 4.7 deprecated `temperature`; skip the param for those models.
-        if not self.model_id.startswith("claude-opus-4-7"):
+        # The Opus 4 family (4.7, 4.8) deprecated `temperature`; skip it there.
+        if not self.model_id.startswith("claude-opus-4"):
             kwargs["temperature"] = self.temperature
         if tools:
             kwargs["tools"] = tools

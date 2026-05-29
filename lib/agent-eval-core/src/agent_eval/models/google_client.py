@@ -47,6 +47,11 @@ def _resolve_api_key() -> str | None:
 
 # Public model id → API model id. Stable IDs as of 2026-05.
 GOOGLE_MODELS: dict[str, str] = {
+    # Current 3.x (web-verified 2026-05-29, ai.google.dev pricing).
+    "gemini-3.5-flash": "gemini-3.5-flash",
+    "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+    # 2.5 line — still listed/supported.
     "gemini-2.5-pro": "gemini-2.5-pro",
     "gemini-2.5-flash": "gemini-2.5-flash",
     "gemini-2.5-flash-lite": "gemini-2.5-flash-lite",

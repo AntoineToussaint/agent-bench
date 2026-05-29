@@ -41,19 +41,27 @@ defaults:
   # that. The recommendations below are for turn-loop deployments.
   claude-haiku-4-5: native
   claude-sonnet-4-6: native
-  claude-opus-4-7: native      # untested; inherits from family
+  claude-opus-4-8: native      # current flagship (2026); untested, inherits family
+  claude-opus-4-7: native      # legacy; untested, inherits family
 
   # OpenAI — UNTESTED in protocol_matrix. Defaults are conservative
-  # (Native = function calling is the documented happy path).
-  gpt-5-mini: native
-  gpt-5: native
-  gpt-5-nano: native
+  # (Native = function calling is the documented happy path). Current
+  # families as of 2026-05-29 (gpt-5/gpt-5-mini superseded by 5.4/5.5).
+  gpt-5.5: native
+  gpt-5.4: native
+  gpt-5.4-mini: native
+  gpt-5.4-nano: native
+  gpt-5-mini: native           # legacy
+  gpt-5: native                # legacy
 
   # Google Gemini — UNTESTED. Native = function calling via the
   # `tools=[Tool(function_declarations=...)]` channel. Worth adding to
   # the empirical comparison: Gemini's tool-use RL signature is distinct
   # from Anthropic's and OpenAI's, so format-anchoring behavior is the
-  # most likely to surprise here.
+  # most likely to surprise here. 3.x added 2026-05-29.
+  gemini-3.5-flash: native
+  gemini-3.1-pro-preview: native
+  gemini-3.1-flash-lite: native
   gemini-2.5-pro: native
   gemini-2.5-flash: native
   gemini-2.5-flash-lite: native

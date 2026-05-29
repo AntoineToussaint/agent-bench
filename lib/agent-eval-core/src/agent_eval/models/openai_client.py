@@ -18,6 +18,14 @@ from agent_eval.types import AssistantMessage, ModelClient, ToolCall, ToolResult
 
 
 OPENAI_MODELS: dict[str, str] = {
+    # Current families (web-verified 2026-05-29, developers.openai.com pricing).
+    "gpt-5.5": "gpt-5.5",
+    "gpt-5.5-pro": "gpt-5.5-pro",
+    "gpt-5.4": "gpt-5.4",
+    "gpt-5.4-mini": "gpt-5.4-mini",
+    "gpt-5.4-nano": "gpt-5.4-nano",
+    # Legacy — no longer on the pricing page; may still route. Kept so older
+    # results/configs resolve.
     "gpt-5": "gpt-5",
     "gpt-5-mini": "gpt-5-mini",
 }
