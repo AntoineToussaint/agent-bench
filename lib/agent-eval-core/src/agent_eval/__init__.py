@@ -32,18 +32,32 @@ from agent_eval.types import (
 from agent_eval.models import MODELS, default_backend_for, make_client, make_model
 from agent_eval.pricing import cost_usd, price_table
 from agent_eval.sweep import Budget, Sweep
+from agent_eval.trace import (
+    CANONICAL_PHASES,
+    PhaseConfig,
+    PhaseNode,
+    PhaseReward,
+    SessionTrace,
+    Snapshot,
+)
 from agent_eval.transcripts import dump_transcript, load_transcript, summarize_transcript
 
 __all__ = [
     "AssistantMessage",
     "Budget",
+    "CANONICAL_PHASES",
     "ContextPolicy",
     "KeepEverything",
     "MODELS",
     "ModelClient",
     "ModelHandle",
+    "PhaseConfig",
+    "PhaseNode",
+    "PhaseReward",
     "RunRecord",
+    "SessionTrace",
     "SlidingWindow",
+    "Snapshot",
     "Sweep",
     "ToolCall",
     "ToolResult",

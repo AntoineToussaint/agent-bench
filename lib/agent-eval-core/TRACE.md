@@ -4,6 +4,14 @@ The spec Step 0 of `STRATEGY.md` builds toward: the canonical object the
 platform records, scores, debugs, and forks against. Grounded in two
 verified SOTA digs (2026-05-29); sources inline.
 
+> **Status:** the `PhaseNode` / `SessionTrace` data model below is implemented
+> in `src/agent_eval/trace.py` and proven end-to-end on the localization phase
+> in `tests/test_trace.py` (fork into two config arms → per-phase oracle reward
+> → pick the winner → JSONL round-trip), with no model calls and no snapshot
+> infra (localization is read-only). **Next:** wire it into the live
+> localization turn-loop so a real run emits a `SessionTrace`, then add the
+> contextual bandit over `PhaseConfig` arms (STRATEGY.md Step 2).
+
 ---
 
 ## The question
