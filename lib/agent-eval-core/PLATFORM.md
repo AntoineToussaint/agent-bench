@@ -45,10 +45,18 @@ against the phase reward.
 The leverage: **Track B's central pain is credit assignment across stages**
 — every config-optimizer either collapses it to a global metric (DSPy/MIPRO)
 or *learns a surrogate* local reward (Optimas) because a real one is
-unavailable. **Track A hands you a ground-truth per-phase reward for free**,
-eliminating the surrogate. Conversely, Track A's discrete verifiable
-sub-episodes make a *bandit over configurations* tractable (no long-horizon
-credit decay). They compose.
+unavailable. **Track A hands you a ground-truth per-phase reward** — on
+labeled benchmarks — eliminating the surrogate. Conversely, Track A's discrete
+verifiable sub-episodes make a *bandit over configurations* tractable (no
+long-horizon credit decay). They compose.
+
+**Caveat (do not skip):** that per-phase reward is only "free" where a gold
+label exists. Test-pass is available at deploy time; localization-Hit@k and
+test-quality-vs-gold are **oracle-only** — they exist on SWE-bench, not in
+production. The resolution is to train the per-phase config policy *offline* on
+labeled tasks and deploy it frozen, which makes **transfer to the real task
+distribution** the central open question. See `STRATEGY.md` → "The reward
+reality."
 
 ---
 

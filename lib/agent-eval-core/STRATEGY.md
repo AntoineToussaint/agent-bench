@@ -2,14 +2,26 @@
 
 The plan of record. `PLATFORM.md` argues the thesis and cites the
 verified landscape; `SOTA.md` anchors the context-engineering
-literature; `NEXT.md` is the backlog. This file says **where we are**
-and **what to do in what order, and why**.
+literature; `NEXT.md` is the backlog. This file says **where we are**,
+**what we're optimizing for**, and **what to do in what order, and why**.
+
+---
+
+## Objective
+
+**Build the agentic platform first; let the research follow.** The
+working phased system is the asset. Per-phase configuration optimization
+is a refinement layer applied *after* the pipeline works end-to-end. The
+defensible research claims (vs Optimas / LLMSelector / DSPy) are a
+byproduct of building the platform well, not the thing that drives
+sequencing. Practical consequence: prioritize a system that solves tasks
+end-to-end over a narrow publishable slice.
 
 ---
 
 ## Where we are
 
-**The instrument (built, 7 commits, 121 tests):**
+**The instrument (built over prior sessions; ~30 commits):**
 - Unified `ModelHandle + ToolBackend + OTEL` substrate across Anthropic /
   OpenAI / Google clients; pricing + backend YAML wired.
 - Failure-mode classifier; `DIMENSIONS.md` / `HARNESS.md` / `FAILURE_MODES.md`
@@ -17,141 +29,181 @@ and **what to do in what order, and why**.
 - Tier-1 context engineering: `ContextPolicy` abstraction + 3 policies. First
   ablation: `ToolResultElision` cut cost 45% at unchanged accuracy on 3
   astropy tasks — but all 3 policies passed 100%, so the task set is too easy
-  to differentiate (a known limitation).
+  to differentiate (a known limitation; see Decision D).
 
-**The thesis (crystallized this session, fully literature-verified):**
+**The thesis (literature-verified, see `PLATFORM.md`):**
 A coding agent runs through fixed phases — localization → repair →
 test-writing → verification. Make each phase a checkpointable, resettable,
 **heterogeneously-rewardable** sub-environment whose **action space includes
 the config bundle {model × prompt × context-strategy}**, learned per-phase
-against a *verifiable* phase reward.
+against a verifiable phase reward.
 
-**Why this is the right bet (from the two verified digs):**
-The config-optimization literature's central pain is per-stage credit
-assignment — DSPy collapses it to a global metric, Optimas *learns a surrogate*
-local reward because a real one is unavailable. A phase-segmented environment
-**supplies the ground-truth per-phase reward for free.** The two ideas solve
-each other's hard problem. Nobody occupies the intersection; the nearest
-neighbors each miss on one defensible axis (Optimas: surrogate reward, not
-phase-structured; LLMSelector: model-only, estimated reward; DSPy: prompt-only,
-global metric). SGAgent (`2602.23647`) shows shipped agents already phase the
-work but run one config across all phases — the gap is live, not hypothetical.
-
----
-
-## The strategic situation
-
-- **The moat is narrow and specific:** *heterogeneous verifiable reward per
-  phase* + *config-bundle-as-action*. NOT the phase decomposition (Agentless
-  owns that) and NOT checkpoint infra (Crab owns that). Lead every framing with
-  those two.
-- **The window is closing:** the most relevant papers are Jan–Apr 2026. The
-  modular pieces are all on the table; a "phase-aware SWE-Gym" is gluable within
-  a quarter by someone else. Implication: **get one defensible, verifiable
-  result out fast on the narrowest slice, before building the general system.**
-- **One genuine research risk:** phase boundaries are fuzzy — real agents
-  interleave localization and repair. "Where does a phase end?" must be answered
-  operationally, not assumed.
+**Why this is the right bet:** the config-optimization literature's central
+pain is per-stage credit assignment — DSPy collapses it to a global metric,
+Optimas *learns a surrogate* local reward because a real one is unavailable. A
+phase-segmented environment supplies a ground-truth per-phase reward (with the
+big caveat below). Nobody occupies the intersection; each nearest neighbor
+misses one axis (Optimas: surrogate reward, not phase-structured; LLMSelector:
+model-only, estimated reward; DSPy: prompt-only, global metric). SGAgent
+(`2602.23647`) shows shipped agents already phase the work but run one config
+across all phases — the gap is live.
 
 ---
 
-## Strategy: narrow-and-deep, then widen
+## The reward reality (read before believing "free reward")
 
-Derisk by proving the thesis on the single cleanest phase before generalizing.
-Each step produces a standalone result and de-risks the next.
+The "ground-truth per-phase reward for free" claim is **only partly true, and
+the split matters more than anything else in this doc.**
 
-### Step 0 — The reset/reward primitive (substrate)
-Add to the existing harness:
-- `reset_to_phase_boundary(state)` — snapshot/restore repo + conversation +
-  tool state at a phase edge.
-- a per-phase **verifiable reward** hook.
+| phase reward | available at deploy time? |
+|---|---|
+| repair: tests pass | **Yes** — you can run tests on any task |
+| localization: Hit@k vs gold files | **No** — gold files exist only on labeled benchmarks |
+| test-quality vs gold | **No** — oracle-only |
 
-**Build cheap first.** Start with git-state + serialized-conversation snapshots,
-not container C/R. Adopt Crab-style (`2604.28138`) eBPF checkpointing only if
-cheap snapshots prove insufficient. Reuse existing OTEL + `ToolBackend`. This is
-the one piece of new infra everything else needs.
+So the rewards split into **prod-available** (test execution) and
+**oracle-only** (anything compared to a gold patch). The localization reward —
+the one we lean on first because it's "cleanest" — **does not exist in
+production**, which is the whole point of a coding agent: you don't know the
+answer.
 
-### Step 1 — Localization as a standalone verifiable sub-environment
-Localization has the **cleanest verifiable reward**: gold files/functions are
-known from the SWE-bench patch → Hit@k / MRR. Reproduce Agentless
-(`2407.01489`) localization as the baseline. Deliverable: *run agent, stop after
-localization, score it.* This is the minimum viable demonstration of the thesis
-and validates Step 0.
+**The bridge:** train the per-phase config policy **offline** on labeled tasks
+(SWE-bench, where oracle rewards exist), then **deploy the frozen policy**. The
+open question this raises — and a genuine research contribution if answered —
+is **transfer**: does a config policy learned on the SWE-bench distribution
+hold on the platform's real task distribution? Treat this as a first-class
+question, not a footnote.
 
-### Step 2 — Config-bundle-as-action on the localization phase (first real result)
-Vary {model × prompt × context-strategy} for localization; measure the phase
-reward. Frame as a **contextual bandit over config bundles** with a verifiable
-reward. This is the first defensible, ownable result and directly exhibits the
-deltas vs LLMSelector (verifiable not estimated reward) and DSPy (bundle not
-prompt-only). **Start as a bandit, not full RL** (see Decision A).
+Corollary: also a noisy-proxy problem. The gold patch is *one* valid fix site;
+rewarding localization Hit@k against it penalizes valid alternative
+localizations. Use it as a training signal, not ground truth about "good
+localization."
 
-### Step 3 — Handoff brief as a learnable context-strategy action (sharpest claim)
+---
+
+## Strategy: phases as the platform substrate, then optimize
+
+Build the end-to-end phased agent first (the platform). Each step is a platform
+capability that *also* yields a result.
+
+### Step 0 — Phase substrate: enforce, checkpoint, reward
+Two coupled pieces of new infra everything needs:
+- **Architecturally-enforced phases.** The platform *drives* the phase
+  sequence: a localize step that emits structured output (candidate
+  files/elements), then repair, then test, then verify. We control the
+  platform, so we enforce boundaries rather than detect them — this sidesteps
+  the fuzzy-boundary problem (Decision B) by construction.
+- **`reset_to_phase_boundary(state)` + per-phase reward hook.** Snapshot/restore
+  repo + conversation + tool state at a phase edge. Build cheap first
+  (git-state + serialized conversation), adopt Crab-style (`2604.28138`)
+  container C/R only if cheap snapshots prove insufficient. Reuse existing
+  OTEL + `ToolBackend`.
+
+### Step 1 — End-to-end phased pipeline that solves tasks (platform MVP)
+Full localize → repair → test → verify, running on a real task set, with a
+**single fixed config** (the SGAgent status quo: one backbone across phases) as
+the baseline. Reproduce Agentless (`2407.01489`) localization as the localize
+baseline. Deliverable: *the platform solves SWE-bench tasks end-to-end, and you
+can stop/checkpoint/score at any phase boundary.* This is the asset; everything
+below improves it.
+
+### Step 2 — Per-phase config selection (the refinement + headline result)
+Vary {model × prompt × context-strategy} per phase; select per phase against
+the phase reward. **Headline comparison: does per-phase config selection beat
+the best single config?** That result matters for the platform (a better,
+cheaper agent) and is the most compelling research claim — and it's available
+here, not at Step 4.
+
+Make it tractable (Decision A + C):
+- **Prune the arm.** {model × prompt × strategy} at 5×5×5 = 125 arms × expensive
+  rollouts is infeasible. Cut to 2–3 options per axis; the *interaction* between
+  axes (a strong model wants a different context strategy than a cheap one) is
+  the novelty, so don't factorize the axes away — shrink them instead.
+- **Contextual bandit, not full RL**, with phase identity as context. Escalate
+  to GRPO/DAPO-style RL only if a phase's reward provably isn't
+  greedy-decomposable (test LLMSelector's monotonicity assumption, `2502.14815`).
+- Train offline on oracle rewards; this is where the localization reward earns
+  its keep (see "reward reality").
+
+### Step 3 — Handoff brief as a learnable context-strategy action
 Fork from the post-localization checkpoint; learn *what compressed context to
-pass into repair*; reward by the repair phase's verifier. This is the single
-most ownable sub-claim — "context-strategy as action" meets "per-phase
-verifiable reward" — and it closes the handoff-as-routing thread in `NEXT.md`.
-The bun-vs-npm example is the verifiable testbed for the gating variant.
+pass into repair*; reward by the repair phase's verifier (which is
+**prod-available** — tests pass — so this one survives deployment). The single
+most ownable research sub-claim, and a real platform capability (smarter
+inter-phase context). Closes the handoff-as-routing thread in `NEXT.md`. The
+bun-vs-npm example is the verifiable testbed for the gating variant.
 
-### Step 4 — Compose per-phase + end-to-end
-Full localize→repair→test→verify pipeline with per-phase rewards AND an
-end-to-end reward. Measure the headline scientific question: **do phase-local
-verifiable rewards reduce the credit-assignment variance that iStar/HiPER
-complain about?** This is the result that justifies the whole frame.
+### Step 4 — Science depth (optional, secondary)
+Whether phase-local rewards reduce the credit-assignment variance that
+iStar/HiPER complain about. Genuine science, but it does not gate the platform
+and is no longer the headline — Step 2's beats-best-single-config is. Pursue
+only if the platform is solid and a deeper paper is wanted.
 
 ---
 
 ## Decisions to make early (don't drift on these)
 
-- **A. Bandit vs full RL.** LLMSelector (`2502.14815`) assumes end-to-end
-  performance is monotonic in per-module quality, so greedy works. Test that
-  assumption per phase. Default to a **contextual bandit over config bundles**;
-  escalate to GRPO/DAPO-style RL only when a phase's reward provably isn't
-  greedy-decomposable. Cheaper, and it's the honest baseline.
-- **B. Phase boundary definition.** Define phases **operationally** — explicit
-  phase tags the agent emits, or a tool-use signature (search/read = localize;
-  edit = repair). Treat boundary *detection accuracy* as a measured quantity,
-  not an assumption. This converts the fuzzy-boundary risk into a reported
-  result.
-- **C. Reward design per phase, with anti-gaming.** Localization = Hit@k/MRR on
-  gold files (watch for "localize everything" gaming → penalize precision).
-  Repair = tests pass. Test-writing = mutation/coverage-style quality, not just
-  "tests run." Heterogeneity is the point; design each verifier deliberately.
-- **D. Harder task set.** The Tier-1 ablation saturated at 100%. Pull the
-  10–25% baseline-pass-rate band (`results/swebench_lite_difficulty.csv`) so
-  config choices actually move the reward.
+- **A. Bandit vs full RL.** Default to a **contextual bandit over (pruned)
+  config bundles**, phase identity as context. Escalate to RL only when a
+  phase's reward isn't greedy-decomposable (LLMSelector `2502.14815`
+  monotonicity). Cheaper, honest baseline.
+- **B. Phase boundaries — resolved: enforce, don't detect.** Because we own the
+  platform, drive the phase sequence architecturally (each phase emits
+  structured output). This removes the fuzzy-boundary risk by construction. The
+  cost: we study a *driven pipeline*, not a free-roaming agent — an accepted,
+  explicit trade.
+- **C. Reward design, granularity, anti-gaming.** Localization: target
+  **element/line level**, not file level — file-level is ~93% solved (LocAgent)
+  and will saturate like the Tier-1 ablation did; element-level has headroom
+  (RGFL: Exact@top-3 36→69%). Penalize precision to stop "localize everything"
+  gaming. Repair: tests pass. Test-writing: mutation/coverage quality, not just
+  "tests run."
+- **D. Harder task set.** Pull the 10–25% baseline-pass band
+  (`results/swebench_lite_difficulty.csv`) so config choices actually move the
+  reward.
+- **E. Reward availability (the train/deploy split).** Be explicit per phase
+  about prod-available vs oracle-only rewards (see "reward reality"). Build the
+  offline-train / deploy-frozen path, and measure transfer.
 
 ---
 
-## Positioning (how to talk about it)
+## Positioning (the research byproduct)
 
-Lead with the three deltas vs the nearest neighbors, every time:
+If/when written up, lead with the three deltas vs nearest neighbors:
 1. **Verifiable** (not learned-surrogate) per-phase rewards — vs Optimas.
 2. **Phase-keyed** (not arbitrary-graph) structure — vs Optimas/DSPy.
 3. **Config bundle {model × prompt × context-strategy} as the action** — vs
    LLMSelector (model-only) and DSPy (prompt-only).
 
-The one-sentence claim: *a per-phase policy over configuration bundles, trained
+One-sentence claim: *a per-phase policy over configuration bundles, trained
 against verifiable phase rewards, with the handoff brief between phases as a
-learnable context-strategy action.*
+learnable context-strategy action.* The transfer question (offline-trained
+policy → real task distribution) is the honest open problem and a contribution
+if answered.
+
+Note on the "window": because the objective is platform-first, scoop risk
+matters less than it would for a paper-first plan. The working system is the
+moat; a competing arxiv preprint doesn't erase a deployed platform.
 
 ---
 
 ## What NOT to do
-- Don't build all four phases at once — localization first, fully, then widen.
+- Don't optimize configs before the end-to-end pipeline (Step 1) works.
+- Don't build the full 125-arm config space — prune to 2–3 per axis.
 - Don't build Crab-level container C/R before cheap snapshots prove inadequate.
-- Don't chase a full RL training loop before the bandit-over-configs result on
-  localization lands.
+- Don't treat localization Hit@k as deployment-time signal or as ground truth
+  about good localization — it's an offline training proxy.
 - Don't cite projected/blog cost figures (Tool Attention, vendor numbers) as
   measured results.
 
 ---
 
 ## Backlog mapping (`NEXT.md`)
-- **Handoff-as-routing (`#33`)** → becomes Step 3; no longer a separate thread.
+- **Handoff-as-routing (`#33`)** → Step 3.
 - **Generalize `ContextPolicy` → `ContextEngineering`** → prerequisite for
-  "context-strategy as action" (Steps 2–3); do it as part of Step 2.
+  "context-strategy as action"; do it as part of Step 2.
 - **Harder tasks for the ablation** → Decision D.
-- **Persistent cost ledger / cold-warm cost / TTFT split** → still valuable as
-  measurement, but secondary to landing Steps 0–2. Pick up opportunistically.
+- **Persistent cost ledger / cold-warm cost / TTFT split** → measurement, useful
+  for the platform's cost story; pick up opportunistically alongside Step 1.
 - **Populate `model_backends.yaml` empirically** → subsumed: the per-phase
   bandit *learns* this instead of guessing it.
