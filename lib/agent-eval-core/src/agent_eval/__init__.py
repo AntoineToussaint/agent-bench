@@ -47,6 +47,7 @@ from agent_eval.failure_modes import (
     taxonomy_path,
 )
 from agent_eval.models import MODELS, default_backend_for, make_client, make_model
+from agent_eval.native_trace import session_to_native, write_native
 from agent_eval.openinference import (
     debugger_trace_dir,
     session_to_otlp,
@@ -106,10 +107,12 @@ __all__ = [
     "make_model",
     "price_table",
     "sample_band",
+    "session_to_native",
     "session_to_otlp",
     "stratify",
     "taxonomy_path",
     "summarize_transcript",
+    "write_native",
     "write_otlp",
     "write_to_debugger",
 ]

@@ -116,7 +116,12 @@ def test_debugger_trace_dir_env_resolution(tmp_path, monkeypatch):
     assert debugger_trace_dir() == tmp_path / "dbg"  # debugger override wins
 
 
-def test_write_to_debugger_names_file_by_task(tmp_path):
-    p = write_to_debugger(_forked_session(), traces_dir=tmp_path)
-    assert p == tmp_path / "astropy-12907.json"
-    assert _spans(json.loads(p.read_text()))
+def test_write_to_debugger_writes_a_bundle(tmp_path):
+    bundle = write_to_debugger(_forked_session(), traces_dir=tmp_path)
+    assert bundle == tmp_path / "astropy-12907"
+    # the debugger bundle layout: execution.json + openinference.json
+    assert (bundle / "execution.json").exists()
+    assert (bundle / "openinference.json").exists()
+    assert _spans(json.loads((bundle / "openinference.json").read_text()))
+    native = json.loads((bundle / "execution.json").read_text())
+    assert native["task"]["ID"] == "astropy-12907"

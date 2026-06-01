@@ -197,22 +197,31 @@ def write_to_debugger(
     traces_dir: Path | str | None = None,
     run_name: str | None = None,
 ) -> Path:
-    """Write a SessionTrace where Mind's agent-debugger will pick it up.
+    """Write a SessionTrace as a Mind agent-debugger trace bundle.
 
-    Emits the flat OpenInference file `<traces_dir>/<task_id>.json` (the
-    debugger's compatibility shape for non-Mind harnesses). Then view it:
+    Creates `<traces_dir>/<task_id>/` with:
+      - `execution.json`   — Mind's native record (partial; lights up the
+                             objective / LLM / tool / timeline panels)
+      - `openinference.json` — the span/timeline projection
+    which is exactly the bundle layout the debugger expects. Then view it:
 
         cd ~/Development/mind/docs/harness/research/agent-research/agent-debugger
         pnpm install && pnpm dev   # http://localhost:3000
 
-    NOTE: this is the OpenInference *projection* (span/timeline view). Mind's
-    native-only panels (objectives / prompts / context-frames / audit) read
-    `execution.json`, which we don't emit — those panels stay empty until/unless
-    we also write Mind's native record. Span + reward visualization works now.
+    Returns the bundle directory. The `execution.json` is partial — see
+    `native_trace.py` for which panels are populated vs intentionally absent
+    (context-frames / prompt-profiles / structured audit fill in as STRATEGY.md
+    Step 2 instrumentation lands).
     """
-    out_dir = Path(traces_dir) if traces_dir is not None else debugger_trace_dir()
+    from agent_eval.native_trace import write_native
+
+    base = Path(traces_dir) if traces_dir is not None else debugger_trace_dir()
     safe = (trace.task_id or "session").replace("/", "__")
-    return write_otlp(trace, out_dir / f"{safe}.json", run_name=run_name)
+    bundle = base / safe
+    bundle.mkdir(parents=True, exist_ok=True)
+    write_native(trace, bundle / "execution.json", run_name=run_name)
+    write_otlp(trace, bundle / "openinference.json", run_name=run_name)
+    return bundle
 
 
 __all__ = ["debugger_trace_dir", "session_to_otlp", "write_otlp", "write_to_debugger"]

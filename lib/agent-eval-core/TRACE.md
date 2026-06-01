@@ -192,12 +192,19 @@ session inspector baked into the product app (web/desktop/TUI, driven by Mind's
 RPC) and a *standalone* offline trace viewer (`agent-debugger`, reads files from
 `~/.mind/traces`). We target the **standalone viewer via files** — the product
 app speaks Mind's live RPC, which agent-bench doesn't, so files are the right
-seam. `agent_eval.openinference.write_to_debugger(trace)` writes
-`<MIND_AGENT_DEBUGGER_TRACE_DIR | MIND_HARNESS_TRACE_DIR | ~/.mind/traces>/<task>.json`;
-then `pnpm dev` in `agent-debugger` renders it. Caveat: this is the OpenInference
-projection, so span + reward views work but Mind's native-only panels
-(objectives/prompts/context-frames/audit) need an `execution.json` we don't emit
-yet — see "what flows each way" above.
+seam. `agent_eval.openinference.write_to_debugger(trace)` writes a bundle
+`<MIND_AGENT_DEBUGGER_TRACE_DIR | MIND_HARNESS_TRACE_DIR | ~/.mind/traces>/<task>/`
+with both `execution.json` (native) and `openinference.json` (projection); then
+`pnpm dev` in `agent-debugger` renders it.
+
+The native `execution.json` (`native_trace.py`) is **partial but honest**: it
+populates the objective / LLM-call / tool-call / timeline / object-index panels
+from the SessionTrace's captured `Transcript`, and reports `context_frames: 0`
+rather than fabricating frames. The fields it leaves empty — context-frame
+omissions, prompt profiles, structured audit (next_action / plan mutations),
+artifacts — are exactly the context-engineering signals STRATEGY.md Step 2 will
+instrument; they flow into the same `execution.json` as we record them, so the
+debugger gets richer in lockstep with the research.
 
 ## Read first
 1. **Crab** — arXiv [2604.28138](https://arxiv.org/abs/2604.28138). Closest
