@@ -151,6 +151,42 @@ canonical rather than bolting reward onto spans:
 
 ---
 
+## Relation to Mind / OpenInference
+
+The sister project **Mind** (`~/Development/mind`) independently arrived at the
+*same two-layer architecture*, which is strong validation of this design:
+
+- **Native source of truth** — Mind's `execution.json` (task / plan / objectives
+  / context_frames / llm+tool+provider records / audit / artifacts). This is our
+  `SessionTrace`'s analogue, and it's **more general than OTEL**: it models agent
+  semantics (objectives, prompt profiles, context-frame omissions, tool catalog)
+  and a Task→Plan→Objective→Turn DAG with logical edges (handoff / uses_output /
+  retry_of) that OTEL's single-parent span tree can't carry natively.
+- **Derived projection** — Mind emits **OpenInference** OTLP/JSON for span
+  visualization (agent-debugger, Phoenix), treating it as a lossy shadow of the
+  native record.
+
+So OTEL/OpenInference and the native object aren't competitors — they're two
+layers. We implement the same split: `SessionTrace` (native) +
+`agent_eval.openinference.session_to_otlp` / `write_otlp` (projection).
+
+**Why OpenInference, not raw OTEL GenAI, as the projection target:** it has the
+agent span kinds (`AGENT`, `EVALUATOR`) and the `container.type` taxonomy
+(task/plan/objective/turn) that GenAI lacks — and it's what Mind's viewer
+ingests. Our projection maps: root → `CHAIN`/`container.type=task`; each
+`PhaseNode` → `AGENT`/`container.type=objective`/`objective.type=<phase>` with
+`llm.model_name`; each `PhaseReward` → a child `EVALUATOR` span carrying
+`eval.score` + `reward.kind`. The output matches Mind's
+`phoenix-probe/codex_to_otlp_files.py` shape, so a projected SessionTrace drops
+straight into Mind's agent-debugger.
+
+**What flows each way.** We borrow Mind's richer vocabulary (Objective/Turn
+containers, prompt profiles, context-frame omission counts, tool catalog — the
+context-engineering signals STRATEGY.md wants). We contribute what Mind's schema
+lacks: the **per-phase verifiable reward** and **checkpoint/fork-as-RL-reset**.
+Both lost in projection, kept only in the native object — because OTEL models one
+execution's causality, not branchable state.
+
 ## Read first
 1. **Crab** — arXiv [2604.28138](https://arxiv.org/abs/2604.28138). Closest
    existing system: phase/turn-boundary checkpoints, the `(P,F)` fork tuple, RL
