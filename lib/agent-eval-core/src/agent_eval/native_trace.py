@@ -91,11 +91,17 @@ def session_to_native(trace: SessionTrace, *, run_name: str | None = None) -> di
     all_tools: list[dict[str, Any]] = []
     timeline: list[dict[str, Any]] = []
     object_index: list[dict[str, Any]] = []
+    total_context_frames = 0  # real, summed from phase metadata when measured
 
     for i, node in enumerate(phases):
         llm_calls, tool_calls = _calls_from_phase(node)
         all_llm.extend(llm_calls)
         all_tools.extend(tool_calls)
+
+        ctx_frames = node.metadata.get("context_frames")
+        ctx_omitted = node.metadata.get("context_omissions")
+        if isinstance(ctx_frames, int):
+            total_context_frames += ctx_frames
 
         objectives[node.id] = {
             "ID": node.id,
@@ -104,6 +110,9 @@ def session_to_native(trace: SessionTrace, *, run_name: str | None = None) -> di
             "Status": _status_of(node),
             "Attempts": 1,
             "ParentID": node.parent_id,
+            # Context-engineering signal; None when unmeasured (don't fabricate).
+            "context_frames": ctx_frames,
+            "context_omissions": ctx_omitted,
         }
         # object_index ties the native objective to its OpenInference span
         # (we use node.id as the span id in the projection too).
@@ -138,7 +147,8 @@ def session_to_native(trace: SessionTrace, *, run_name: str | None = None) -> di
                 "objectives": list(objectives.values()),
                 "llm_port_calls": len(all_llm),
                 "tool_calls": len(all_tools),
-                "context_frames": 0,  # not yet instrumented
+                # Real count summed from phase metadata; 0 if no phase measured it.
+                "context_frames": total_context_frames,
                 "artifact_count": 0,
             },
         },

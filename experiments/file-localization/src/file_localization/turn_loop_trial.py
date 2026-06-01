@@ -135,6 +135,7 @@ def make_turn_loop_trial_with_backend(
     top_k: int | None = None,
     transcripts_dir: "Path | None" = None,
     emit_session_dir: "Path | None" = None,
+    debugger_dir: "Path | None" = None,
 ):
     """Factory: build a Trial that drives a turn loop.
 
@@ -194,6 +195,11 @@ def make_turn_loop_trial_with_backend(
         consecutive_errors = 0
         no_progress_turns = 0
         mimicry_total = 0
+        # Context-engineering signal: how many messages the context policy
+        # elided across the run (0 for KeepEverything), and the peak context
+        # size. These feed the native trace's context_frames (STRATEGY.md Step 2).
+        ctx_omitted_total = 0
+        ctx_frames_peak = 0
         # Step-level metrics: aggregated at trial end. See DIMENSIONS.md.
         turns_with_new_signature = 0    # for wasted_turn_fraction
         actions_per_active_turn: list[int] = []  # for batch_efficiency
@@ -221,12 +227,17 @@ def make_turn_loop_trial_with_backend(
                 # other policies prune / elide. See HARNESS.md.
                 if handle.context_policy is not None and hasattr(client, "messages"):
                     provider = _provider_of(client.name)
+                    _before = len(client.messages)
                     client.messages = handle.context_policy.prepare(
                         client.messages, provider=provider, turn_idx=turns
                     )
+                    _omitted = max(0, _before - len(client.messages))
+                    ctx_omitted_total += _omitted
+                    ctx_frames_peak = max(ctx_frames_peak, len(client.messages))
                     turn_sp.set_attribute(
                         "agent_eval.context_policy", handle.context_policy.name
                     )
+                    turn_sp.set_attribute("agent_eval.context.omitted_this_turn", _omitted)
                 try:
                     with span_llm_request(model=client.name, backend=bk.name) as llm_sp:
                         if forced_terminal:
@@ -421,9 +432,9 @@ def make_turn_loop_trial_with_backend(
         # Emit the phase-trace control object (TRACE.md). Localization is one
         # phase, read-only, so this is a single `localize` node under a root —
         # the unit a contextual bandit over PhaseConfig arms will compare
-        # (STRATEGY.md Step 2). Optional: only when a dir is given.
+        # (STRATEGY.md Step 2). Built when either output is requested.
         session_path: str | None = None
-        if emit_session_dir is not None:
+        if emit_session_dir is not None or debugger_dir is not None:
             from opentelemetry import trace as _otel_trace2
 
             from file_localization.phase import localization_session
@@ -444,10 +455,17 @@ def make_turn_loop_trial_with_backend(
                 submitted=submitted,
                 span_id=_span_id,
                 trace_id=_trace_id,
+                context_frames=ctx_frames_peak,
+                context_omissions=ctx_omitted_total,
             )
-            _p = Path(emit_session_dir) / f"{task.task_id}__{client.name}__{condition}.jsonl"
-            sess.to_jsonl(_p)
-            session_path = str(_p)
+            if emit_session_dir is not None:
+                _p = Path(emit_session_dir) / f"{task.task_id}__{client.name}__{condition}.jsonl"
+                sess.to_jsonl(_p)
+                session_path = str(_p)
+            if debugger_dir is not None:
+                from agent_eval.openinference import write_to_debugger
+
+                write_to_debugger(sess, traces_dir=debugger_dir)
 
         rec = RunRecord(
             task_id=task.task_id,
@@ -499,6 +517,8 @@ def make_turn_loop_trial_with_backend(
                     cache_r / (in_tok + cache_r) if (in_tok + cache_r) > 0 else 0.0
                 ),
                 "session_path": session_path,
+                "context_omitted_total": ctx_omitted_total,
+                "context_frames_peak": ctx_frames_peak,
             },
         )
         if transcripts_dir:
@@ -518,6 +538,7 @@ def make_turn_loop_trial(
     top_k: int | None = None,
     transcripts_dir: "Path | None" = None,
     emit_session_dir: "Path | None" = None,
+    debugger_dir: "Path | None" = None,
 ):
     """Default factory: use whichever backend the ModelHandle carries.
 
@@ -536,6 +557,7 @@ def make_turn_loop_trial(
         top_k=top_k,
         transcripts_dir=transcripts_dir,
         emit_session_dir=emit_session_dir,
+        debugger_dir=debugger_dir,
     )
 
 

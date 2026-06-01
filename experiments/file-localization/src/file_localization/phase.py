@@ -34,6 +34,8 @@ def localization_session(
     submitted: list[str],
     span_id: str | None = None,
     trace_id: str | None = None,
+    context_frames: int | None = None,
+    context_omissions: int | None = None,
 ) -> SessionTrace:
     """Build a one-phase SessionTrace for a single localization run.
 
@@ -68,6 +70,14 @@ def localization_session(
         reward=reward,
         span_id=span_id,
         trace_id=trace_id,
-        metadata={"backend": backend, "task_class": task.task_class, "condition": None},
+        metadata={
+            "backend": backend,
+            "task_class": task.task_class,
+            "condition": None,
+            # Context-engineering signal (STRATEGY.md Step 2). None when the
+            # caller didn't measure it; 0 means the policy elided nothing.
+            "context_frames": context_frames,
+            "context_omissions": context_omissions,
+        },
     )
     return trace

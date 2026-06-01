@@ -110,6 +110,27 @@ def test_trial_emits_session_trace_with_localize_node(tmp_path: Path) -> None:
     assert hasattr(node, "span_id")
 
 
+def test_trial_debugger_dir_writes_a_mind_bundle(tmp_path: Path) -> None:
+    _build_repo(tmp_path)
+    task = _task()
+    client = _StubClient(name="claude-sonnet-4-6", script=[_done(["src/pricing/calc.py"])])
+    trial = make_turn_loop_trial(
+        repo_view_for=lambda t: LocalRepoView(tmp_path),
+        debugger_dir=tmp_path / "traces",
+    )
+    rec = trial(_handle(client), "turn-loop-tool_use", task)
+    assert rec.passed
+    bundle = tmp_path / "traces" / "demo-1"
+    assert (bundle / "execution.json").exists()      # native panels
+    assert (bundle / "openinference.json").exists()  # span view
+    import json
+
+    native = json.loads((bundle / "execution.json").read_text())
+    assert native["task"]["ID"] == "demo-1"
+    obj = next(iter(native["task"]["Plan"]["Objectives"].values()))
+    assert obj["Type"] == "localize"
+
+
 def test_two_config_arms_fork_and_best_leaf_picks_winner(tmp_path: Path) -> None:
     """Run two configs on the same task, graft them under one SessionTrace,
     and confirm best_leaf selects the higher-composite arm — the Step-2

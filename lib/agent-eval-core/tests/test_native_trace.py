@@ -100,6 +100,26 @@ def test_absent_fields_not_fabricated():
     assert "context_frames" not in doc or not doc.get("context_frames")
 
 
+def test_context_signal_flows_from_metadata_to_native():
+    """When a phase records context-engineering signal (frames/omissions), the
+    native doc surfaces it instead of fabricating 0."""
+    t = SessionTrace(task_id="t")
+    root = t.start(Snapshot())
+    t.add(
+        phase="localize",
+        config=PhaseConfig(model="m"),
+        parent=root,
+        snapshot=Snapshot.from_transcript(_conversation("m", ["src/a.py"])),
+        reward=PhaseReward(value=1.0, kind="oracle", detail={"passed": True}),
+        metadata={"context_frames": 5, "context_omissions": 3},
+    )
+    doc = session_to_native(t)
+    obj = next(iter(doc["task"]["Plan"]["Objectives"].values()))
+    assert obj["context_frames"] == 5
+    assert obj["context_omissions"] == 3
+    assert doc["run"]["summary"]["context_frames"] == 5  # summed, real
+
+
 def test_write_native_roundtrips(tmp_path):
     p = write_native(_session(), tmp_path / "execution.json")
     doc = json.loads(p.read_text())
