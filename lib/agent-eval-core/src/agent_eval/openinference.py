@@ -28,6 +28,7 @@ why the native object is the source of truth.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -175,4 +176,43 @@ def write_otlp(
     return path
 
 
-__all__ = ["session_to_otlp", "write_otlp"]
+def debugger_trace_dir() -> Path:
+    """Where Mind's agent-debugger reads trace bundles from.
+
+    Resolution order (matches the debugger + Mind server env contract):
+      MIND_AGENT_DEBUGGER_TRACE_DIR  (the debugger's own override)
+      MIND_HARNESS_TRACE_DIR         (where the Mind server writes)
+      ~/.mind/traces                 (default for both)
+    """
+    for env in ("MIND_AGENT_DEBUGGER_TRACE_DIR", "MIND_HARNESS_TRACE_DIR"):
+        v = os.environ.get(env)
+        if v:
+            return Path(v)
+    return Path.home() / ".mind" / "traces"
+
+
+def write_to_debugger(
+    trace: SessionTrace,
+    *,
+    traces_dir: Path | str | None = None,
+    run_name: str | None = None,
+) -> Path:
+    """Write a SessionTrace where Mind's agent-debugger will pick it up.
+
+    Emits the flat OpenInference file `<traces_dir>/<task_id>.json` (the
+    debugger's compatibility shape for non-Mind harnesses). Then view it:
+
+        cd ~/Development/mind/docs/harness/research/agent-research/agent-debugger
+        pnpm install && pnpm dev   # http://localhost:3000
+
+    NOTE: this is the OpenInference *projection* (span/timeline view). Mind's
+    native-only panels (objectives / prompts / context-frames / audit) read
+    `execution.json`, which we don't emit — those panels stay empty until/unless
+    we also write Mind's native record. Span + reward visualization works now.
+    """
+    out_dir = Path(traces_dir) if traces_dir is not None else debugger_trace_dir()
+    safe = (trace.task_id or "session").replace("/", "__")
+    return write_otlp(trace, out_dir / f"{safe}.json", run_name=run_name)
+
+
+__all__ = ["debugger_trace_dir", "session_to_otlp", "write_otlp", "write_to_debugger"]

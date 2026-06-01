@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from agent_eval import (
     PhaseConfig,
     PhaseReward,
     SessionTrace,
     Snapshot,
+    debugger_trace_dir,
     session_to_otlp,
     write_otlp,
+    write_to_debugger,
 )
 
 
@@ -101,3 +104,19 @@ def test_write_otlp_roundtrips(tmp_path):
     p = write_otlp(_forked_session(), tmp_path / "astropy-12907.json")
     doc = json.loads(p.read_text())
     assert _spans(doc)  # non-empty
+
+
+def test_debugger_trace_dir_env_resolution(tmp_path, monkeypatch):
+    monkeypatch.delenv("MIND_AGENT_DEBUGGER_TRACE_DIR", raising=False)
+    monkeypatch.delenv("MIND_HARNESS_TRACE_DIR", raising=False)
+    assert debugger_trace_dir() == Path.home() / ".mind" / "traces"
+    monkeypatch.setenv("MIND_HARNESS_TRACE_DIR", str(tmp_path / "harness"))
+    assert debugger_trace_dir() == tmp_path / "harness"
+    monkeypatch.setenv("MIND_AGENT_DEBUGGER_TRACE_DIR", str(tmp_path / "dbg"))
+    assert debugger_trace_dir() == tmp_path / "dbg"  # debugger override wins
+
+
+def test_write_to_debugger_names_file_by_task(tmp_path):
+    p = write_to_debugger(_forked_session(), traces_dir=tmp_path)
+    assert p == tmp_path / "astropy-12907.json"
+    assert _spans(json.loads(p.read_text()))

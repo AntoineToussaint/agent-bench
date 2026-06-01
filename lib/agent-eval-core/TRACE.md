@@ -187,6 +187,18 @@ lacks: the **per-phase verifiable reward** and **checkpoint/fork-as-RL-reset**.
 Both lost in projection, kept only in the native object — because OTEL models one
 execution's causality, not branchable state.
 
+**Debugging agent-bench runs in Mind.** Mind has two debug surfaces: a *live*
+session inspector baked into the product app (web/desktop/TUI, driven by Mind's
+RPC) and a *standalone* offline trace viewer (`agent-debugger`, reads files from
+`~/.mind/traces`). We target the **standalone viewer via files** — the product
+app speaks Mind's live RPC, which agent-bench doesn't, so files are the right
+seam. `agent_eval.openinference.write_to_debugger(trace)` writes
+`<MIND_AGENT_DEBUGGER_TRACE_DIR | MIND_HARNESS_TRACE_DIR | ~/.mind/traces>/<task>.json`;
+then `pnpm dev` in `agent-debugger` renders it. Caveat: this is the OpenInference
+projection, so span + reward views work but Mind's native-only panels
+(objectives/prompts/context-frames/audit) need an `execution.json` we don't emit
+yet — see "what flows each way" above.
+
 ## Read first
 1. **Crab** — arXiv [2604.28138](https://arxiv.org/abs/2604.28138). Closest
    existing system: phase/turn-boundary checkpoints, the `(P,F)` fork tuple, RL

@@ -47,7 +47,12 @@ from agent_eval.failure_modes import (
     taxonomy_path,
 )
 from agent_eval.models import MODELS, default_backend_for, make_client, make_model
-from agent_eval.openinference import session_to_otlp, write_otlp
+from agent_eval.openinference import (
+    debugger_trace_dir,
+    session_to_otlp,
+    write_otlp,
+    write_to_debugger,
+)
 from agent_eval.pricing import cost_usd, price_table
 from agent_eval.sweep import Budget, Sweep
 from agent_eval.trace import (
@@ -92,6 +97,7 @@ __all__ = [
     "category_of",
     "classify_localization",
     "cost_usd",
+    "debugger_trace_dir",
     "default_backend_for",
     "dump_transcript",
     "load_difficulty",
@@ -105,6 +111,7 @@ __all__ = [
     "taxonomy_path",
     "summarize_transcript",
     "write_otlp",
+    "write_to_debugger",
 ]
 
 __version__ = "0.1.0"
