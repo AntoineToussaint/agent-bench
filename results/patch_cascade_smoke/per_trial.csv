@@ -1,0 +1,13 @@
+task_id,condition,passed,cost_usd,latency_s,input_tokens,output_tokens,top_tier_output_tokens,first_passing_tier,tiers,error
+c06_extract_function__medium,haiku-scratch,1,0.010356,6.236,5091,1053,,,,
+c06_extract_function__medium,sonnet-scratch,1,0.033099,14.302,5088,1189,,,,
+c06_extract_function__medium,opus-scratch,1,0.060487,10.215,4925,1136,,,,
+c06_extract_function__medium,patch-cascade-3,1,0.060806,11.986,15036,1236,131,0,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c06_extract_function__medium,patch-cascade-2,1,0.046161,10.183,5093,1226,173,0,claude-haiku-4-5|claude-opus-4-8,
+c06_extract_function__medium,cascade-rewrite-3,1,0.058165,13.874,15497,1332,105,0,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c08_add_feature__medium,haiku-scratch,0,0.007796,4.467,5096,540,,,,
+c08_add_feature__medium,sonnet-scratch,0,0.021279,6.285,5093,400,,,,
+c08_add_feature__medium,opus-scratch,1,0.041792,6.538,4914,665,,,,
+c08_add_feature__medium,patch-cascade-3,1,0.063386,16.884,15237,1187,454,2,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c08_add_feature__medium,patch-cascade-2,1,0.042699,8.911,10146,852,378,1,claude-haiku-4-5|claude-opus-4-8,
+c08_add_feature__medium,cascade-rewrite-3,1,0.062544,15.641,15763,1207,67,1,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,

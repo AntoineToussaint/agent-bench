@@ -48,6 +48,19 @@ out. ~30 minutes, mostly CLI plumbing.
 
 ## Medium (1-2 days each)
 
+### Patch Cascade: predict-and-route the correction format
+Parked study (see `experiments/code-editing/README.md#patch-cascade` and
+`scripts/run_patch_cascade.py`). Established: with caching a cheap-draft +
+strong-correction-diff cascade Pareto-beats single-shot Opus on cost; whether a
+*diff* beats a full *rewrite* on the correction is governed by **edit concentration**
+(`edit_fraction = diff_chars/changed_file_chars`), not file size — diff wins for
+substantial localized edits, loses for diffuse many-hunk ones. Follow-up: the cheap
+draft's diff is available *before* committing the expensive tier, so **route
+diff-vs-rewrite per correction by predicting `edit_fraction`** — and fold output-format
+into the `{model × prompt × context-strategy}` per-phase action space (ties to
+`STRATEGY.md` Step 2). The conservative early-stop gate + locality instrumentation
+already exist in `run_cascade`.
+
 ### Generalize `ContextPolicy` → `ContextEngineering`
 Today's `ContextPolicy.prepare(messages, provider, turn_idx) → messages`
 is too narrow — it only knows how to *prune*. Generalize to:

@@ -109,6 +109,13 @@ See [`lib/agent-eval-core/README.md`](lib/agent-eval-core/README.md) and
 | `tool-selection` | How should LLMs *find* the right tool from a large catalog (full surfacing vs BM25 / embeddings / LLM router × phase architectures)? | **Two-phase (cheap classifier + smart generator) scales nearly flat** with catalog size; one-phase scales linearly worse. At 150 tools, 2phase-Haiku is 4× cheaper per success than 1phase-Haiku, 31× cheaper than 1phase-Sonnet. |
 | `file-localization` | Can retrievers find the files an issue needs edited? (`recall@k`, `NDCG@k` on SWE-Bench gold patches.) | In progress — **and the on-ramp to the research direction:** localization is Step 1 of `STRATEGY.md`, the cleanest stage to score and tune first. |
 
+A cost/latency study, **Patch Cascade**, also rides the `code-editing` harness
+(`run_cascade`): a cheap model drafts, stronger models emit only correction *diffs*
+up a tier ladder. Headline — with prompt caching it Pareto-beats single-shot Opus on
+cost at equal pass, and whether a diff beats a full rewrite is governed by **edit
+*concentration*, not file size** (wins for substantial localized edits, loses for
+diffuse many-hunk ones). See [`experiments/code-editing/README.md`](experiments/code-editing/README.md#patch-cascade-costlatency-study-on-this-harness).
+
 Both `code-editing` and `tool-selection` independently observe the **Sonnet 4.6
 one-call regression**
 ([anthropic-sdk-typescript#956](https://github.com/anthropics/anthropic-sdk-typescript/issues/956));
