@@ -798,3 +798,489 @@ def _initial_user_message(task: TaskSpec, workdir: Path) -> str:
         "after you call `done`."
     )
     return "\n".join(parts)
+
+
+# =====================================================================
+# Patch Cascade — cheap model drafts a full answer, stronger models each
+# emit only a *correction* against the current state, climbing a model
+# tier ladder (haiku -> sonnet -> opus). Hypothesis: the correction is a
+# short diff, so the expensive tier's output-token bill (the dominant
+# cost + latency driver) drops vs solving from scratch. See the design
+# discussion in the experiment notes. STRATEGY.md frames this as a
+# context/cost study, not part of the phased-agent platform.
+# =====================================================================
+
+# Used only by the `rewrite` correction style (the ablation that isolates
+# diff-output savings): the model rewrites whole files instead of diffing.
+WRITE_FILE_TOOL: dict[str, Any] = {
+    "name": "write_file",
+    "description": (
+        "Overwrite the ENTIRE contents of a file (creating it if needed). "
+        "Provide the complete new file content — not a diff."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "Path relative to the working directory."},
+            "content": {"type": "string", "description": "Complete new file content."},
+        },
+        "required": ["path", "content"],
+    },
+}
+
+
+def _clear_pycache(workdir: Path) -> None:
+    """Remove every __pycache__ under workdir.
+
+    The cascade runs the oracle once per tier (the silent `first_passing_tier`
+    probe). The probe imports the task's modules, writing .pyc files. When the
+    NEXT tier edits a .py whose mtime lands in the same filesystem-resolution
+    tick as the cached .pyc, CPython loads the STALE bytecode and the oracle
+    scores the previous tier's code. Clearing __pycache__ before each oracle
+    run makes every run hermetic.
+    """
+    import shutil as _shutil
+
+    for pc in workdir.rglob("__pycache__"):
+        if pc.is_dir():
+            _shutil.rmtree(pc, ignore_errors=True)
+
+
+def _oracle_hermetic(cmd: list[str], workdir: Path):
+    """Run the oracle after clearing stale bytecode caches."""
+    _clear_pycache(workdir)
+    return run_oracle(cmd, workdir)
+
+
+def _apply_write_file(call: ToolCall, workdir: Path) -> ToolResult:
+    path = call.arguments.get("path")
+    content = call.arguments.get("content")
+    if not path or content is None:
+        return ToolResult(call.call_id, "error", "missing path/content")
+    try:
+        target = EditFormat.resolve(workdir, path)
+    except ValueError as e:
+        return ToolResult(call.call_id, "error", str(e))
+    if target.is_dir():
+        return ToolResult(call.call_id, "error", f"is a directory: {path}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(content, encoding="utf-8")
+    return ToolResult(call.call_id, "ok", f"wrote {path} ({len(content)} bytes)")
+
+
+SYSTEM_CASCADE_CORRECTION = (
+    "You are a senior code-editing assistant reviewing a PREVIOUS attempt at a "
+    "task. The system context below shows the ORIGINAL project files; the user "
+    "message shows the diff the previous attempt applied to them.\n\n"
+    "Your job: emit ONLY the minimal corrections needed to make the solution "
+    "correct and complete. Critical rules:\n"
+    "  - If the current code already satisfies the task, emit ZERO tool calls. "
+    "Do not restyle or rewrite correct code.\n"
+    "  - Change as little as possible. Prefer the smallest edit that fixes the "
+    "problem. You are correcting, not rewriting from scratch.\n"
+    "  - `str_replace`/`write_file` operate on the CURRENT files (original + the "
+    "previous diff), not the original.\n"
+    "  - You have ONE response. There is no follow-up turn and no test feedback."
+)
+
+# Strict reviewer used by the early-stop confidence gate. Prod-honest: it never
+# sees the oracle, only the task + code, and decides whether to escalate.
+#
+# Deliberately CONSERVATIVE / asymmetric. The cost of the two errors is not
+# symmetric: a false CONFIDENT halts the ladder and SHIPS BROKEN CODE; a false
+# NOT_CONFIDENT merely spends one more (cheap-relative) review tier. So the gate
+# is told to escalate on any doubt — CONFIDENT is reserved for cases it would
+# stake correctness on.
+SYSTEM_CASCADE_GATE = (
+    "You are a STRICT, SKEPTICAL code reviewer. A cheaper model attempted a task; "
+    "you decide whether it is so clearly correct that no stronger model needs to "
+    "look. This is a high bar.\n\n"
+    "Method — work through it before answering:\n"
+    "  1. List EVERY explicit and implicit requirement in the task.\n"
+    "  2. For each, point to the exact code that satisfies it. If you cannot, or "
+    "the code is plausible-but-unverified, that requirement is NOT satisfied.\n"
+    "  3. Consider edge cases and whether a thorough test suite would pass.\n\n"
+    "Decision rule (ASYMMETRIC — obey strictly):\n"
+    "  - Answer CONFIDENT only if you would stake correctness on it: every "
+    "requirement is provably met and you see no plausible failure.\n"
+    "  - If you have ANY doubt — a requirement you can't fully verify, an edge "
+    "case, an unfamiliar API — answer NOT_CONFIDENT. Escalating costs little; "
+    "wrongly approving a broken solution is the worst outcome. When unsure, escalate.\n\n"
+    "First line: exactly CONFIDENT or NOT_CONFIDENT. Then a one-line reason."
+)
+
+
+def _files_block(files: list[tuple[str, str]]) -> str:
+    """Render (relpath, contents) pairs as a fenced block. This is the large,
+    STABLE chunk that lives in the cached system prefix."""
+    out: list[str] = []
+    for rel, text in files:
+        out.append(f"## `{rel}`\n```python\n{text}\n```\n")
+    return "\n".join(out)
+
+
+def _prior_attempt_diff(original: dict[str, str], workdir: Path) -> str:
+    """Unified diff of original files -> current workdir state.
+
+    This is the small, VARIABLE suffix appended after the cached prefix: the
+    correction tier reconstructs the current state as (original + this diff),
+    so the big original-files block stays byte-identical (cacheable) across
+    every correction call for the task."""
+    import difflib
+
+    current = dict(_enumerate_workdir(workdir))
+    rels = sorted(set(original) | set(current))
+    chunks: list[str] = []
+    for rel in rels:
+        a = original.get(rel, "").splitlines(keepends=True)
+        b = current.get(rel, "").splitlines(keepends=True)
+        if a == b:
+            continue
+        diff = difflib.unified_diff(a, b, fromfile=f"a/{rel}", tofile=f"b/{rel}")
+        chunks.append("".join(diff))
+    return "\n".join(chunks) if chunks else "(no changes — files identical to original)"
+
+
+def _locality(original: dict[str, str], workdir: Path) -> dict[str, float]:
+    """Model-INDEPENDENT locality features of the change so far (original ->
+    current). The diff-vs-rewrite crossover is predicted by these: a large
+    `changed_file_chars` with a small `edit_fraction` is where a diff is far
+    shorter than a full rewrite (so the diff wins on cost AND latency)."""
+    import difflib
+
+    current = dict(_enumerate_workdir(workdir))
+    changed = [r for r in (set(original) | set(current)) if original.get(r) != current.get(r)]
+    changed_file_chars = sum(len(current.get(r, "")) for r in changed)
+    diff_chars = 0
+    for r in changed:
+        a = original.get(r, "").splitlines(keepends=True)
+        b = current.get(r, "").splitlines(keepends=True)
+        diff_chars += sum(len(x) for x in difflib.unified_diff(a, b, n=3))
+    return {
+        "n_changed_files": float(len(changed)),
+        "changed_file_chars": float(changed_file_chars),
+        "diff_chars": float(diff_chars),
+        # < 1 => the patch is smaller than the files it touches (diff should win);
+        # >= 1 => diff representation as big as / bigger than a rewrite (rewrite wins).
+        "edit_fraction": (diff_chars / changed_file_chars) if changed_file_chars else 0.0,
+    }
+
+
+def _count_failures(stdout: str) -> int | None:
+    """Pull a failing-test count out of a pytest tail, e.g. '3 failed, 5 passed'.
+    A coarse `draft_distance`: how far the cheap draft was from correct."""
+    import re
+
+    m = re.search(r"(\d+)\s+failed", stdout or "")
+    if m:
+        return int(m.group(1))
+    if stdout and re.search(r"\d+\s+passed", stdout) and "failed" not in stdout:
+        return 0
+    return None
+
+
+def _confidence_gate(
+    judge: ModelClient, gate_system: str, diff_text: str,
+) -> tuple[bool, TurnUsage, float, str]:
+    """Ask a cheap judge whether the current attempt fully solves the task.
+
+    Returns (confident, usage, latency_s, raw_text). The judge never sees the
+    oracle — this is the deploy-time-honest stop signal."""
+    user = (
+        "The previous attempt applied this diff to the original files:\n"
+        f"```diff\n{diff_text}\n```\n\n"
+        "Does the resulting code FULLY and CORRECTLY satisfy the task? "
+        "First line: CONFIDENT or NOT_CONFIDENT."
+    )
+    judge.reset(gate_system)
+    judge.add_user_text(user)
+    t0 = time.monotonic()
+    with span_llm_request(model=judge.name, backend="cascade-gate") as sp:
+        msg = judge.step([])
+        record_llm_usage(
+            sp, input_tokens=msg.usage.input_tokens, output_tokens=msg.usage.output_tokens,
+            cache_read_tokens=msg.usage.cache_read_tokens,
+            cache_creation_tokens=msg.usage.cache_creation_tokens,
+        )
+    latency = time.monotonic() - t0
+    first = (msg.text or "").strip().splitlines()[0].upper() if (msg.text or "").strip() else ""
+    confident = "CONFIDENT" in first and "NOT" not in first
+    return confident, msg.usage, latency, (msg.text or "")
+
+
+def _run_one_llm_pass(
+    client: ModelClient,
+    system: str,
+    user_text: str,
+    tools: list[dict[str, Any]],
+    apply_fn,
+    workdir: Path,
+) -> tuple[TurnUsage, int, int, float, str]:
+    """One stateless LLM call: reset -> ask -> apply every tool call.
+
+    Returns (usage, n_edits, n_invalid, latency_s, assistant_text). Raises on
+    a model/transport error so the caller can record it.
+    """
+    client.reset(system)
+    client.add_user_text(user_text)
+    t0 = time.monotonic()
+    with span_llm_request(model=client.name, backend="cascade") as llm_sp:
+        msg = client.step(tools)
+        record_llm_usage(
+            llm_sp,
+            input_tokens=msg.usage.input_tokens,
+            output_tokens=msg.usage.output_tokens,
+            cache_read_tokens=msg.usage.cache_read_tokens,
+            cache_creation_tokens=msg.usage.cache_creation_tokens,
+        )
+    latency = time.monotonic() - t0
+    n_edits = 0
+    n_invalid = 0
+    for call in msg.tool_calls:
+        if call.name == "done":
+            continue
+        n_edits += 1
+        res = apply_fn(call, workdir)
+        if res.status == "error":
+            n_invalid += 1
+    return msg.usage, n_edits, n_invalid, latency, msg.text or ""
+
+
+def run_cascade(
+    task: TaskSpec,
+    tiers: list[ModelClient],
+    fmt: EditFormat,
+    workdir: Path,
+    *,
+    correction_style: str = "diff",  # "diff" (search_replace) | "rewrite" (write_file)
+    gate_client: ModelClient | None = None,
+    condition_name: str | None = None,
+    transcripts_dir: Path | None = None,
+) -> RunRecord:
+    """Patch Cascade: tier 0 drafts a full single-shot patch; each later tier
+    emits only a correction. The oracle runs once at the end (and silently after
+    each tier, recorded as `first_passing_tier`).
+
+    Caching / append-only: the large STABLE chunk (task + ORIGINAL files) lives
+    in the `system` block, which the Anthropic client marks `cache_control:
+    ephemeral`. Correction tiers append only a small unified DIFF of the prior
+    attempt, so the cached prefix stays byte-identical across same-model calls
+    (e.g. Opus recurring across conditions, or re-runs). NOTE: caches are keyed
+    per-model, so the three different tiers of one cascade never share a cache —
+    the win is cross-condition / cross-run reuse, not intra-cascade.
+
+    `gate_client`, when given, is a cheap judge that decides after each non-final
+    tier whether the current attempt is good enough to STOP (deploy-honest: it
+    never sees the oracle). The silent oracle probe is kept only as an analysis
+    ceiling and to score the gate's accuracy.
+
+    `tiers` is ordered cheap -> expensive (built clients). Cost is summed PER
+    TIER at each tier's own model price.
+    """
+    if not tiers:
+        raise ValueError("run_cascade needs at least one tier")
+    rewrite = correction_style == "rewrite"
+    materialize(task, workdir)
+    workdir = workdir.resolve()
+
+    # Snapshot the ORIGINAL files now (before any tier edits) — this is the
+    # stable, cacheable context shared by every correction call.
+    original_files = dict(_enumerate_workdir(workdir))
+    original_block = _files_block(list(original_files.items()))
+    task_block = f"# Task\n\n{task.instructions.strip()}\n"
+
+    diff_edit_tools = [t for t in fmt.tools() if t["name"] not in _READ_ONLY_TOOLS]
+    correction_tools = [WRITE_FILE_TOOL] if rewrite else diff_edit_tools
+    correction_apply = _apply_write_file if rewrite else fmt.apply
+
+    # Stable system prefixes (cached). Identical across all same-role calls for
+    # this task, so repeated same-model calls hit the prompt cache.
+    draft_system = "\n\n".join([
+        SYSTEM_BASE_SINGLE_SHOT, _language_guidance(task.language),
+        fmt.system_prompt(), task_block,
+        "# Project files (full contents — no view tool available)\n" + original_block,
+    ])
+    correction_system = "\n\n".join([
+        SYSTEM_CASCADE_CORRECTION, _language_guidance(task.language),
+        (fmt.system_prompt() if not rewrite else ""), task_block,
+        "# Original project files (before any attempt)\n" + original_block,
+    ]).strip()
+    gate_system = "\n\n".join([
+        SYSTEM_CASCADE_GATE, _language_guidance(task.language), task_block,
+        "# Original project files (before any attempt)\n" + original_block,
+    ])
+
+    draft_user = (
+        "Emit ALL edits now as tool calls — one response only, no follow-up turn."
+    )
+
+    total_usage = TurnUsage()
+    total_cost = 0.0
+    total_latency = 0.0
+    total_edits = 0
+    total_invalid = 0
+    per_tier: list[dict[str, Any]] = []
+    first_passing_tier: int | None = None
+    stopped_early_at_tier: int | None = None
+    draft_failing_tests: int | None = None
+    error: str | None = None
+
+    for i, client in enumerate(tiers):
+        is_draft = i == 0
+        if is_draft:
+            system, user_text = draft_system, draft_user
+            tools, apply_fn = diff_edit_tools, fmt.apply
+        else:
+            diff_text = _prior_attempt_diff(original_files, workdir)
+            verb = ("`write_file` (full new contents of changed files)"
+                    if rewrite else "`str_replace` / `create_file` / `delete_file`")
+            system = correction_system
+            user_text = (
+                "The previous attempt applied this diff to the original files:\n"
+                f"```diff\n{diff_text}\n```\n\n"
+                f"Review against the task. Emit ONLY minimal corrections via {verb}. "
+                "If the current code already satisfies the task, emit NO tool calls."
+            )
+            tools, apply_fn = correction_tools, correction_apply
+
+        try:
+            usage, n_edits, n_invalid, latency, _text = _run_one_llm_pass(
+                client, system, user_text, tools, apply_fn, workdir
+            )
+        except Exception as e:  # noqa: BLE001
+            error = f"model_error@tier{i}({client.name}): {type(e).__name__}: {e}"
+            break
+
+        tier_cost = cost_usd(client.name, usage)
+        total_usage.input_tokens += usage.input_tokens
+        total_usage.output_tokens += usage.output_tokens
+        total_usage.cache_read_tokens += usage.cache_read_tokens
+        total_usage.cache_creation_tokens += usage.cache_creation_tokens
+        total_cost += tier_cost
+        total_latency += latency
+        total_edits += n_edits
+        total_invalid += n_invalid
+
+        # Silent oracle probe: analysis-only ceiling + ground truth for the gate.
+        probe = _oracle_hermetic(task.oracle_cmd, workdir)
+        if probe.passed and first_passing_tier is None:
+            first_passing_tier = i
+        if is_draft:
+            draft_failing_tests = _count_failures(probe.stdout)
+
+        entry = {
+            "tier": i,
+            "role": "draft" if is_draft else "correction",
+            "model": client.name,
+            "input_tokens": usage.input_tokens,
+            "output_tokens": usage.output_tokens,
+            "cache_read_tokens": usage.cache_read_tokens,
+            "cache_creation_tokens": usage.cache_creation_tokens,
+            "cost_usd": round(tier_cost, 6),
+            "latency_s": round(latency, 3),
+            "n_edits": n_edits,
+            "n_invalid": n_invalid,
+            "passed_after": probe.passed,
+        }
+
+        # Early-stop gate: after a non-final tier, a cheap judge decides whether
+        # to escalate. Deploy-honest (no oracle). Its cost counts; its accuracy
+        # is scored against the (hidden) probe.
+        if gate_client is not None and i < len(tiers) - 1:
+            diff_for_gate = _prior_attempt_diff(original_files, workdir)
+            confident, g_usage, g_latency, _g_text = _confidence_gate(
+                gate_client, gate_system, diff_for_gate
+            )
+            g_cost = cost_usd(gate_client.name, g_usage)
+            total_cost += g_cost
+            total_latency += g_latency
+            total_usage.input_tokens += g_usage.input_tokens
+            total_usage.output_tokens += g_usage.output_tokens
+            total_usage.cache_read_tokens += g_usage.cache_read_tokens
+            total_usage.cache_creation_tokens += g_usage.cache_creation_tokens
+            entry.update({
+                "gate_model": gate_client.name,
+                "gate_confident": confident,
+                "gate_correct": (confident == probe.passed),  # vs hidden oracle
+                "gate_cost_usd": round(g_cost, 6),
+                "gate_latency_s": round(g_latency, 3),
+            })
+            per_tier.append(entry)
+            if confident:
+                stopped_early_at_tier = i
+                break
+        else:
+            per_tier.append(entry)
+
+    oracle = _oracle_hermetic(task.oracle_cmd, workdir)
+    locality = _locality(original_files, workdir)  # final change vs original
+    cond = condition_name or ("cascade_" + correction_style + "_" + ">".join(c.name for c in tiers))
+
+    transcript_path = None
+    if transcripts_dir:
+        transcripts_dir.mkdir(parents=True, exist_ok=True)
+        tp = transcripts_dir / f"{task.task_id}__{cond}.json"
+        tp.write_text(
+            json.dumps(
+                {
+                    "task_id": task.task_id, "condition": cond,
+                    "correction_style": correction_style,
+                    "tiers": [c.name for c in tiers],
+                    "per_tier": per_tier,
+                    "first_passing_tier": first_passing_tier,
+                    "stopped_early_at_tier": stopped_early_at_tier,
+                    "oracle": {
+                        "passed": oracle.passed, "returncode": oracle.returncode,
+                        "stdout": oracle.stdout[-4000:], "stderr": oracle.stderr[-4000:],
+                    },
+                },
+                indent=2, default=str,
+            ),
+            encoding="utf-8",
+        )
+        transcript_path = str(tp)
+
+    top = per_tier[-1] if per_tier else {}
+    return RunRecord(
+        task_id=task.task_id,
+        model=cond,  # the cascade identity; per-tier models live in extra
+        condition=cond,
+        passed=oracle.passed,
+        turns=len(per_tier),
+        tool_calls=total_edits,
+        invalid_tool_calls=total_invalid,
+        usage=total_usage,
+        latency_seconds=total_latency,
+        cost_usd=total_cost,
+        stdout=oracle.stdout[-2000:],
+        stderr=oracle.stderr[-2000:],
+        error=error,
+        transcript_path=transcript_path,
+        extra={
+            "correction_style": correction_style,
+            "tiers": [c.name for c in tiers],
+            "per_tier": per_tier,
+            "first_passing_tier": first_passing_tier,
+            "stopped_early_at_tier": stopped_early_at_tier,
+            "tiers_run": len(per_tier),
+            "draft_passed": (per_tier[0]["passed_after"] if per_tier else False),
+            "draft_failing_tests": draft_failing_tests,
+            # Model-independent locality of the final change — the predictor of
+            # the diff-vs-rewrite crossover (big files + small edit_fraction => diff wins).
+            "changed_file_chars": locality["changed_file_chars"],
+            "diff_chars": locality["diff_chars"],
+            "edit_fraction": locality["edit_fraction"],
+            "n_changed_files": locality["n_changed_files"],
+            "gate_model": (gate_client.name if gate_client is not None else None),
+            # Gate accuracy vs the hidden oracle, across the gated decisions.
+            "gate_decisions": [
+                {"tier": e["tier"], "confident": e.get("gate_confident"),
+                 "correct": e.get("gate_correct")}
+                for e in per_tier if "gate_confident" in e
+            ],
+            # The mechanism knob: top-tier output tokens. Compare across
+            # conditions to get diff-vs-rewrite-vs-scratch output savings.
+            "top_tier_output_tokens": top.get("output_tokens", 0),
+            "top_tier_cost_usd": top.get("cost_usd", 0.0),
+        },
+    )
