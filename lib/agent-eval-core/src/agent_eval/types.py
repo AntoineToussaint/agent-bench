@@ -39,6 +39,13 @@ class TurnUsage:
     output_tokens: int = 0
     cache_read_tokens: int = 0
     cache_creation_tokens: int = 0
+    # Latency decomposition (NEXT.md #32). ttft = queue + prefill (time to first
+    # content token); generate = decode time (first token -> done). Caching
+    # speeds ttft (prefill); shorter output speeds generate (decode). Populated
+    # by streaming clients; 0.0 when the client didn't stream (lumped into the
+    # runner's latency_seconds instead). Summed across turns like token counts.
+    ttft_seconds: float = 0.0
+    generate_seconds: float = 0.0
 
 
 @dataclass

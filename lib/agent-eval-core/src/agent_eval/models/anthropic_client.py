@@ -91,12 +91,32 @@ class _AnthropicClient(ModelClient):
             kwargs["tools"] = tools
         if tool_choice is not None:
             kwargs["tool_choice"] = tool_choice
-        msg = self.client.messages.create(**kwargs)
+
+        # Stream so we can split latency into TTFT (queue + prefill) and generate
+        # (decode). We still assemble the same final Message + usage as create().
+        import time
+
+        t0 = time.monotonic()
+        t_first: float | None = None
+        with self.client.messages.stream(**kwargs) as stream:
+            for event in stream:
+                if t_first is None and getattr(event, "type", None) in (
+                    "content_block_start",
+                    "content_block_delta",
+                ):
+                    t_first = time.monotonic()
+            msg = stream.get_final_message()
+        t_end = time.monotonic()
+        ttft = (t_first if t_first is not None else t_end) - t0
+        generate = (t_end - t_first) if t_first is not None else 0.0
+
         self.messages.append({"role": "assistant", "content": msg.content})
-        return _to_assistant_message(msg)
+        return _to_assistant_message(msg, ttft_seconds=ttft, generate_seconds=generate)
 
 
-def _to_assistant_message(msg: Message) -> AssistantMessage:
+def _to_assistant_message(
+    msg: Message, *, ttft_seconds: float = 0.0, generate_seconds: float = 0.0
+) -> AssistantMessage:
     text_parts: list[str] = []
     calls: list[ToolCall] = []
     for block in msg.content:
@@ -113,6 +133,8 @@ def _to_assistant_message(msg: Message) -> AssistantMessage:
         output_tokens=msg.usage.output_tokens,
         cache_read_tokens=getattr(msg.usage, "cache_read_input_tokens", 0) or 0,
         cache_creation_tokens=getattr(msg.usage, "cache_creation_input_tokens", 0) or 0,
+        ttft_seconds=ttft_seconds,
+        generate_seconds=generate_seconds,
     )
     return AssistantMessage(
         text="\n".join(text_parts), tool_calls=calls, usage=usage, raw=msg.model_dump()

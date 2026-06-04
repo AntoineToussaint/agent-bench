@@ -1,0 +1,13 @@
+task_id,condition,rep,passed,cost_usd,latency_s,ttft_s,generate_s,input_tokens,output_tokens,cache_read_tokens,top_tier_output_tokens,changed_file_chars,diff_chars,edit_fraction,draft_failing_tests,first_passing_tier,stopped_early_at_tier,tiers_run,gate_decisions,tiers,error
+c08_add_feature__large,opus-scratch,0,1,0.119987,11.040,1.417,9.620,16465,1208,0,,,,,,,,,,,
+c08_add_feature__large,opus-scratch,1,1,0.133376,13.907,4.244,9.658,2,1195,1194,,,,,,,,,,,
+c08_add_feature__large,cascade-2-diff-gated,0,1,0.172104,16.388,2.739,13.648,790,1786,0,915,3943.0,1694.0,0.42962211514075577,0,1,,2,t0:Nok,claude-haiku-4-5|claude-opus-4-8,
+c08_add_feature__large,cascade-2-diff-gated,1,1,0.039169,15.330,2.336,12.994,502,1665,44547,855,4005.0,1757.0,0.4387016229712859,0,1,,2,t0:Nok,claude-haiku-4-5|claude-opus-4-8,
+c08_add_feature__large,cascade-3-diff-gated,0,1,0.095361,24.380,5.406,18.973,2268,2143,57813,499,4013.0,1760.0,0.4385746324445552,0,2,,3,t0:Nok;t1:Nok,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c08_add_feature__large,cascade-3-diff-gated,1,1,0.047658,28.739,5.012,23.726,1761,1996,71553,508,4013.0,1762.0,0.43907301270869675,0,2,,3,t0:Nok;t1:Nok,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c08_add_feature__medium,opus-scratch,0,1,0.041792,6.738,1.452,5.284,4914,665,1194,,,,,,,,,,,
+c08_add_feature__medium,opus-scratch,1,1,0.048007,7.608,2.158,5.446,2,668,1194,,,,,,,,,,,
+c08_add_feature__medium,cascade-2-diff-gated,0,1,0.063819,11.470,2.221,9.249,862,1181,0,387,2699.0,1060.0,0.39273805113004817,2,1,,2,t0:Nok,claude-haiku-4-5|claude-opus-4-8,
+c08_add_feature__medium,cascade-2-diff-gated,1,1,0.020232,11.887,2.669,9.217,538,1188,14818,394,2699.0,1060.0,0.39273805113004817,2,1,,2,t0:Nok,claude-haiku-4-5|claude-opus-4-8,
+c08_add_feature__medium,cascade-3-diff-gated,0,1,0.041330,19.689,6.457,13.231,1900,1578,18995,243,2699.0,1060.0,0.39273805113004817,2,2,,3,t0:Nok;t1:Nok,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
+c08_add_feature__medium,cascade-3-diff-gated,1,1,0.026127,18.162,4.663,13.497,874,1555,23646,240,2699.0,1060.0,0.39273805113004817,2,2,,3,t0:Nok;t1:Nok,claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8,
