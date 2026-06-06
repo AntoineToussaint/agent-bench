@@ -175,6 +175,7 @@ def main() -> int:
     with csv_path.open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["task_id", "condition", "rep", "passed", "cost_usd", "latency_s",
+                    "ttft_s", "generate_s",
                     "input_tokens", "output_tokens", "cache_read_tokens",
                     "top_tier_output_tokens", "changed_file_chars", "diff_chars",
                     "edit_fraction", "draft_failing_tests", "first_passing_tier",
@@ -183,7 +184,9 @@ def main() -> int:
         for tid, name, rep, rec in records:
             w.writerow([
                 tid, name, rep, int(rec.passed), f"{rec.cost_usd:.6f}",
-                f"{rec.latency_seconds:.3f}", rec.usage.input_tokens,
+                f"{rec.latency_seconds:.3f}",
+                f"{rec.usage.ttft_seconds:.3f}", f"{rec.usage.generate_seconds:.3f}",
+                rec.usage.input_tokens,
                 rec.usage.output_tokens, rec.usage.cache_read_tokens,
                 rec.extra.get("top_tier_output_tokens", ""),
                 rec.extra.get("changed_file_chars", ""),
@@ -210,17 +213,21 @@ def main() -> int:
 
     summary_path = out / "summary.csv"
     print(f"\n=== AGGREGATE (mean over {args.reps} reps) ===")
-    hdr = f"  {'task':24s} {'condition':24s} {'pass%':>6s} {'$mean':>8s} {'lat':>6s} {'gate_acc':>9s} {'early%':>7s}"
+    hdr = (f"  {'task':24s} {'condition':24s} {'pass%':>6s} {'$mean':>8s} "
+           f"{'lat':>6s} {'ttft':>6s} {'gen':>6s} {'gate_acc':>9s} {'early%':>7s}")
     print(hdr)
     with summary_path.open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["task_id", "condition", "n", "pass_rate", "mean_cost_usd",
-                    "mean_latency_s", "gate_n", "gate_accuracy", "early_stop_rate"])
+                    "mean_latency_s", "mean_ttft_s", "mean_generate_s",
+                    "gate_n", "gate_accuracy", "early_stop_rate"])
         for (tid, name), recs in agg.items():
             n = len(recs)
             pass_rate = _mean([1.0 if r.passed else 0.0 for r in recs])
             mean_cost = _mean([r.cost_usd for r in recs])
             mean_lat = _mean([r.latency_seconds for r in recs])
+            mean_ttft = _mean([r.usage.ttft_seconds for r in recs])
+            mean_gen = _mean([r.usage.generate_seconds for r in recs])
             gate_dec = [d for r in recs for d in r.extra.get("gate_decisions", [])]
             gate_n = len(gate_dec)
             gate_acc = _mean([1.0 if d["correct"] else 0.0 for d in gate_dec]) if gate_n else None
@@ -228,9 +235,9 @@ def main() -> int:
                            for r in recs])
             acc_s = f"{gate_acc:.2f}({gate_n})" if gate_acc is not None else "-"
             print(f"  {tid:24s} {name:24s} {pass_rate*100:5.0f}% ${mean_cost:7.4f} "
-                  f"{mean_lat:5.1f}s {acc_s:>9s} {early*100:6.0f}%")
+                  f"{mean_lat:5.1f}s {mean_ttft:5.1f}s {mean_gen:5.1f}s {acc_s:>9s} {early*100:6.0f}%")
             w.writerow([tid, name, n, f"{pass_rate:.3f}", f"{mean_cost:.6f}",
-                        f"{mean_lat:.3f}", gate_n,
+                        f"{mean_lat:.3f}", f"{mean_ttft:.3f}", f"{mean_gen:.3f}", gate_n,
                         f"{gate_acc:.3f}" if gate_acc is not None else "",
                         f"{early:.3f}"])
 
