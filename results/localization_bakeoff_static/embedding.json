@@ -1,0 +1,615 @@
+{
+  "summary": {
+    "method": "embedding",
+    "n": 10,
+    "errors": 0,
+    "recall_all": {
+      "1": 0.0,
+      "5": 0.5,
+      "10": 0.7,
+      "20": 0.8
+    },
+    "recall_edit": {
+      "1": 0.0,
+      "5": 0.5,
+      "10": 0.7,
+      "20": 0.8
+    },
+    "ndcg_all": {
+      "1": 0.0,
+      "5": 0.271,
+      "10": 0.3359,
+      "20": 0.3595
+    },
+    "ndcg_edit": {
+      "1": 0.0,
+      "5": 0.271,
+      "10": 0.3359,
+      "20": 0.3595
+    },
+    "median_index_ms": 4630.64,
+    "median_query_ms": 259.13
+  },
+  "per_task": [
+    {
+      "instance_id": "pallets__flask-5014",
+      "repo": "pallets/flask",
+      "method": "embedding",
+      "gold_edit_files": [
+        "src/flask/blueprints.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/blueprints.rst",
+        "src/flask/blueprints.py",
+        "tests/test_cli.py",
+        "tests/test_apps/blueprintapp/apps/frontend/__init__.py",
+        "src/flask/debughelpers.py",
+        "tests/test_apps/blueprintapp/__init__.py",
+        "tests/test_blueprints.py",
+        ".github/ISSUE_TEMPLATE/bug-report.md",
+        "tests/test_apps/blueprintapp/apps/admin/__init__.py",
+        "docs/errorhandling.rst",
+        "docs/patterns/appfactories.rst",
+        "docs/tutorial/views.rst",
+        "tests/test_templating.py",
+        "src/flask/__init__.py",
+        "CHANGES.rst",
+        "tests/typing/typing_error_handler.py",
+        ".github/ISSUE_TEMPLATE/feature-request.md",
+        "tests/test_user_error_handler.py",
+        "requirements/tests-pallets-min.txt",
+        "tests/test_apps/blueprintapp/apps/admin/static/test.txt"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "index_ms": 4630.639750044793,
+      "query_ms": 259.12720803171396,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1142",
+      "repo": "psf/requests",
+      "method": "embedding",
+      "gold_edit_files": [
+        "requests/models.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "README.rst",
+        "docs/community/faq.rst",
+        "docs/user/advanced.rst",
+        "docs/user/intro.rst",
+        "test_requests.py",
+        "docs/community/support.rst",
+        "docs/dev/todo.rst",
+        "docs/dev/philosophy.rst",
+        "docs/user/quickstart.rst",
+        "docs/index.rst",
+        "requests/__init__.py",
+        "docs/community/updates.rst",
+        "docs/api.rst",
+        "requests/api.py",
+        "requests/utils.py",
+        "docs/community/out-there.rst",
+        "AUTHORS.rst",
+        "requests/models.py",
+        "HISTORY.rst",
+        "docs/user/authentication.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "index_ms": 1929.3914589798078,
+      "query_ms": 242.7376250270754,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "repo": "psf/requests",
+      "method": "embedding",
+      "gold_edit_files": [
+        "requests/sessions.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "test_requests.py",
+        "docs/api.rst",
+        "docs/community/faq.rst",
+        "docs/user/advanced.rst",
+        "requests/__init__.py",
+        "HISTORY.rst",
+        "README.rst",
+        "docs/user/quickstart.rst",
+        "requests/models.py",
+        "requests/packages/charade/escsm.py",
+        "requests/utils.py",
+        "requests/status_codes.py",
+        "docs/index.rst",
+        "requests/packages/urllib3/exceptions.py",
+        "requests/auth.py",
+        "requests/compat.py",
+        "requests/packages/charade/utf8prober.py",
+        "requests/packages/urllib3/filepost.py",
+        "requests/exceptions.py",
+        "requests/packages/charade/latin1prober.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "index_ms": 1819.137416081503,
+      "query_ms": 231.32254206575453,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "repo": "psf/requests",
+      "method": "embedding",
+      "gold_edit_files": [
+        "requests/auth.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/user/authentication.rst",
+        "requests/auth.py",
+        "requests/compat.py",
+        "docs/community/faq.rst",
+        "docs/dev/authors.rst",
+        "requests/packages/urllib3/util.py",
+        "HISTORY.rst",
+        "requests/utils.py",
+        "docs/user/quickstart.rst",
+        "docs/user/intro.rst",
+        "docs/community/support.rst",
+        "docs/dev/todo.rst",
+        "docs/user/advanced.rst",
+        "docs/index.rst",
+        "docs/dev/philosophy.rst",
+        "README.rst",
+        "docs/conf.py",
+        "requests/packages/charade/__main__.py",
+        "setup.cfg",
+        "requests/certs.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "index_ms": 1534.8491669865325,
+      "query_ms": 213.0272500216961,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4075",
+      "repo": "pydata/xarray",
+      "method": "embedding",
+      "gold_edit_files": [
+        "xarray/core/weighted.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "xarray/tests/test_weighted.py",
+        "xarray/core/weighted.py",
+        "setup.cfg",
+        "doc/computation.rst",
+        ".github/ISSUE_TEMPLATE/bug_report.md",
+        "xarray/tests/test_dtypes.py",
+        "xarray/tests/test_duck_array_ops.py",
+        "doc/whats-new.rst",
+        "xarray/tests/test_computation.py",
+        "xarray/tests/test_sparse.py",
+        "README.rst",
+        "xarray/tests/test_ufuncs.py",
+        "xarray/tests/test_coding.py",
+        "xarray/tests/test_formatting.py",
+        "doc/installing.rst",
+        "doc/why-xarray.rst",
+        "xarray/tests/__init__.py",
+        "xarray/tests/test_dataarray.py",
+        "xarray/tests/test_plot.py",
+        "xarray/core/arithmetic.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "index_ms": 3767.177709029056,
+      "query_ms": 429.0226659504697,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4094",
+      "repo": "pydata/xarray",
+      "method": "embedding",
+      "gold_edit_files": [
+        "xarray/core/dataarray.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "asv_bench/benchmarks/unstacking.py",
+        "doc/reshaping.rst",
+        "doc/combining.rst",
+        "setup.cfg",
+        "xarray/tests/test_dataset.py",
+        "doc/pandas.rst",
+        "xarray/tests/test_sparse.py",
+        "properties/test_pandas_roundtrip.py",
+        "xarray/tests/test_computation.py",
+        "xarray/tests/test_formatting_html.py",
+        "doc/groupby.rst",
+        "xarray/__init__.py",
+        "xarray/tests/test_merge.py",
+        "xarray/tests/test_variable.py",
+        "asv_bench/benchmarks/combine.py",
+        "xarray/tests/test_coding_strings.py",
+        "doc/io.rst",
+        "doc/howdoi.rst",
+        "doc/why-xarray.rst",
+        "doc/data-structures.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "index_ms": 4242.27350007277,
+      "query_ms": 401.22804197017103,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10081",
+      "repo": "pytest-dev/pytest",
+      "method": "embedding",
+      "gold_edit_files": [
+        "src/_pytest/unittest.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "testing/test_unittest.py",
+        "doc/en/how-to/unittest.rst",
+        "testing/test_nose.py",
+        "src/_pytest/unittest.py",
+        "testing/test_unraisableexception.py",
+        "testing/test_debugging.py",
+        "src/_pytest/debugging.py",
+        "testing/test_stepwise.py",
+        "testing/example_scripts/unittest/test_setup_skip_class.py",
+        "testing/example_scripts/unittest/test_setup_skip.py",
+        "testing/test_threadexception.py",
+        "testing/test_doctest.py",
+        "doc/en/example/simple.rst",
+        "testing/acceptance_test.py",
+        "src/pytest/__init__.py",
+        "pyproject.toml",
+        "testing/python/collect.py",
+        "doc/en/how-to/failures.rst",
+        "doc/en/example/pythoncollection.rst",
+        "testing/python/integration.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.43067655807339306,
+        "10": 0.43067655807339306,
+        "20": 0.43067655807339306
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.43067655807339306,
+        "10": 0.43067655807339306,
+        "20": 0.43067655807339306
+      },
+      "index_ms": 7512.130000046454,
+      "query_ms": 214.49187491089106,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5262",
+      "repo": "pytest-dev/pytest",
+      "method": "embedding",
+      "gold_edit_files": [
+        "src/_pytest/capture.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        ".github/ISSUE_TEMPLATE.md",
+        "doc/en/capture.rst",
+        "doc/en/example/reportingdemo.rst",
+        "testing/test_terminal.py",
+        "testing/code/test_code.py",
+        "testing/test_capture.py",
+        "src/_pytest/capture.py",
+        "doc/en/announce/release-2.9.0.rst",
+        "testing/test_pytester.py",
+        "testing/test_collection.py",
+        "testing/test_pastebin.py",
+        "doc/en/logging.rst",
+        "doc/en/usage.rst",
+        "testing/test_doctest.py",
+        "doc/en/faq.rst",
+        "testing/acceptance_test.py",
+        "testing/test_unittest.py",
+        "testing/python/raises.py",
+        "testing/python/integration.py",
+        "src/pytest.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "index_ms": 5978.239084011875,
+      "query_ms": 214.18983291368932,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11310",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "embedding",
+      "gold_edit_files": [
+        "sklearn/model_selection/_search.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/modules/grid_search.rst",
+        "examples/model_selection/plot_randomized_search.py",
+        "doc/modules/computational_performance.rst",
+        "examples/model_selection/plot_multi_metric_evaluation.py",
+        "doc/tutorial/statistical_inference/model_selection.rst",
+        "examples/applications/plot_prediction_latency.py",
+        "sklearn/model_selection/tests/test_search.py",
+        "sklearn/model_selection/_search.py",
+        "examples/ensemble/plot_gradient_boosting_oob.py",
+        "examples/ensemble/plot_gradient_boosting_early_stopping.py",
+        "doc/modules/scaling_strategies.rst",
+        "benchmarks/bench_glmnet.py",
+        "sklearn/tests/test_grid_search.py",
+        "sklearn/grid_search.py",
+        "sklearn/feature_selection/tests/test_from_model.py",
+        "benchmarks/bench_tree.py",
+        "examples/plot_kernel_ridge_regression.py",
+        "sklearn/feature_selection/rfe.py",
+        "doc/developers/performance.rst",
+        "doc/faq.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.31546487678572877,
+        "20": 0.31546487678572877
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.31546487678572877,
+        "20": 0.31546487678572877
+      },
+      "index_ms": 17988.425416056998,
+      "query_ms": 2622.082749963738,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12585",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "embedding",
+      "gold_edit_files": [
+        "sklearn/base.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "sklearn/tests/test_base.py",
+        "sklearn/utils/tests/test_estimator_checks.py",
+        "doc/whats_new/v0.21.rst",
+        "sklearn/utils/estimator_checks.py",
+        "sklearn/base.py",
+        "sklearn/feature_selection/tests/test_from_model.py",
+        "sklearn/tests/test_common.py",
+        "sklearn/ensemble/base.py",
+        "sklearn/ensemble/tests/test_bagging.py",
+        "sklearn/tests/test_metaestimators.py",
+        "sklearn/ensemble/tests/test_gradient_boosting.py",
+        "sklearn/utils/mocking.py",
+        "sklearn/ensemble/tests/test_weight_boosting.py",
+        "doc/glossary.rst",
+        "sklearn/utils/tests/test_metaestimators.py",
+        "sklearn/ensemble/tests/test_voting_classifier.py",
+        "ISSUE_TEMPLATE.md",
+        "sklearn/exceptions.py",
+        "sklearn/ensemble/tests/test_base.py",
+        "sklearn/ensemble/voting_classifier.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.38685280723454163,
+        "10": 0.38685280723454163,
+        "20": 0.38685280723454163
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.38685280723454163,
+        "10": 0.38685280723454163,
+        "20": 0.38685280723454163
+      },
+      "index_ms": 18485.872582998127,
+      "query_ms": 332.9139999113977,
+      "error": null
+    }
+  ]
+}

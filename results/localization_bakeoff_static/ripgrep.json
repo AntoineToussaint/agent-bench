@@ -1,0 +1,615 @@
+{
+  "summary": {
+    "method": "ripgrep",
+    "n": 10,
+    "errors": 0,
+    "recall_all": {
+      "1": 0.0,
+      "5": 0.1,
+      "10": 0.2,
+      "20": 0.7
+    },
+    "recall_edit": {
+      "1": 0.0,
+      "5": 0.1,
+      "10": 0.2,
+      "20": 0.7
+    },
+    "ndcg_all": {
+      "1": 0.0,
+      "5": 0.05,
+      "10": 0.0833,
+      "20": 0.2083
+    },
+    "ndcg_edit": {
+      "1": 0.0,
+      "5": 0.05,
+      "10": 0.0833,
+      "20": 0.2083
+    },
+    "median_index_ms": 0.0,
+    "median_query_ms": 203.32
+  },
+  "per_task": [
+    {
+      "instance_id": "pallets__flask-5014",
+      "repo": "pallets/flask",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "src/flask/blueprints.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "src/flask/app.py",
+        "CHANGES.rst",
+        "src/flask/helpers.py",
+        "docs/config.rst",
+        "src/flask/scaffold.py",
+        "src/flask/cli.py",
+        "tests/test_basic.py",
+        "src/flask/wrappers.py",
+        "docs/errorhandling.rst",
+        "src/flask/sessions.py",
+        "docs/security.rst",
+        "docs/api.rst",
+        "docs/extensiondev.rst",
+        "docs/patterns/celery.rst",
+        "src/flask/blueprints.py",
+        "tests/test_cli.py",
+        "docs/tutorial/views.rst",
+        "docs/patterns/viewdecorators.rst",
+        "docs/tutorial/tests.rst",
+        "docs/patterns/packages.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.25
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.25
+      },
+      "index_ms": 0.0017499551177024841,
+      "query_ms": 161.8381249718368,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1142",
+      "repo": "psf/requests",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "requests/models.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/user/advanced.rst",
+        "requests/utils.py",
+        "requests/packages/urllib3/connectionpool.py",
+        "HISTORY.rst",
+        "docs/user/quickstart.rst",
+        "requests/packages/urllib3/request.py",
+        "requests/models.py",
+        "requests/packages/urllib3/util.py",
+        "requests/packages/charade/hebrewprober.py",
+        "README.rst",
+        "requests/adapters.py",
+        "requests/api.py",
+        "test_requests.py",
+        "docs/api.rst",
+        "docs/community/faq.rst",
+        "docs/conf.py",
+        "requests/sessions.py",
+        "docs/index.rst",
+        "requests/packages/urllib3/poolmanager.py",
+        "requests/cookies.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "index_ms": 0.003708992153406143,
+      "query_ms": 162.28091600351036,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "repo": "psf/requests",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "requests/sessions.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "test_requests.py",
+        "docs/user/advanced.rst",
+        "HISTORY.rst",
+        "requests/models.py",
+        "docs/user/quickstart.rst",
+        "docs/api.rst",
+        "requests/packages/urllib3/connectionpool.py",
+        "requests/packages/urllib3/util.py",
+        "README.rst",
+        "requests/utils.py",
+        "docs/index.rst",
+        "requests/packages/urllib3/poolmanager.py",
+        "requests/packages/urllib3/request.py",
+        "docs/user/authentication.rst",
+        "NOTICE",
+        "requests/packages/urllib3/fields.py",
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/packages/urllib3/packages/six.py",
+        "docs/community/faq.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "index_ms": 0.003249966539442539,
+      "query_ms": 167.70079196430743,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "repo": "psf/requests",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "requests/auth.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "test_requests.py",
+        "requests/sessions.py",
+        "docs/conf.py",
+        "docs/user/advanced.rst",
+        "docs/user/quickstart.rst",
+        "requests/packages/urllib3/util.py",
+        "HISTORY.rst",
+        "requests/utils.py",
+        "requests/packages/urllib3/request.py",
+        "requests/models.py",
+        "requests/api.py",
+        "requests/packages/urllib3/packages/six.py",
+        "requests/packages/charade/chardistribution.py",
+        "requests/packages/urllib3/packages/ssl_match_hostname/_implementation.py",
+        "requests/adapters.py",
+        "requests/packages/urllib3/fields.py",
+        "requests/cacert.pem",
+        "requests/auth.py",
+        "requests/__init__.py",
+        "docs/api.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "index_ms": 0.004874891601502895,
+      "query_ms": 151.6575829591602,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4075",
+      "repo": "pydata/xarray",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "xarray/core/weighted.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/whats-new.rst",
+        "xarray/core/dataset.py",
+        "xarray/core/dataarray.py",
+        "xarray/tests/test_backends.py",
+        "doc/contributing.rst",
+        "xarray/tests/test_dataarray.py",
+        "xarray/core/variable.py",
+        "xarray/core/common.py",
+        "doc/computation.rst",
+        "doc/dask.rst",
+        "doc/io.rst",
+        "xarray/core/computation.py",
+        "doc/plotting.rst",
+        "xarray/tests/test_dataset.py",
+        "xarray/tests/test_variable.py",
+        "xarray/backends/api.py",
+        "doc/api.rst",
+        "xarray/tests/test_units.py",
+        "xarray/tests/test_plot.py",
+        "doc/time-series.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "index_ms": 0.002374988980591297,
+      "query_ms": 194.77245898451656,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4094",
+      "repo": "pydata/xarray",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "xarray/core/dataarray.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/whats-new.rst",
+        "xarray/core/dataset.py",
+        "xarray/core/dataarray.py",
+        "xarray/tests/test_dataset.py",
+        "xarray/tests/test_backends.py",
+        "xarray/core/variable.py",
+        "xarray/tests/test_dataarray.py",
+        "xarray/core/computation.py",
+        "xarray/tests/test_units.py",
+        "xarray/core/groupby.py",
+        "doc/computation.rst",
+        "doc/data-structures.rst",
+        "doc/plotting.rst",
+        "doc/api.rst",
+        "doc/reshaping.rst",
+        "xarray/tests/test_coding_times.py",
+        "xarray/core/common.py",
+        "xarray/backends/api.py",
+        "doc/dask.rst",
+        "doc/io.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.5,
+        "10": 0.5,
+        "20": 0.5
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.5,
+        "10": 0.5,
+        "20": 0.5
+      },
+      "index_ms": 0.004375004209578037,
+      "query_ms": 203.3160839928314,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10081",
+      "repo": "pytest-dev/pytest",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "src/_pytest/unittest.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/en/changelog.rst",
+        "doc/en/reference/plugin_list.rst",
+        "doc/en/reference/reference.rst",
+        "doc/en/how-to/fixtures.rst",
+        "doc/en/announce/release-2.5.0.rst",
+        "doc/en/how-to/skipping.rst",
+        "CONTRIBUTING.rst",
+        "doc/en/announce/release-2.0.0.rst",
+        "doc/en/example/simple.rst",
+        "src/_pytest/fixtures.py",
+        "testing/test_unittest.py",
+        "testing/acceptance_test.py",
+        "doc/en/announce/release-2.3.5.rst",
+        "src/_pytest/python_api.py",
+        "doc/en/announce/release-2.4.0.rst",
+        "src/_pytest/pytester.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/unittest.py",
+        "src/_pytest/config/__init__.py",
+        "testing/test_debugging.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.23540891336663824
+      },
+      "index_ms": 0.003249966539442539,
+      "query_ms": 285.18862510100007,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5262",
+      "repo": "pytest-dev/pytest",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "src/_pytest/capture.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "CHANGELOG.rst",
+        "doc/en/reference.rst",
+        "src/_pytest/assertion/rewrite.py",
+        "CONTRIBUTING.rst",
+        "src/_pytest/logging.py",
+        "src/_pytest/config/__init__.py",
+        "doc/en/example/simple.rst",
+        "testing/test_terminal.py",
+        "src/_pytest/pytester.py",
+        "src/_pytest/hookspec.py",
+        "src/_pytest/capture.py",
+        "doc/en/writing_plugins.rst",
+        "doc/en/assert.rst",
+        "doc/en/deprecations.rst",
+        "doc/en/warnings.rst",
+        "doc/en/fixture.rst",
+        "testing/test_assertrewrite.py",
+        "doc/en/usage.rst",
+        "doc/en/announce/release-2.3.0.rst",
+        "doc/en/announce/release-2.3.5.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.27894294565112987
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.27894294565112987
+      },
+      "index_ms": 0.0035410048440098763,
+      "query_ms": 260.45120891649276,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11310",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "sklearn/model_selection/_search.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/developers/contributing.rst",
+        "doc/modules/linear_model.rst",
+        "doc/faq.rst",
+        "doc/modules/computational_performance.rst",
+        "doc/whats_new/v0.19.rst",
+        "doc/tutorial/statistical_inference/supervised_learning.rst",
+        "doc/glossary.rst",
+        "doc/modules/feature_extraction.rst",
+        "doc/modules/clustering.rst",
+        "doc/modules/model_evaluation.rst",
+        "doc/whats_new/v0.15.rst",
+        "doc/tutorial/text_analytics/working_with_text_data.rst",
+        "doc/modules/gaussian_process.rst",
+        "sklearn/cluster/k_means_.py",
+        "sklearn/model_selection/_search.py",
+        "sklearn/grid_search.py",
+        "doc/whats_new/v0.17.rst",
+        "doc/modules/grid_search.rst",
+        "doc/whats_new/older_versions.rst",
+        "doc/modules/svm.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.25
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.25
+      },
+      "index_ms": 0.0033329706639051437,
+      "query_ms": 417.2421250259504,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12585",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "ripgrep",
+      "gold_edit_files": [
+        "sklearn/base.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/developers/contributing.rst",
+        "doc/glossary.rst",
+        "doc/whats_new/v0.20.rst",
+        "sklearn/utils/estimator_checks.py",
+        "doc/modules/computing.rst",
+        "sklearn/metrics/pairwise.py",
+        "doc/whats_new/v0.19.rst",
+        "doc/tutorial/machine_learning_map/pyparsing.py",
+        "doc/modules/feature_extraction.rst",
+        "doc/whats_new/older_versions.rst",
+        "doc/modules/gaussian_process.rst",
+        "sklearn/feature_extraction/tests/test_text.py",
+        "sklearn/utils/testing.py",
+        "doc/modules/svm.rst",
+        "doc/modules/clustering.rst",
+        "doc/modules/linear_model.rst",
+        "doc/tutorial/basic/tutorial.rst",
+        "sklearn/model_selection/_split.py",
+        "sklearn/externals/joblib/externals/cloudpickle/cloudpickle.py",
+        "doc/faq.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0
+      },
+      "index_ms": 0.0034580007195472717,
+      "query_ms": 444.80199995450675,
+      "error": null
+    }
+  ]
+}

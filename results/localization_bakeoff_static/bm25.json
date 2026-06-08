@@ -1,0 +1,615 @@
+{
+  "summary": {
+    "method": "bm25",
+    "n": 10,
+    "errors": 0,
+    "recall_all": {
+      "1": 0.1,
+      "5": 0.4,
+      "10": 0.7,
+      "20": 1.0
+    },
+    "recall_edit": {
+      "1": 0.1,
+      "5": 0.4,
+      "10": 0.7,
+      "20": 1.0
+    },
+    "ndcg_all": {
+      "1": 0.1,
+      "5": 0.2762,
+      "10": 0.3762,
+      "20": 0.4525
+    },
+    "ndcg_edit": {
+      "1": 0.1,
+      "5": 0.2762,
+      "10": 0.3762,
+      "20": 0.4525
+    },
+    "median_index_ms": 73.33,
+    "median_query_ms": 6.82
+  },
+  "per_task": [
+    {
+      "instance_id": "pallets__flask-5014",
+      "repo": "pallets/flask",
+      "method": "bm25",
+      "gold_edit_files": [
+        "src/flask/blueprints.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "CHANGES.rst",
+        "src/flask/wrappers.py",
+        "docs/design.rst",
+        "docs/blueprints.rst",
+        "src/flask/scaffold.py",
+        "src/flask/app.py",
+        "src/flask/debughelpers.py",
+        "docs/patterns/urlprocessors.rst",
+        "docs/errorhandling.rst",
+        "docs/config.rst",
+        "src/flask/sessions.py",
+        "docs/tutorial/views.rst",
+        "src/flask/helpers.py",
+        "src/flask/blueprints.py",
+        "docs/patterns/fileuploads.rst",
+        "src/flask/config.py",
+        "docs/security.rst",
+        "docs/patterns/viewdecorators.rst",
+        "docs/api.rst",
+        "docs/tutorial/database.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.2559580248098155
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.2559580248098155
+      },
+      "index_ms": 32.82870806287974,
+      "query_ms": 0.5571669898927212,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1142",
+      "repo": "psf/requests",
+      "method": "bm25",
+      "gold_edit_files": [
+        "requests/models.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/user/advanced.rst",
+        "requests/models.py",
+        "docs/user/quickstart.rst",
+        "requests/packages/urllib3/request.py",
+        "requests/adapters.py",
+        "requests/utils.py",
+        "README.rst",
+        "HISTORY.rst",
+        "docs/index.rst",
+        "docs/community/faq.rst",
+        "requests/cookies.py",
+        "requests/sessions.py",
+        "requests/packages/urllib3/util.py",
+        "docs/dev/philosophy.rst",
+        "requests/packages/urllib3/response.py",
+        "docs/user/authentication.rst",
+        "requests/api.py",
+        "requests/packages/urllib3/connectionpool.py",
+        "requests/packages/charade/hebrewprober.py",
+        "docs/conf.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "index_ms": 13.920166995376348,
+      "query_ms": 0.5578330019488931,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1724",
+      "repo": "psf/requests",
+      "method": "bm25",
+      "gold_edit_files": [
+        "requests/sessions.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/user/quickstart.rst",
+        "HISTORY.rst",
+        "docs/user/advanced.rst",
+        "test_requests.py",
+        "requests/packages/urllib3/connectionpool.py",
+        "requests/models.py",
+        "requests/sessions.py",
+        "requests/api.py",
+        "requests/packages/urllib3/request.py",
+        "docs/api.rst",
+        "requests/adapters.py",
+        "README.rst",
+        "requests/packages/urllib3/util.py",
+        "docs/index.rst",
+        "requests/packages/urllib3/poolmanager.py",
+        "requests/packages/urllib3/response.py",
+        "docs/user/authentication.rst",
+        "requests/packages/urllib3/contrib/ntlmpool.py",
+        "requests/packages/urllib3/fields.py",
+        "docs/conf.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "index_ms": 16.50245802011341,
+      "query_ms": 6.820957991294563,
+      "error": null
+    },
+    {
+      "instance_id": "psf__requests-1766",
+      "repo": "psf/requests",
+      "method": "bm25",
+      "gold_edit_files": [
+        "requests/auth.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "docs/user/advanced.rst",
+        "requests/utils.py",
+        "docs/user/authentication.rst",
+        "requests/packages/urllib3/util.py",
+        "docs/index.rst",
+        "HISTORY.rst",
+        "requests/auth.py",
+        "requests/sessions.py",
+        "docs/user/quickstart.rst",
+        "docs/conf.py",
+        "docs/api.rst",
+        "README.rst",
+        "requests/cookies.py",
+        "requests/packages/urllib3/connectionpool.py",
+        "requests/models.py",
+        "requests/packages/charade/hebrewprober.py",
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/packages/urllib3/packages/ssl_match_hostname/_implementation.py",
+        "test_requests.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "index_ms": 16.165916924364865,
+      "query_ms": 1.1422500247135758,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4075",
+      "repo": "pydata/xarray",
+      "method": "bm25",
+      "gold_edit_files": [
+        "xarray/core/weighted.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "xarray/util/print_versions.py",
+        "doc/whats-new.rst",
+        "doc/computation.rst",
+        "doc/io.rst",
+        "doc/contributing.rst",
+        ".github/ISSUE_TEMPLATE/bug_report.md",
+        "xarray/core/common.py",
+        "xarray/backends/api.py",
+        "xarray/core/dataarray.py",
+        "doc/conf.py",
+        "xarray/core/dataset.py",
+        "xarray/core/computation.py",
+        "xarray/core/weighted.py",
+        "xarray/tests/test_backends.py",
+        "doc/dask.rst",
+        "xarray/core/variable.py",
+        "doc/plotting.rst",
+        "doc/installing.rst",
+        "xarray/plot/plot.py",
+        "doc/indexing.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.26264953503719357
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.26264953503719357
+      },
+      "index_ms": 70.49670803826302,
+      "query_ms": 4.025332978926599,
+      "error": null
+    },
+    {
+      "instance_id": "pydata__xarray-4094",
+      "repo": "pydata/xarray",
+      "method": "bm25",
+      "gold_edit_files": [
+        "xarray/core/dataarray.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "xarray/util/print_versions.py",
+        "doc/io.rst",
+        "xarray/backends/api.py",
+        "doc/whats-new.rst",
+        "doc/conf.py",
+        "xarray/tests/test_backends.py",
+        "xarray/core/dataarray.py",
+        "doc/installing.rst",
+        "doc/contributing.rst",
+        "doc/computation.rst",
+        "xarray/core/dataset.py",
+        "doc/reshaping.rst",
+        "xarray/tests/test_dataarray.py",
+        "doc/combining.rst",
+        "xarray/tests/__init__.py",
+        "xarray/core/computation.py",
+        "setup.cfg",
+        "xarray/core/variable.py",
+        "xarray/tests/test_dataset.py",
+        "xarray/core/concat.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.3333333333333333,
+        "20": 0.3333333333333333
+      },
+      "index_ms": 73.33220890723169,
+      "query_ms": 2.838666085153818,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-10081",
+      "repo": "pytest-dev/pytest",
+      "method": "bm25",
+      "gold_edit_files": [
+        "src/_pytest/unittest.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/en/how-to/unittest.rst",
+        "doc/en/changelog.rst",
+        "testing/test_unittest.py",
+        "doc/en/example/simple.rst",
+        "doc/en/example/markers.rst",
+        "doc/en/how-to/fixtures.rst",
+        "doc/en/example/parametrize.rst",
+        "doc/en/example/pythoncollection.rst",
+        "doc/en/announce/release-2.4.0.rst",
+        "doc/en/how-to/skipping.rst",
+        "doc/en/reference/reference.rst",
+        "doc/en/how-to/output.rst",
+        "src/_pytest/hookspec.py",
+        "testing/test_debugging.py",
+        "doc/en/how-to/nose.rst",
+        "src/_pytest/unittest.py",
+        "doc/en/announce/release-2.0.0.rst",
+        "doc/en/getting-started.rst",
+        "doc/en/how-to/assert.rst",
+        "doc/en/announce/release-2.5.0.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.24465054211822604
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.24465054211822604
+      },
+      "index_ms": 104.4908749172464,
+      "query_ms": 8.429332985542715,
+      "error": null
+    },
+    {
+      "instance_id": "pytest-dev__pytest-5262",
+      "repo": "pytest-dev/pytest",
+      "method": "bm25",
+      "gold_edit_files": [
+        "src/_pytest/capture.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/en/getting-started.rst",
+        "testing/acceptance_test.py",
+        "src/_pytest/capture.py",
+        "src/_pytest/pytester.py",
+        "CHANGELOG.rst",
+        "testing/test_capture.py",
+        "doc/en/usage.rst",
+        "src/_pytest/config/__init__.py",
+        "src/_pytest/compat.py",
+        "src/_pytest/assertion/rewrite.py",
+        "doc/en/goodpractices.rst",
+        "src/_pytest/doctest.py",
+        "testing/test_doctest.py",
+        "doc/en/announce/release-2.0.2.rst",
+        "testing/test_assertion.py",
+        "src/_pytest/python.py",
+        "doc/en/example/parametrize.rst",
+        "doc/en/announce/release-2.0.1.rst",
+        "doc/en/example/simple.rst",
+        "src/_pytest/nodes.py"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.5,
+        "10": 0.5,
+        "20": 0.5
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.5,
+        "10": 0.5,
+        "20": 0.5
+      },
+      "index_ms": 73.8485420588404,
+      "query_ms": 9.578958037309349,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-11310",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "bm25",
+      "gold_edit_files": [
+        "sklearn/model_selection/_search.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "sklearn/model_selection/_search.py",
+        "sklearn/model_selection/tests/test_search.py",
+        "sklearn/grid_search.py",
+        "examples/model_selection/plot_randomized_search.py",
+        "doc/modules/grid_search.rst",
+        "doc/modules/cross_validation.rst",
+        "doc/tutorial/text_analytics/working_with_text_data.rst",
+        "doc/developers/contributing.rst",
+        "doc/modules/ensemble.rst",
+        "examples/svm/plot_rbf_parameters.py",
+        "doc/modules/computational_performance.rst",
+        "examples/gaussian_process/plot_compare_gpr_krr.py",
+        "doc/glossary.rst",
+        "doc/modules/compose.rst",
+        "doc/modules/multiclass.rst",
+        "doc/whats_new/v0.18.rst",
+        "sklearn/cross_validation.py",
+        "doc/modules/learning_curve.rst",
+        "doc/faq.rst",
+        "doc/tutorial/basic/tutorial.rst"
+      ],
+      "recall_all": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_edit": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "index_ms": 233.91216702293605,
+      "query_ms": 12.427292065694928,
+      "error": null
+    },
+    {
+      "instance_id": "scikit-learn__scikit-learn-12585",
+      "repo": "scikit-learn/scikit-learn",
+      "method": "bm25",
+      "gold_edit_files": [
+        "sklearn/base.py"
+      ],
+      "gold_test_files": [],
+      "predicted": [
+        "doc/developers/contributing.rst",
+        "sklearn/base.py",
+        "sklearn/utils/estimator_checks.py",
+        "sklearn/pipeline.py",
+        "doc/developers/tips.rst",
+        "sklearn/tests/test_pipeline.py",
+        "sklearn/compose/_column_transformer.py",
+        "sklearn/tests/test_base.py",
+        "doc/glossary.rst",
+        "sklearn/utils/testing.py",
+        "CONTRIBUTING.md",
+        "doc/developers/advanced_installation.rst",
+        "sklearn/model_selection/_validation.py",
+        "doc/modules/computing.rst",
+        "sklearn/utils/tests/test_estimator_checks.py",
+        "doc/modules/compose.rst",
+        "doc/faq.rst",
+        "sklearn/model_selection/_search.py",
+        "doc/modules/preprocessing.rst",
+        "doc/developers/performance.rst"
+      ],
+      "recall_all": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "recall_edit": {
+        "1": 0.0,
+        "5": 1.0,
+        "10": 1.0,
+        "20": 1.0
+      },
+      "ndcg_all": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "ndcg_edit": {
+        "1": 0.0,
+        "5": 0.6309297535714575,
+        "10": 0.6309297535714575,
+        "20": 0.6309297535714575
+      },
+      "index_ms": 248.03241691552103,
+      "query_ms": 14.303457923233509,
+      "error": null
+    }
+  ]
+}
