@@ -1,0 +1,11 @@
+instance_id,model,passed,recall,n_predicted,submitted,turns,cost_usd,latency_s,error
+pallets__flask-5014,claude-haiku-4-5,1,1.0,1,src/flask/blueprints.py,5,0.034568,7.592,
+psf__requests-1142,claude-haiku-4-5,1,1.0,1,requests/models.py,5,0.034486,10.806,
+psf__requests-1724,claude-haiku-4-5,1,1.0,2,requests/models.py|requests/sessions.py,6,0.032857,16.536,
+psf__requests-1766,claude-haiku-4-5,1,1.0,1,requests/auth.py,4,0.020843,7.601,
+pydata__xarray-4075,claude-haiku-4-5,1,1.0,1,xarray/core/weighted.py,7,0.042818,12.854,
+pydata__xarray-4094,claude-haiku-4-5,1,1.0,1,xarray/core/dataarray.py,12,0.064488,21.849,
+pytest-dev__pytest-10081,claude-haiku-4-5,1,1.0,1,src/_pytest/unittest.py,6,0.048987,12.768,
+pytest-dev__pytest-5262,claude-haiku-4-5,1,1.0,1,src/_pytest/capture.py,6,0.039836,11.643,
+scikit-learn__scikit-learn-11310,claude-haiku-4-5,1,1.0,1,sklearn/model_selection/_search.py,14,0.075748,26.152,
+scikit-learn__scikit-learn-12585,claude-haiku-4-5,1,1.0,1,sklearn/base.py,5,0.032515,13.782,
