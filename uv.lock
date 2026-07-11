@@ -862,7 +862,9 @@ dependencies = [
 
 [package.optional-dependencies]
 embeddings = [
+    { name = "openai" },
     { name = "sentence-transformers" },
+    { name = "tiktoken" },
 ]
 semble = [
     { name = "semble" },
@@ -871,9 +873,11 @@ semble = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", specifier = ">=2.20.0" },
+    { name = "openai", marker = "extra == 'embeddings'", specifier = ">=2.37.0" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "semble", marker = "extra == 'semble'", git = "https://github.com/MinishLab/semble" },
     { name = "sentence-transformers", marker = "extra == 'embeddings'", specifier = ">=3.0.0" },
+    { name = "tiktoken", marker = "extra == 'embeddings'", specifier = ">=0.7.0" },
     { name = "tqdm", specifier = ">=4.66.0" },
     { name = "unidiff", specifier = ">=0.7.5" },
 ]

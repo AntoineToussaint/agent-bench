@@ -11,10 +11,10 @@ Motivation: most code-retrieval benchmarks are LLM-generated and LLM-judged (e.g
 ```bash
 uv sync                       # ripgrep + BM25 retrievers
 uv sync --extra semble        # also installs semble from GitHub
-uv sync --extra embeddings    # adds sentence-transformers (for custom dense retrievers)
+uv sync --extra embeddings    # `embedding` retriever: openai + tiktoken (+ sentence-transformers)
 ```
 
-`ripgrep` retriever needs `rg` on `$PATH`.
+`ripgrep` retriever needs `rg` on `$PATH`. The `embedding` retriever needs `OPENAI_API_KEY`.
 
 ## Usage
 
@@ -68,6 +68,7 @@ tasks_dir/
 |---|---|
 | `ripgrep` | Extract keywords from the query → `rg -l --fixed-strings` → rank files by distinct-keyword hit count. |
 | `bm25` | BM25 over file contents using `rank-bm25`; one document per file. |
+| `embedding` | Pure code-RAG: embeds each source file (OpenAI `text-embedding-3-small`, path-prefixed, token-truncated) and the issue, ranks files by cosine similarity. The self-contained "vector index" arm for the agentic-search-vs-RAG bake-off. Requires the `embeddings` extra + `OPENAI_API_KEY`. |
 | `semble` | Wraps `semble.SembleIndex.from_path`; over-fetches chunks, dedupes to file paths. Requires the `semble` extra. |
 
 Plug in your own:
@@ -125,6 +126,7 @@ src/file_localization/
     ├── base.py        # Retriever Protocol
     ├── ripgrep.py
     ├── bm25.py
+    ├── embedding.py
     └── semble.py
 ```
 

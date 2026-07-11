@@ -34,9 +34,9 @@ from file_localization.turn_loop_trial import LocalRepoView, make_turn_loop_tria
 
 
 def _load_tasks(jsonl: Path, manifest: Path | None, n: int | None):
-    rows = [json.loads(l) for l in jsonl.read_text().splitlines() if l.strip()]
+    rows = [json.loads(line) for line in jsonl.read_text().splitlines() if line.strip()]
     if manifest:
-        ids = {l.strip() for l in manifest.read_text().splitlines() if l.strip()}
+        ids = {line.strip() for line in manifest.read_text().splitlines() if line.strip()}
         rows = [r for r in rows if r.get("instance_id") in ids]
     raws = [
         RawTask(

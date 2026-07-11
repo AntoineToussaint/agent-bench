@@ -12,6 +12,11 @@ dependencies = [
 
 [project.optional-dependencies]
 embeddings = [
+    # built-in `embedding` retriever: OpenAI embeddings over source files.
+    # tiktoken lets _truncate keep far more content than the char fallback.
+    "openai>=2.37.0",
+    "tiktoken>=0.7.0",
+    # sentence-transformers is optional headroom for custom local dense retrievers.
     "sentence-transformers>=3.0.0",
 ]
 semble = [
