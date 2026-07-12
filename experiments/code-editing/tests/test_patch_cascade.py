@@ -44,10 +44,11 @@ class StubClient:
         return self._responses.pop(0)
 
 
-def _msg(tool_calls, in_tok, out_tok) -> AssistantMessage:
+def _msg(tool_calls, in_tok, out_tok, ttft=0.0, gen=0.0) -> AssistantMessage:
     return AssistantMessage(
         text="", tool_calls=tool_calls,
-        usage=TurnUsage(input_tokens=in_tok, output_tokens=out_tok),
+        usage=TurnUsage(input_tokens=in_tok, output_tokens=out_tok,
+                        ttft_seconds=ttft, generate_seconds=gen),
     )
 
 
@@ -112,6 +113,26 @@ def test_cascade_diff_corrects_draft_and_sums_cost(buggy_task):
     assert rec.extra["top_tier_output_tokens"] == 80
     assert [t["model"] for t in rec.extra["per_tier"]] == [
         "claude-haiku-4-5", "claude-opus-4-8"]
+
+
+def test_cascade_sums_ttft_and_generate(buggy_task):
+    """Latency decomposition (NEXT.md #32) is summed across tiers."""
+    fmt = FORMAT_REGISTRY["search_replace"]()
+    draft = StubClient("claude-haiku-4-5", [_msg(
+        [ToolCall("str_replace", {"path": "target.py",
+                                  "old_str": "return a - b", "new_str": "return a * b"}, "c0")],
+        in_tok=1000, out_tok=400, ttft=0.5, gen=2.0,
+    )])
+    fix = StubClient("claude-opus-4-8", [_msg(
+        [ToolCall("str_replace", {"path": "target.py",
+                                  "old_str": "return a * b", "new_str": "return a + b"}, "c1")],
+        in_tok=1200, out_tok=80, ttft=0.8, gen=0.6,
+    )])
+    with tempfile.TemporaryDirectory() as tmp:
+        rec = run_cascade(buggy_task, [draft, fix], fmt, Path(tmp), correction_style="diff")
+    assert rec.usage.ttft_seconds == pytest.approx(1.3)      # 0.5 + 0.8
+    assert rec.usage.generate_seconds == pytest.approx(2.6)  # 2.0 + 0.6
+    assert [t["ttft_s"] for t in rec.extra["per_tier"]] == [0.5, 0.8]
 
 
 def test_cascade_rewrite_uses_write_file(buggy_task):

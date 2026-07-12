@@ -15,6 +15,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from agent_eval.models._openai_stream import stream_step_with_latency
 from agent_eval.types import AssistantMessage, ModelClient, ToolCall, ToolResult, TurnUsage
 
 
@@ -111,7 +112,11 @@ class _OpenRouterClient(ModelClient):
                     "type": "function",
                     "function": {"name": tool_choice["name"]},
                 }
-        resp = self.client.chat.completions.create(**kwargs)
+        # Stream so we can split latency into TTFT (queue + prefill) and generate
+        # (decode); falls back to a non-streamed create() when the upstream
+        # can't stream. usage may still be 0 if an OpenRouter upstream omits it
+        # — no worse than before. See agent_eval.models._openai_stream.
+        resp, ttft, generate = stream_step_with_latency(self.client, kwargs)
         choice = resp.choices[0].message
 
         assistant_entry: dict[str, Any] = {
@@ -141,6 +146,8 @@ class _OpenRouterClient(ModelClient):
         usage = TurnUsage(
             input_tokens=getattr(usage_obj, "prompt_tokens", 0) or 0,
             output_tokens=getattr(usage_obj, "completion_tokens", 0) or 0,
+            ttft_seconds=ttft,
+            generate_seconds=generate,
         )
         return AssistantMessage(
             text=choice.content or "", tool_calls=calls, usage=usage, raw=resp.model_dump()

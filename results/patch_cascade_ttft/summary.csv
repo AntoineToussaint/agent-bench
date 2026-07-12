@@ -1,0 +1,7 @@
+task_id,condition,n,pass_rate,mean_cost_usd,mean_latency_s,mean_ttft_s,mean_generate_s,gate_n,gate_accuracy,early_stop_rate
+c08_add_feature__large,opus-scratch,2,1.000,0.126682,12.473,2.830,9.639,0,,0.000
+c08_add_feature__large,cascade-2-diff-gated,2,1.000,0.105636,15.859,2.537,13.321,2,1.000,0.000
+c08_add_feature__large,cascade-3-diff-gated,2,1.000,0.071509,26.560,5.209,21.350,4,1.000,0.000
+c08_add_feature__medium,opus-scratch,2,1.000,0.044900,7.173,1.805,5.365,0,,0.000
+c08_add_feature__medium,cascade-2-diff-gated,2,1.000,0.042025,11.679,2.445,9.233,2,1.000,0.000
+c08_add_feature__medium,cascade-3-diff-gated,2,1.000,0.033728,18.926,5.560,13.364,4,1.000,0.000

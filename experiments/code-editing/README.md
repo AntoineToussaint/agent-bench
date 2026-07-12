@@ -138,6 +138,11 @@ Design notes:
   **diffuse** many-hunk edits (`edit_fraction ≥ 1`, where per-hunk context overhead
   makes the diff bigger than a rewrite) and for trivial edits.
 - **Latency benefits more than cost** where diff wins (output tokens dominate wall-clock).
+  Decomposing latency into TTFT + generate (streaming, `TurnUsage.ttft_seconds` /
+  `generate_seconds`) shows the cascade's extra wall-clock is **cumulative *decode*, not
+  startups** — total TTFT across a 2-tier cascade ≈ a single Opus call's TTFT; the blow-up is
+  summed generation. So caching can't help latency (it only speeds TTFT ≈15–20% of the total),
+  and the lever is total tokens *generated*. Single-shot Opus stays latency-king on hard tasks.
 - The conservative gate recovers early-stop savings without shipping broken drafts.
 - Boundary: on *medium* tasks the effect is in the noise — outputs are too short for the
   diff to matter; the win shows up on large/localized edits.

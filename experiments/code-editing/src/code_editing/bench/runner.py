@@ -1156,6 +1156,8 @@ def run_cascade(
         total_usage.output_tokens += usage.output_tokens
         total_usage.cache_read_tokens += usage.cache_read_tokens
         total_usage.cache_creation_tokens += usage.cache_creation_tokens
+        total_usage.ttft_seconds += usage.ttft_seconds
+        total_usage.generate_seconds += usage.generate_seconds
         total_cost += tier_cost
         total_latency += latency
         total_edits += n_edits
@@ -1178,6 +1180,8 @@ def run_cascade(
             "cache_creation_tokens": usage.cache_creation_tokens,
             "cost_usd": round(tier_cost, 6),
             "latency_s": round(latency, 3),
+            "ttft_s": round(usage.ttft_seconds, 3),
+            "generate_s": round(usage.generate_seconds, 3),
             "n_edits": n_edits,
             "n_invalid": n_invalid,
             "passed_after": probe.passed,
@@ -1198,6 +1202,8 @@ def run_cascade(
             total_usage.output_tokens += g_usage.output_tokens
             total_usage.cache_read_tokens += g_usage.cache_read_tokens
             total_usage.cache_creation_tokens += g_usage.cache_creation_tokens
+            total_usage.ttft_seconds += g_usage.ttft_seconds
+            total_usage.generate_seconds += g_usage.generate_seconds
             entry.update({
                 "gate_model": gate_client.name,
                 "gate_confident": confident,
