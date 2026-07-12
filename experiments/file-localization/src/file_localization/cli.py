@@ -12,6 +12,7 @@ from .runner import run, save_results, summarize
 BUILTIN_RETRIEVERS = {
     "ripgrep": "file_localization.retrievers.ripgrep:RipgrepRetriever",
     "bm25": "file_localization.retrievers.bm25:BM25Retriever",
+    "embedding": "file_localization.retrievers.embedding:EmbeddingRetriever",
     "semble": "file_localization.retrievers.semble:SembleRetriever",
 }
 
