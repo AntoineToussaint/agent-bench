@@ -100,10 +100,10 @@ class _AnthropicClient(ModelClient):
         t_first: float | None = None
         with self.client.messages.stream(**kwargs) as stream:
             for event in stream:
-                if t_first is None and getattr(event, "type", None) in (
-                    "content_block_start",
-                    "content_block_delta",
-                ):
+                # Mark TTFT at the first *token* (content_block_delta), not the
+                # block-open (content_block_start), to keep the split consistent
+                # with the OpenAI/Google clients — a block opens before it emits.
+                if t_first is None and getattr(event, "type", None) == "content_block_delta":
                     t_first = time.monotonic()
             msg = stream.get_final_message()
         t_end = time.monotonic()

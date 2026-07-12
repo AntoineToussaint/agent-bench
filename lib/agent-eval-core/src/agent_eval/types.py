@@ -39,12 +39,14 @@ class TurnUsage:
     output_tokens: int = 0
     cache_read_tokens: int = 0
     cache_creation_tokens: int = 0
-    # Latency decomposition (NEXT.md #32). ttft = queue + prefill (time to first
-    # content token); generate = decode time (first token -> done). Caching
-    # speeds ttft (prefill); shorter output speeds generate (decode). Every
-    # provider client streams and populates these (Anthropic / OpenAI / Google /
-    # OpenRouter); they stay 0.0 only for non-streaming stubs, where the runner's
-    # latency_seconds carries the whole number. Summed across turns like tokens.
+    # Latency decomposition (NEXT.md #32). ttft = queue + prefill (up to the
+    # first generated token); generate = decode time (first token -> done). All
+    # provider clients mark the same boundary — the first content *delta*, not
+    # the block/role preamble — so the split is comparable across models.
+    # Caching speeds ttft (prefill); shorter output speeds generate (decode).
+    # 0.0 only when the client didn't stream: a non-streaming stub, or an
+    # OpenAI/OpenRouter create() fallback when the model/org can't stream — then
+    # the runner's latency_seconds carries the whole number. Summed across turns.
     ttft_seconds: float = 0.0
     generate_seconds: float = 0.0
 

@@ -11,6 +11,10 @@ from __future__ import annotations
 import time
 from types import SimpleNamespace
 
+import httpx
+import pytest
+from openai import BadRequestError
+
 
 # --------------------------------------------------------------------------- #
 # OpenAI                                                                       #
@@ -103,6 +107,70 @@ def test_openai_no_content_events_zero_generate(monkeypatch):
     msg = c.step(tools=[])
     assert msg.usage.generate_seconds == 0.0
     assert msg.usage.ttft_seconds >= 0.0
+
+
+def _bad_request(message, param=None):
+    req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+    return BadRequestError(
+        message, response=httpx.Response(400, request=req), body={"param": param}
+    )
+
+
+def test_openai_falls_back_to_create_when_streaming_unsupported(monkeypatch):
+    # OpenAI gates streaming for some models behind org verification: a 400 on
+    # `stream`. We should transparently retry non-streamed and report 0 split.
+    def _raise(**kw):
+        raise _bad_request(
+            "Your organization must be verified to stream this model.", param="stream"
+        )
+
+    created = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="fallback", tool_calls=None))],
+        usage=SimpleNamespace(prompt_tokens=4, completion_tokens=2),
+        model_dump=lambda: {"id": "fb"},
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    from agent_eval.models.openai_client import _OpenAIClient
+
+    c = _OpenAIClient(model_id="gpt-5.4")
+    c.reset("system")
+    c.add_user_text("hi")
+    c.client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(stream=_raise, create=lambda **kw: created)
+        )
+    )
+    msg = c.step(tools=[])
+    assert msg.text == "fallback"
+    assert msg.usage.input_tokens == 4
+    assert msg.usage.ttft_seconds == 0.0
+    assert msg.usage.generate_seconds == 0.0
+
+
+def test_openai_reraises_unrelated_bad_request(monkeypatch):
+    # A 400 that isn't about streaming (e.g. a bad tool schema) must surface,
+    # not silently retry.
+    called = {"create": False}
+
+    def _raise(**kw):
+        raise _bad_request("Invalid schema for tool 'edit'", param="tools")
+
+    def _create(**kw):
+        called["create"] = True
+        return None
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    from agent_eval.models.openai_client import _OpenAIClient
+
+    c = _OpenAIClient(model_id="gpt-5.4")
+    c.reset("system")
+    c.add_user_text("hi")
+    c.client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(stream=_raise, create=_create))
+    )
+    with pytest.raises(BadRequestError):
+        c.step(tools=[])
+    assert called["create"] is False  # no fallback attempted
 
 
 # --------------------------------------------------------------------------- #

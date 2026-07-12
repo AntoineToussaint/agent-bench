@@ -216,6 +216,10 @@ class _GoogleClient(ModelClient):
             cand = (getattr(chunk, "candidates", None) or [None])[0]
             content = getattr(cand, "content", None) if cand is not None else None
             for part in getattr(content, "parts", None) or []:
+                # Mark TTFT at the first part carrying real output (a call or
+                # non-empty text) — consistent with the Anthropic/OpenAI clients,
+                # which mark the first content delta. Empty preamble parts don't
+                # count.
                 if getattr(part, "function_call", None) is not None:
                     fc_parts.append(part)
                     if t_first is None:

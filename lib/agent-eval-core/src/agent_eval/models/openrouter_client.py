@@ -15,6 +15,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from agent_eval.models._openai_stream import stream_step_with_latency
 from agent_eval.types import AssistantMessage, ModelClient, ToolCall, ToolResult, TurnUsage
 
 
@@ -112,28 +113,10 @@ class _OpenRouterClient(ModelClient):
                     "function": {"name": tool_choice["name"]},
                 }
         # Stream so we can split latency into TTFT (queue + prefill) and generate
-        # (decode). get_final_completion() reassembles the same ChatCompletion
-        # create() would have returned; include_usage makes the terminal chunk
-        # carry token counts (an OpenRouter upstream may still omit them, in
-        # which case usage stays 0 — no worse than before).
-        import time
-
-        t0 = time.monotonic()
-        t_first: float | None = None
-        with self.client.chat.completions.stream(
-            **kwargs, stream_options={"include_usage": True}
-        ) as stream:
-            for event in stream:
-                if t_first is None and getattr(event, "type", None) in (
-                    "content.delta",
-                    "refusal.delta",
-                    "tool_calls.function.arguments.delta",
-                ):
-                    t_first = time.monotonic()
-            resp = stream.get_final_completion()
-        t_end = time.monotonic()
-        ttft = (t_first if t_first is not None else t_end) - t0
-        generate = (t_end - t_first) if t_first is not None else 0.0
+        # (decode); falls back to a non-streamed create() when the upstream
+        # can't stream. usage may still be 0 if an OpenRouter upstream omits it
+        # — no worse than before. See agent_eval.models._openai_stream.
+        resp, ttft, generate = stream_step_with_latency(self.client, kwargs)
         choice = resp.choices[0].message
 
         assistant_entry: dict[str, Any] = {
