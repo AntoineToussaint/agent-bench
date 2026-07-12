@@ -50,6 +50,26 @@ class TurnUsage:
     ttft_seconds: float = 0.0
     generate_seconds: float = 0.0
 
+    @property
+    def decode_tokens_per_s(self) -> float:
+        """Decode throughput — output tokens ÷ generate time (tokens/sec).
+
+        The length-normalized "how fast does it generate?" number: unlike raw
+        latency it doesn't reward a model for simply emitting fewer tokens. 0.0
+        when generate time is unknown (non-streaming) or zero, so callers can
+        filter those out rather than average in a meaningless rate.
+        """
+        return self.output_tokens / self.generate_seconds if self.generate_seconds > 0 else 0.0
+
+    @property
+    def ttft_fraction(self) -> float:
+        """Share of model time spent before the first token (startup vs decode).
+
+        ttft / (ttft + generate). ~1.0 means "slow to start", ~0.0 means "slow
+        to generate". 0.0 when neither was measured (non-streaming)."""
+        total = self.ttft_seconds + self.generate_seconds
+        return self.ttft_seconds / total if total > 0 else 0.0
+
 
 @dataclass
 class AssistantMessage:

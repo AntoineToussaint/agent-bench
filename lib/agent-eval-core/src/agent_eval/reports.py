@@ -4,6 +4,11 @@ Two views:
   - Per-record CSV: one row per trial (including each replicate).
   - Per-cell aggregate: collapse replicates into pass_rate + p25/p50/p75
     distributions for turns / cost / latency / tokens.
+
+Latency is reported both as one wall-clock number (`latency_seconds`) and,
+when clients stream, split into TTFT vs generate (NEXT.md #32) with a derived
+decode throughput (tokens/sec). The markdown grows a "Latency split" section
+only when something actually streamed.
 """
 
 from __future__ import annotations
@@ -35,6 +40,9 @@ CSV_COLUMNS = [
     "cache_creation_tokens",
     "cost_usd",
     "latency_seconds",
+    "ttft_seconds",
+    "generate_seconds",
+    "decode_tokens_per_s",
     "error",
 ]
 
@@ -67,6 +75,9 @@ def write_csv(records: list[RunRecord], out: Path) -> None:
                     "cache_creation_tokens": r.usage.cache_creation_tokens,
                     "cost_usd": f"{r.cost_usd:.6f}",
                     "latency_seconds": f"{r.latency_seconds:.3f}",
+                    "ttft_seconds": f"{r.usage.ttft_seconds:.3f}",
+                    "generate_seconds": f"{r.usage.generate_seconds:.3f}",
+                    "decode_tokens_per_s": f"{r.usage.decode_tokens_per_s:.1f}",
                     "error": r.error or "",
                 }
             )
@@ -91,6 +102,11 @@ class CellStats:
     cost_usd: tuple[float, float, float]
     latency_seconds: tuple[float, float, float]
     total_tokens: tuple[float, float, float]
+    # Latency split (NEXT.md #32). ttft/generate are 0-tuples for non-streaming
+    # runs; decode_tokens_per_s is aggregated over streamed replicates only.
+    ttft_seconds: tuple[float, float, float]
+    generate_seconds: tuple[float, float, float]
+    decode_tokens_per_s: tuple[float, float, float]
 
 
 def _p(xs: list[float]) -> tuple[float, float, float]:
@@ -136,6 +152,13 @@ def aggregate_cells(records: list[RunRecord]) -> list[CellStats]:
                 total_tokens=_p(
                     [r.usage.input_tokens + r.usage.output_tokens for r in rs]
                 ),
+                ttft_seconds=_p([r.usage.ttft_seconds for r in rs]),
+                generate_seconds=_p([r.usage.generate_seconds for r in rs]),
+                # Throughput only makes sense where decode was timed; averaging
+                # in 0.0 for non-streamed replicates would understate it.
+                decode_tokens_per_s=_p(
+                    [r.usage.decode_tokens_per_s for r in rs if r.usage.generate_seconds > 0]
+                ),
             )
         )
     return out
@@ -151,6 +174,9 @@ def write_aggregate_csv(records: list[RunRecord], out: Path) -> None:
         "tool_calls_p25", "tool_calls_p50", "tool_calls_p75",
         "cost_p25", "cost_p50", "cost_p75",
         "latency_p25", "latency_p50", "latency_p75",
+        "ttft_p25", "ttft_p50", "ttft_p75",
+        "generate_p25", "generate_p50", "generate_p75",
+        "decode_tps_p25", "decode_tps_p50", "decode_tps_p75",
         "tokens_p25", "tokens_p50", "tokens_p75",
     ]
     with out.open("w", newline="", encoding="utf-8") as f:
@@ -164,6 +190,9 @@ def write_aggregate_csv(records: list[RunRecord], out: Path) -> None:
                 "tool_calls_p25": f"{c.tool_calls[0]:.2f}", "tool_calls_p50": f"{c.tool_calls[1]:.2f}", "tool_calls_p75": f"{c.tool_calls[2]:.2f}",
                 "cost_p25": f"{c.cost_usd[0]:.6f}", "cost_p50": f"{c.cost_usd[1]:.6f}", "cost_p75": f"{c.cost_usd[2]:.6f}",
                 "latency_p25": f"{c.latency_seconds[0]:.3f}", "latency_p50": f"{c.latency_seconds[1]:.3f}", "latency_p75": f"{c.latency_seconds[2]:.3f}",
+                "ttft_p25": f"{c.ttft_seconds[0]:.3f}", "ttft_p50": f"{c.ttft_seconds[1]:.3f}", "ttft_p75": f"{c.ttft_seconds[2]:.3f}",
+                "generate_p25": f"{c.generate_seconds[0]:.3f}", "generate_p50": f"{c.generate_seconds[1]:.3f}", "generate_p75": f"{c.generate_seconds[2]:.3f}",
+                "decode_tps_p25": f"{c.decode_tokens_per_s[0]:.1f}", "decode_tps_p50": f"{c.decode_tokens_per_s[1]:.1f}", "decode_tps_p75": f"{c.decode_tokens_per_s[2]:.1f}",
                 "tokens_p25": f"{c.total_tokens[0]:.0f}", "tokens_p50": f"{c.total_tokens[1]:.0f}", "tokens_p75": f"{c.total_tokens[2]:.0f}",
             })
 
@@ -232,8 +261,49 @@ def _summarize_means(records: list[RunRecord]) -> str:
                 pr = sum(e.passed for e in entries) / len(entries)
                 row.append(f"{pr:.0%}")
         lines.append("| " + " | ".join(row) + " |")
+    lines.append(_latency_split_section(records))
     lines.append(_failure_mode_section(records))
     return "\n".join(lines) + "\n"
+
+
+def _latency_split_section(records: list[RunRecord]) -> str:
+    """TTFT-vs-generate breakdown (NEXT.md #32), one row per (model, condition).
+
+    Answers "is this model slow to *start* or slow to *generate*?" directly:
+    mean TTFT, mean decode time, the TTFT share of model time, and decode
+    throughput (tokens/sec) — the length-normalized generation speed. Returns
+    "" when nothing streamed (all generate_seconds == 0), so non-streaming
+    runs don't sprout a table of zeros.
+    """
+    streamed = [r for r in records if r.usage.generate_seconds > 0]
+    if not streamed:
+        return ""
+    groups: dict[tuple[str, str], list[RunRecord]] = defaultdict(list)
+    for r in streamed:
+        groups[(r.model, r.condition)].append(r)
+
+    lines = [
+        "",
+        "## Latency split (TTFT vs generate)",
+        "",
+        "Per NEXT.md #32: is the model slow to *start* (TTFT) or slow to",
+        "*generate* (decode)? `ttft_frac` ≈ 1 means startup-bound, ≈ 0 means",
+        "decode-bound. `decode tok/s` is length-normalized generation speed.",
+        "Averaged over streamed trials only.",
+        "",
+        "| model | condition | mean_ttft (s) | mean_gen (s) | ttft_frac | decode tok/s |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for (model, cond), rs in sorted(groups.items()):
+        mean_ttft = statistics.mean(r.usage.ttft_seconds for r in rs)
+        mean_gen = statistics.mean(r.usage.generate_seconds for r in rs)
+        mean_frac = statistics.mean(r.usage.ttft_fraction for r in rs)
+        mean_tps = statistics.mean(r.usage.decode_tokens_per_s for r in rs)
+        lines.append(
+            f"| {model} | {cond} | {mean_ttft:.2f} | {mean_gen:.2f} | "
+            f"{mean_frac:.2f} | {mean_tps:,.0f} |"
+        )
+    return "\n".join(lines)
 
 
 def _failure_mode_section(records: list[RunRecord]) -> str:
@@ -332,6 +402,7 @@ def _summarize_with_replicates(records: list[RunRecord]) -> str:
                 else:
                     row.append(f"{min(rates):.0%}-{max(rates):.0%}")
         lines.append("| " + " | ".join(row) + " |")
+    lines.append(_latency_split_section(records))
     lines.append(_failure_mode_section(records))
     return "\n".join(lines) + "\n"
 

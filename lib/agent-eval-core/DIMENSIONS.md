@@ -23,8 +23,10 @@ on `RunRecord.extra`.
 
 - `passed: bool` — the headline metric
 - `turns`, `tool_calls`, `invalid_tool_calls`
-- `usage` — input / output / cache-read / cache-creation tokens
-- `latency_seconds`, `cost_usd`
+- `usage` — input / output / cache-read / cache-creation tokens, plus the
+  latency split `ttft_seconds` / `generate_seconds` (NEXT.md #32) with derived
+  `decode_tokens_per_s` and `ttft_fraction` properties
+- `latency_seconds` (wall-clock), `cost_usd`
 - `error` — set on hard failure (e.g. "aborted: 3 consecutive error turns")
 - `extra["failure_mode"]` — one of the 17 categories from `FAILURE_MODES.md`
 
@@ -105,7 +107,7 @@ missing is more coverage (more models, more task types).
 ## Concrete next-step proposals, ranked
 
 1. **Coverage of the existing 3 dimensions** — populate `model_backends.yaml` empirically for more models (Opus 4.7, GPT-5, plus the now-wired Gemini 2.5 Pro / Flash-Lite). Currently 3 of 9 entries have empirical backing (Haiku, Sonnet, and Flash from the 3-lab smoke).
-2. **Split `latency_seconds` into TTFT + generate** — switch all three model clients (Anthropic, OpenAI, Google) from non-streaming `create` to streaming `stream`, capture monotonic timestamp at first content delta. New `TurnUsage.ttft_seconds` / `generate_seconds` fields. Pairs with `batch_efficiency`: a chatty model with high TTFT pays the start-up cost every turn. ~1-2 hours, all infrastructure already in place.
+2. **Split `latency_seconds` into TTFT + generate** — *done (#32).* All provider clients (Anthropic, OpenAI, Google, OpenRouter) stream and mark the first content delta into `TurnUsage.ttft_seconds` / `generate_seconds`; `reports.py` surfaces the split plus derived `decode_tokens_per_s` in the CSV, the aggregate, and a "Latency split" markdown section. Still pairs with `batch_efficiency`: a chatty model with high TTFT pays the start-up cost every turn.
 3. **Add `abstain`** to tool-selection — small change to the existing scorer; just need tasks where the right answer is "call nothing." Closes a published gap (MetaTool, BFCL) inside our existing harness.
 4. **Add `consistency`** — derived metric, not a new experiment. Run any cell at `repetitions=5+`, report `pass^k` and `pass@1` side-by-side. Free with what we have.
 5. **Add `clarify`** — new experiment, but reuses everything: a user-simulator (cheap LLM) replies to agent questions; score = ambiguity resolved before acting. Closes a real gap (no `τ-coding` exists).
