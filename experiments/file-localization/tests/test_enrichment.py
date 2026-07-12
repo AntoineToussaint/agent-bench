@@ -33,20 +33,21 @@ def test_load_and_coerce(tmp_path):
     assert enr["a__a-2"]["cost_gpt5"] is None        # blank -> None
 
 
-def test_is_clean_filters_severe_flags(tmp_path):
+def test_is_clean_filters_contamination_flags(tmp_path):
+    # Annotation columns are binary 0/1 majority votes (matches the real CSV).
     p = tmp_path / "enr.csv"
     p.write_text(
-        "instance_id,difficulty,underspecified,false_negative\n"
-        "clean,1-4 hours,0.0,1.0\n"        # below threshold -> clean
-        "fn_severe,1-4 hours,0.0,2.0\n"    # false_negative severe -> drop
-        "us_severe,1-4 hours,3.0,0.0\n"    # underspecified severe -> drop
+        "instance_id,difficulty,underspecified,false_negative,other_major_issues\n"
+        "clean,1-4 hours,0.0,0.0,0.0\n"          # no flags -> clean
+        "fn_flagged,1-4 hours,0.0,1.0,0.0\n"     # false_negative -> drop
+        "omi_flagged,1-4 hours,0.0,0.0,1.0\n"    # other_major_issues -> drop
+        "us_only,1-4 hours,1.0,0.0,0.0\n"        # underspecified is NOT contamination -> clean
     )
     enr = load_verified_enrichment(p)
     assert is_clean(enr["clean"]) is True
-    assert is_clean(enr["fn_severe"]) is False
-    assert is_clean(enr["us_severe"]) is False
-    # threshold is tunable
-    assert is_clean(enr["clean"], severity_threshold=1.0) is False
+    assert is_clean(enr["fn_flagged"]) is False
+    assert is_clean(enr["omi_flagged"]) is False
+    assert is_clean(enr["us_only"]) is True
 
 
 def test_committed_csv_schema_if_present():

@@ -1,8 +1,10 @@
 """Load SWE-bench tasks by difficulty band (focus: SWE-bench Verified).
 
 Glue between the generic difficulty interface (`agent_eval.difficulty`) and the
-SWE-bench adapter. The difficulty signal comes from a CSV produced by
-`scripts/swebench_difficulty.py` (leaderboard pass-rate per instance); this
+SWE-bench adapter. For Verified the difficulty signal comes from a CSV produced
+by `scripts/build_verified_difficulty.py` (model-solvability: fraction of 4
+strong reference models that solved each task, tie-broken by cost/calls/human
+time — see SOURCES.md for why the old leaderboard pass-rate was dropped). This
 module turns "give me N hard Verified tasks" into a list of LocalizationTask.
 
 Typical use (STRATEGY.md Decision D — get off the saturated easy band):
@@ -13,12 +15,10 @@ Typical use (STRATEGY.md Decision D — get off the saturated easy band):
         csv_path="lib/agent-eval-core/data/swebench_verified_difficulty.csv",
     )
 
-Generate the CSV first (one-time, needs `gh` + network):
+Generate the CSV first (one-time, no network — derives from the enrichment CSV):
 
     uv run --package file-localization python \\
-        experiments/file-localization/scripts/swebench_difficulty.py \\
-        --split verified --since 20240601 \\
-        --out lib/agent-eval-core/data/swebench_verified_difficulty.csv
+        experiments/file-localization/scripts/build_verified_difficulty.py
 """
 
 from __future__ import annotations
@@ -108,16 +108,28 @@ def load_verified_enrichment(
     return out
 
 
-def is_clean(enrichment_row: dict, *, severity_threshold: float = 2.0) -> bool:
-    """True if a task is NOT flagged contaminated/contested.
+# Annotation flags that make a task's resolved/pass signal untrustworthy.
+# `underspecified` is intentionally NOT here — see is_clean docstring.
+_CONTAMINATION_FLAGS = ("false_negative", "other_major_issues")
 
-    Drops instances where `underspecified` or `false_negative` severity is at
-    or above `severity_threshold` (OpenAI's ≥2 = "severe"). Use to filter out
-    tasks whose pass/fail signal is untrustworthy before scoring localization.
+
+def is_clean(enrichment_row: dict, *, flag_threshold: float = 1.0) -> bool:
+    """True if a task's pass/fail signal is NOT suspect.
+
+    The enrichment copies OpenAI's ensembled annotations verbatim, and those
+    columns are **binary 0/1 majority votes** (not 0-3 severities — every value
+    in the committed CSV is 0.0 or 1.0). Drops instances flagged
+    `false_negative` (gold tests fail incorrectly) or `other_major_issues` —
+    these corrupt the resolved/pass signal. `underspecified` is left clean on
+    purpose: an ambiguous spec is intrinsic *difficulty* (a model that can't
+    infer the intended fix is legitimately harder), not contamination.
+
+    NOTE: the previous default threshold of 2.0 never fired against the binary
+    data, so is_clean silently passed every task — this fixes that.
     """
-    for flag in ("underspecified", "false_negative"):
+    for flag in _CONTAMINATION_FLAGS:
         v = enrichment_row.get(flag)
-        if isinstance(v, (int, float)) and v >= severity_threshold:
+        if isinstance(v, (int, float)) and v >= flag_threshold:
             return False
     return True
 

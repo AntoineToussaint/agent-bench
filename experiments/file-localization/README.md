@@ -11,7 +11,7 @@ Motivation: most code-retrieval benchmarks are LLM-generated and LLM-judged (e.g
 ```bash
 uv sync                       # ripgrep + BM25 retrievers
 uv sync --extra semble        # also installs semble from GitHub
-uv sync --extra embeddings    # `embedding` retriever: openai + tiktoken (+ sentence-transformers)
+uv sync --extra embeddings    # `embedding` retriever: openai + tiktoken
 ```
 
 `ripgrep` retriever needs `rg` on `$PATH`. The `embedding` retriever needs `OPENAI_API_KEY`.

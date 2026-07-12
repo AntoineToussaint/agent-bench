@@ -32,10 +32,35 @@ What is NOT available upstream and therefore absent here: per-instance
 **latency / wall-clock** and **token counts** (no public SWE-bench source
 exposes them).
 
-## `swebench_*_difficulty.csv` (if present)
+## `swebench_verified_difficulty.csv`
 
-Per-instance leaderboard pass-rate (solver difficulty), built by
-`experiments/file-localization/scripts/swebench_difficulty.py` from
+**Model-solvability difficulty** for the Verified 500, built by
+`experiments/file-localization/scripts/build_verified_difficulty.py` from the
+enrichment CSV above (no network — pure local derivation). Sorted hardest-first.
+
+Columns: `instance_id, repo, n_solved, n_total, pass_rate, difficulty_score,
+band, human_bucket, ref_cost_avg, avg_calls, flagged`. The first five are the
+shape `agent_eval.difficulty.CsvDifficultySource` reads, so this is a drop-in
+difficulty source; `pass_rate` = `ref_solve_rate` (n of 4 reference models that
+solved it / 4). `difficulty_score` ∈ [0,1] (1 = hardest) is a rank percentile
+over the sort key *(solve-rate asc, ref_cost desc, avg_calls desc, human-time
+desc)* — solve-rate dominates, cost/calls/human-time break ties. `flagged=1`
+marks tasks with a `false_negative` / `other_major_issues` annotation (suspect
+pass/fail signal); `underspecified` is left in the ranking as genuine difficulty.
+
+**Why not the leaderboard.** This file *used* to be the leaderboard pass-rate
+(`resolved_submissions / N`) scraped by `swebench_difficulty.py` from
+`github.com/swe-bench/experiments`. For Verified that signal proved
+non-discriminative: mean reference-model solve-rate was flat (~0.62–0.69) across
+every leaderboard band, and 22 tasks marked `0/125` are solved by ≥3 of 4 strong
+models — dominated by stale/partial early submissions and instances missing from
+many submission sets. `swebench_difficulty.py` is kept for the **Lite** split
+(`swebench_lite_difficulty.csv`), where the leaderboard is still the only signal.
+
+## `swebench_lite_difficulty.csv` (if present)
+
+Per-instance leaderboard pass-rate (solver difficulty) for the **Lite** split,
+built by `experiments/file-localization/scripts/swebench_difficulty.py` from
 `github.com/swe-bench/experiments`. Columns: `instance_id, repo, n_solved,
-n_total, pass_rate`. Distinct from the `ref_solve_rate` above (that's only the
+n_total, pass_rate`. Distinct from `ref_solve_rate` above (that's only the
 4 reference models; this is the whole leaderboard).

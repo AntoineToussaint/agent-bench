@@ -7,7 +7,6 @@ approach using it can attribute the inner cost.
 Naming convention for selector ids — these surface in approach ids like
 `toolbox_preselect:bm25` or `tool_retrieval:embed-openai-small`:
   - bm25
-  - embed-local                 (sentence-transformers MiniLM)
   - embed-openai-small
   - embed-openai-large
   - llm-haiku                   (claude-haiku-4-5)
@@ -17,12 +16,10 @@ Naming convention for selector ids — these surface in approach ids like
 from .base import Selectable, Selection, Selector
 from .bm25 import BM25Selector
 from .llm import LLMSelector
-from .local_embed import LocalEmbedSelector
 from .openai_embed import OpenAIEmbedSelector
 
 SELECTORS: dict[str, object] = {
     "bm25": BM25Selector,
-    "embed-local": lambda: LocalEmbedSelector(),
     "embed-openai-small": lambda: OpenAIEmbedSelector("text-embedding-3-small"),
     "embed-openai-large": lambda: OpenAIEmbedSelector("text-embedding-3-large"),
     "llm-haiku": lambda: LLMSelector("claude-haiku-4-5"),
