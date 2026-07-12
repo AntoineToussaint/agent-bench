@@ -111,7 +111,29 @@ class _OpenRouterClient(ModelClient):
                     "type": "function",
                     "function": {"name": tool_choice["name"]},
                 }
-        resp = self.client.chat.completions.create(**kwargs)
+        # Stream so we can split latency into TTFT (queue + prefill) and generate
+        # (decode). get_final_completion() reassembles the same ChatCompletion
+        # create() would have returned; include_usage makes the terminal chunk
+        # carry token counts (an OpenRouter upstream may still omit them, in
+        # which case usage stays 0 — no worse than before).
+        import time
+
+        t0 = time.monotonic()
+        t_first: float | None = None
+        with self.client.chat.completions.stream(
+            **kwargs, stream_options={"include_usage": True}
+        ) as stream:
+            for event in stream:
+                if t_first is None and getattr(event, "type", None) in (
+                    "content.delta",
+                    "refusal.delta",
+                    "tool_calls.function.arguments.delta",
+                ):
+                    t_first = time.monotonic()
+            resp = stream.get_final_completion()
+        t_end = time.monotonic()
+        ttft = (t_first if t_first is not None else t_end) - t0
+        generate = (t_end - t_first) if t_first is not None else 0.0
         choice = resp.choices[0].message
 
         assistant_entry: dict[str, Any] = {
@@ -141,6 +163,8 @@ class _OpenRouterClient(ModelClient):
         usage = TurnUsage(
             input_tokens=getattr(usage_obj, "prompt_tokens", 0) or 0,
             output_tokens=getattr(usage_obj, "completion_tokens", 0) or 0,
+            ttft_seconds=ttft,
+            generate_seconds=generate,
         )
         return AssistantMessage(
             text=choice.content or "", tool_calls=calls, usage=usage, raw=resp.model_dump()

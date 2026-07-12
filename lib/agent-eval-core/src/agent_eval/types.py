@@ -41,9 +41,10 @@ class TurnUsage:
     cache_creation_tokens: int = 0
     # Latency decomposition (NEXT.md #32). ttft = queue + prefill (time to first
     # content token); generate = decode time (first token -> done). Caching
-    # speeds ttft (prefill); shorter output speeds generate (decode). Populated
-    # by streaming clients; 0.0 when the client didn't stream (lumped into the
-    # runner's latency_seconds instead). Summed across turns like token counts.
+    # speeds ttft (prefill); shorter output speeds generate (decode). Every
+    # provider client streams and populates these (Anthropic / OpenAI / Google /
+    # OpenRouter); they stay 0.0 only for non-streaming stubs, where the runner's
+    # latency_seconds carries the whole number. Summed across turns like tokens.
     ttft_seconds: float = 0.0
     generate_seconds: float = 0.0
 

@@ -197,56 +197,94 @@ class _GoogleClient(ModelClient):
             if tc is not None:
                 config_kwargs["tool_config"] = tc
 
-        resp = self.client.models.generate_content(
+        # Stream so we can split latency into TTFT (queue + prefill) and generate
+        # (decode). Gemini's SDK has no final-response accumulator, so we assemble
+        # the text + function-call parts and usage ourselves as chunks arrive.
+        import time
+
+        t0 = time.monotonic()
+        t_first: float | None = None
+        text_parts: list[str] = []
+        fc_parts: list[gtypes.Part] = []
+        usage_meta: Any = None
+        model_version: str | None = None
+        for chunk in self.client.models.generate_content_stream(
             model=self.model_id,
             contents=self.history,
             config=gtypes.GenerateContentConfig(**config_kwargs),
+        ):
+            cand = (getattr(chunk, "candidates", None) or [None])[0]
+            content = getattr(cand, "content", None) if cand is not None else None
+            for part in getattr(content, "parts", None) or []:
+                if getattr(part, "function_call", None) is not None:
+                    fc_parts.append(part)
+                    if t_first is None:
+                        t_first = time.monotonic()
+                elif getattr(part, "text", None):
+                    text_parts.append(part.text)
+                    if t_first is None:
+                        t_first = time.monotonic()
+            um = getattr(chunk, "usage_metadata", None)
+            if um is not None:
+                usage_meta = um
+            model_version = getattr(chunk, "model_version", None) or model_version
+        t_end = time.monotonic()
+        ttft = (t_first if t_first is not None else t_end) - t0
+        generate = (t_end - t_first) if t_first is not None else 0.0
+
+        # Reassemble the model turn for history: merged text (streamed as
+        # fragments, so concatenate) followed by the complete call parts.
+        full_text = "".join(text_parts)
+        assembled: list[gtypes.Part] = []
+        if full_text:
+            assembled.append(gtypes.Part(text=full_text))
+        assembled.extend(fc_parts)
+        if assembled:
+            self.history.append(gtypes.Content(role="model", parts=assembled))
+
+        return _build_assistant_message(
+            full_text, fc_parts, usage_meta, model_version, self._call_name_by_id,
+            ttft_seconds=ttft, generate_seconds=generate,
         )
 
-        # Append the model's response to history so the next turn sees it.
-        if resp.candidates and resp.candidates[0].content:
-            self.history.append(resp.candidates[0].content)
 
-        return _to_assistant_message(resp, self._call_name_by_id)
-
-
-def _to_assistant_message(
-    resp: Any,
+def _build_assistant_message(
+    text: str,
+    fc_parts: list[Any],
+    usage_meta: Any,
+    model_version: str | None,
     call_name_by_id: dict[str, str],
+    *,
+    ttft_seconds: float = 0.0,
+    generate_seconds: float = 0.0,
 ) -> AssistantMessage:
-    """Convert a Gemini GenerateContentResponse to our AssistantMessage."""
-    text_parts: list[str] = []
+    """Assemble our AssistantMessage from streamed Gemini parts + usage."""
     calls: list[ToolCall] = []
+    for i, part in enumerate(fc_parts):
+        fc = getattr(part, "function_call", None)
+        if fc is None or not getattr(fc, "name", None):
+            continue
+        # Gemini sometimes returns an explicit call id; if absent, synthesize
+        # one so the harness can pair the eventual function_response.
+        call_id = getattr(fc, "id", None) or f"gem_{i:03d}"
+        args = dict(fc.args) if fc.args else {}
+        calls.append(ToolCall(name=fc.name, arguments=args, call_id=call_id))
+        call_name_by_id[call_id] = fc.name
 
-    candidates = getattr(resp, "candidates", None) or []
-    if candidates and candidates[0].content and candidates[0].content.parts:
-        for i, part in enumerate(candidates[0].content.parts):
-            fc = getattr(part, "function_call", None)
-            if fc is not None and getattr(fc, "name", None):
-                # Gemini sometimes returns an explicit call id; if absent,
-                # synthesize one so the harness can pair the response.
-                call_id = getattr(fc, "id", None) or f"gem_{i:03d}"
-                args = dict(fc.args) if fc.args else {}
-                calls.append(ToolCall(name=fc.name, arguments=args, call_id=call_id))
-                call_name_by_id[call_id] = fc.name
-                continue
-            text = getattr(part, "text", None)
-            if text:
-                text_parts.append(text)
-
-    usage_meta = getattr(resp, "usage_metadata", None)
     usage = TurnUsage(
         input_tokens=getattr(usage_meta, "prompt_token_count", 0) or 0,
         output_tokens=getattr(usage_meta, "candidates_token_count", 0) or 0,
         cache_read_tokens=getattr(usage_meta, "cached_content_token_count", 0) or 0,
         cache_creation_tokens=0,  # Gemini doesn't separately bill cache writes
+        ttft_seconds=ttft_seconds,
+        generate_seconds=generate_seconds,
     )
 
     return AssistantMessage(
-        text="\n".join(text_parts),
+        text=text,
         tool_calls=calls,
         usage=usage,
-        raw={"model": getattr(resp, "model_version", None)},
+        raw={"model": model_version},
     )
 
 
