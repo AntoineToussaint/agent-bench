@@ -111,8 +111,9 @@ def main() -> int:
             neg = rng.sample(wrong_pool, min(args.distractors, len(wrong_pool)))
             cases.append((t, neg, False))  # negative: right repo, wrong files
 
+    n_pos = sum(1 for _, _, label in cases if label)
     print(f"{len(tasks)} tasks -> {len(cases)} candidates "
-          f"({sum(1 for _,_,l in cases if l)} positive / {sum(1 for _,_,l in cases if not l)} negative); "
+          f"({n_pos} positive / {len(cases) - n_pos} negative); "
           f"verifier = {args.verifier_model}")
     if args.dry_run:
         for t, files, label in cases[:6]:
@@ -126,13 +127,13 @@ def main() -> int:
         return 2
 
     client = make_client(args.verifier_model)
-    out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
     conf = defaultdict(int)
     rows = []
     for t, files, label in cases:
         confident, usage, latency = _judge(client, t.issue_text, files)
         cost = cost_usd(args.verifier_model, usage)
-        correct = (confident == label)
         cell = ("TP" if confident and label else "FP" if confident and not label
                 else "FN" if (not confident) and label else "TN")
         conf[cell] += 1
