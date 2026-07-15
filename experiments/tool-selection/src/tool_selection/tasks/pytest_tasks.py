@@ -8,10 +8,10 @@ All four tasks share the same failure mode → maximum lesson transfer signal.
 
 from __future__ import annotations
 
-from tool_selection.matchers import Contains, Eq, Present, Regex
+from tool_selection.matchers import Regex
 from tool_selection.types import RequiredCall, Task
 
-from ._failures import bash_pytest_wrong_path, wrong_test_path
+from ._failures import wrong_test_path
 
 # ---------- T1: Run the auth tests ----------
 

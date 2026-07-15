@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from dotenv import load_dotenv
@@ -136,7 +136,7 @@ def _build_wrap_fn(spec_wrap: dict, spec_conditionals: dict):
         for src_arg, template in spec_wrap.items():
             try:
                 out[src_arg] = template.format(**ctx)
-            except KeyError as e:
+            except KeyError:
                 # Missing placeholder — fall back to leaving template alone
                 out[src_arg] = template
         return out
@@ -168,8 +168,9 @@ def synthesize_from_cluster(
 
     # Build the prompt
     lesson_block = "\n".join(
-        f"  - [{l.category}] {l.text}\n      (from error: {l.source_error[:150]})"
-        for l in cluster_lessons
+        f"  - [{lesson.category}] {lesson.text}\n"
+        f"      (from error: {lesson.source_error[:150]})"
+        for lesson in cluster_lessons
     )
     source_schema = json.dumps(source_tool.json_schema, indent=2)
     prompt = (

@@ -21,7 +21,7 @@ Scoring:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 
@@ -57,12 +57,12 @@ def is_test_file(path: str) -> bool:
 class LocalizationTask:
     """Input contract: everything a localization trial receives."""
 
-    instance_id: str          # e.g. "django__django-12345"
-    issue_text: str           # the GitHub issue / problem statement
-    repo: str                 # e.g. "django/django"
-    base_commit: str          # commit SHA the issue is against
-    gold_edit_files: frozenset[str]    # files the gold patch modifies
-    gold_test_files: frozenset[str]    # files the gold test patch modifies
+    instance_id: str  # e.g. "django__django-12345"
+    issue_text: str  # the GitHub issue / problem statement
+    repo: str  # e.g. "django/django"
+    base_commit: str  # commit SHA the issue is against
+    gold_edit_files: frozenset[str]  # files the gold patch modifies
+    gold_test_files: frozenset[str]  # files the gold test patch modifies
     # Optional: pre-computed file listing at base_commit. None means
     # the trial must fetch it itself (e.g. via local checkout or API).
     repo_file_list: tuple[str, ...] | None = None
@@ -95,21 +95,21 @@ class LocalizationTask:
 class LocalizationResult:
     """Output contract: what every localization trial must produce."""
 
-    predicted_files: list[str]   # ranked, highest-confidence first
-    reasoning: str = ""          # optional natural-language explanation
+    predicted_files: list[str]  # ranked, highest-confidence first
+    reasoning: str = ""  # optional natural-language explanation
 
 
 @dataclass
 class LocalizationScore:
     """Computed metrics for one trial."""
 
-    recall: float           # |predicted ∩ gold| / |gold|
-    precision: float        # |predicted ∩ gold| / |predicted|
+    recall: float  # |predicted ∩ gold| / |gold|
+    precision: float  # |predicted ∩ gold| / |predicted|
     f1: float
-    passed: bool            # recall == 1.0 (all gold files found)
+    passed: bool  # recall == 1.0 (all gold files found)
     n_predicted: int
     n_false_positives: int
-    composite: float        # recall − fp_penalty · normalized_false_positives
+    composite: float  # recall − fp_penalty · normalized_false_positives
 
     def as_extra(self) -> dict[str, float | int | bool]:
         """Render as the `extra` dict on a RunRecord."""
@@ -159,12 +159,12 @@ def score(
     hits = pred_set & gold_n
     tp = len(hits)
     fp = len(pred_set) - tp
-    fn = len(gold_n) - tp
-
     recall = tp / max(1, len(gold_n))
     precision = tp / max(1, len(pred_set)) if pred_set else 0.0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
-    passed = tp == len(gold_n)
+    # An empty source-file gold set is an invalid localization example, not a
+    # vacuous success. Keep scoring total so adapters can surface/report it.
+    passed = bool(gold_n) and tp == len(gold_n)
     composite = max(0.0, recall - fp_penalty * (fp / max(1, len(gold_n))))
 
     return LocalizationScore(

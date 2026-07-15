@@ -30,7 +30,7 @@ from tool_selection.pricing import cost_for
 from tool_selection.types import Tool
 
 from .lessons import Lesson
-from .promotion import LessonCluster, _cluster_key, _pick_synthesizer  # reuse clustering
+from .promotion import LessonCluster, _cluster_key  # reuse clustering
 
 load_dotenv()
 
@@ -89,8 +89,9 @@ def synthesize_patch(
         return AugmentResult(patch=None, error="empty cluster")
 
     lesson_block = "\n".join(
-        f"  - [{l.category}] {l.text}\n      (from error: {l.source_error[:150]})"
-        for l in cluster_lessons
+        f"  - [{lesson.category}] {lesson.text}\n"
+        f"      (from error: {lesson.source_error[:150]})"
+        for lesson in cluster_lessons
     )
     prompt = (
         f"# Source tool\n"
@@ -122,7 +123,7 @@ def synthesize_patch(
     patch = DescriptionPatch(
         target_tool=source_tool.name,
         addendum=text,
-        source_lessons=[l.id for l in cluster_lessons],
+        source_lessons=[lesson.id for lesson in cluster_lessons],
     )
     return AugmentResult(patch=patch, cost_usd=cost, input_tokens=in_tok, output_tokens=out_tok)
 

@@ -36,6 +36,7 @@ def localization_session(
     trace_id: str | None = None,
     context_frames: int | None = None,
     context_omissions: int | None = None,
+    context_chars_elided: int | None = None,
 ) -> SessionTrace:
     """Build a one-phase SessionTrace for a single localization run.
 
@@ -60,7 +61,11 @@ def localization_session(
     reward = PhaseReward(
         value=score.composite,
         kind="oracle",
-        detail={**score.as_extra(), "passed": score.passed, "submitted": list(submitted)},
+        detail={
+            **score.as_extra(),
+            "passed": score.passed,
+            "submitted": list(submitted),
+        },
     )
     trace.add(
         phase="localize",
@@ -78,6 +83,7 @@ def localization_session(
             # caller didn't measure it; 0 means the policy elided nothing.
             "context_frames": context_frames,
             "context_omissions": context_omissions,
+            "context_chars_elided": context_chars_elided,
         },
     )
     return trace

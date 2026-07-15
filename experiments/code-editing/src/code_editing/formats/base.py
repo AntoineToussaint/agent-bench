@@ -47,12 +47,13 @@ class EditFormat(ABC):
         files that must remain hidden from the model so it can't read or
         edit them to game the benchmark.
         """
-        p = (workdir / rel).resolve()
-        wd = str(workdir.resolve())
-        if not str(p).startswith(wd):
+        root = workdir.resolve()
+        p = (root / rel).resolve()
+        try:
+            relparts = p.relative_to(root).parts
+        except ValueError:
             raise ValueError(f"path escapes workdir: {rel}")
         # Block any path that lives inside _overlay/.
-        relparts = p.relative_to(workdir.resolve()).parts
         if relparts and relparts[0] == "_overlay":
             raise ValueError(f"path is reserved: {rel}")
         return p

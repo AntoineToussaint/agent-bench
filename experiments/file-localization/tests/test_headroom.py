@@ -1,4 +1,4 @@
-"""Unit tests for the Step-2 headroom math (run_config_arms.headroom_analysis).
+"""Unit tests for the config-arm oracle-gap math.
 
 The headline number drives a build/don't-build decision, so the math is tested
 directly — no API, no sweep.
@@ -29,20 +29,21 @@ def test_headroom_when_no_single_arm_dominates():
     cost = {"A": {"t1": 0.01, "t2": 0.01}, "B": {"t1": 0.02, "t2": 0.02}}
     h = rca.headroom_analysis(["A", "B"], composite, cost)
     assert h is not None
-    assert h.best_single == 0.5            # each arm averages 0.5
-    assert h.oracle_select == 1.0          # pick the winner each task
-    assert abs(h.headroom - 0.5) < 1e-9    # real headroom → build the bandit
+    assert h.best_single == 0.5  # each arm averages 0.5
+    assert h.oracle_select == 1.0  # pick the winner each task
+    assert abs(h.headroom - 0.5) < 1e-9  # optimistic oracle-routing ceiling
+    assert h.headroom_ci95 == (0.0, 0.5)
 
 
 def test_no_headroom_when_one_arm_dominates_every_task():
     composite = {
-        "A": {"t1": 0.9, "t2": 0.8},       # A best on both
+        "A": {"t1": 0.9, "t2": 0.8},  # A best on both
         "B": {"t1": 0.3, "t2": 0.2},
     }
     cost = {"A": {"t1": 0.01, "t2": 0.01}, "B": {"t1": 0.01, "t2": 0.01}}
     h = rca.headroom_analysis(["A", "B"], composite, cost)
     assert h.best_single_arm == "A"
-    assert abs(h.headroom) < 1e-9          # oracle == best single → don't build
+    assert abs(h.headroom) < 1e-9  # oracle == best single → don't build
 
 
 def test_only_compares_tasks_completed_by_every_arm():
@@ -53,8 +54,8 @@ def test_only_compares_tasks_completed_by_every_arm():
     }
     cost = {"A": {"t1": 0.01, "t2": 0.01}, "B": {"t1": 0.02}}
     h = rca.headroom_analysis(["A", "B"], composite, cost)
-    assert h.completed == ["t1"]           # t2 dropped
-    assert h.best_single == 1.0            # A on the one shared task
+    assert h.completed == ["t1"]  # t2 dropped
+    assert h.best_single == 1.0  # A on the one shared task
     assert h.headroom == 0.0
 
 

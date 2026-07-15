@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from code_editing.formats.search_replace import SearchReplaceFormat
 from code_editing.formats.semantic import SemanticFormat
 from code_editing.formats.unified_diff import UnifiedDiffFormat
@@ -50,6 +48,30 @@ def test_search_replace_ambiguous(tmp_path: Path) -> None:
     )
     assert res.status == "error"
     assert "matches 2 locations" in res.content
+
+
+def test_search_replace_rejects_sibling_prefix_escape(tmp_path: Path) -> None:
+    workdir = tmp_path / "work"
+    workdir.mkdir()
+    sibling = tmp_path / "work-secret.py"
+    sibling.write_text("secret = 1\n", encoding="utf-8")
+    fmt = SearchReplaceFormat()
+    res = fmt.apply(
+        ToolCall(
+            name="str_replace",
+            arguments={
+                "path": "../work-secret.py",
+                "old_str": "secret = 1",
+                "new_str": "secret = 2",
+            },
+            call_id="escape",
+        ),
+        workdir,
+    )
+
+    assert res.status == "error"
+    assert "escapes workdir" in res.content
+    assert sibling.read_text(encoding="utf-8") == "secret = 1\n"
 
 
 # ---------- unified_diff ----------

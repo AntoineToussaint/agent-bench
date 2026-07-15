@@ -391,7 +391,6 @@ def run_structured(
     """One LLM call. Model outputs JSON change-set as text. No tool_use API."""
 
     import json as _json
-    import re as _re
 
     materialize(task, workdir)
     workdir = workdir.resolve()
@@ -752,7 +751,7 @@ def run_single_shot(
 
 def _full_context_message(task: TaskSpec, workdir: Path) -> str:
     """Build the single-shot user message: task + every file's full contents."""
-    parts: list[str] = [f"# Task\n", task.instructions.strip(), ""]
+    parts: list[str] = ["# Task\n", task.instructions.strip(), ""]
     parts.append("# Project files (full contents — no view tool available)\n")
     files = _enumerate_workdir(workdir)
     for rel, text in files:

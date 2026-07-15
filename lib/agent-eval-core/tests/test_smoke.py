@@ -12,13 +12,14 @@ from agent_eval import (
     TurnUsage,
     cost_usd,
 )
-from agent_eval.reports import write_csv, write_markdown, summarize_markdown
+from agent_eval.reports import write_csv, write_markdown
 from agent_eval.sweep.budget import BudgetExceeded
 
 
 def test_models_registry_nonempty() -> None:
     assert "claude-sonnet-4-6" in MODELS
     assert "gpt-5" in MODELS
+    assert "gpt-5.6-sol" in MODELS
 
 
 def test_cost_usd_basic() -> None:

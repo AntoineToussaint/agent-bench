@@ -7,10 +7,6 @@ imports keep working.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Literal
-
 # Re-exports from agent-eval-core so existing imports continue to work.
 from agent_eval import (  # noqa: F401
     AssistantMessage,
@@ -22,15 +18,9 @@ from agent_eval import (  # noqa: F401
     TurnUsage,
 )
 
+from code_editing.contract import EditTask
 
-@dataclass
-class TaskSpec:
-    """A benchmark task fixture — code-editing-specific."""
 
-    task_id: str
-    language: Literal["python", "typescript"]
-    category: str  # e.g. "rename", "move", "extract_method", "polyglot"
-    fixture_dir: Path  # directory containing the starter files
-    instructions: str
-    oracle_cmd: list[str]  # command to run inside the workdir to verify
-    files_in_context: list[str] = field(default_factory=list)
+# Backward-compatible public name; the contract module is the single source
+# of truth rather than a second, structurally identical dataclass.
+TaskSpec = EditTask

@@ -198,7 +198,7 @@ class PromotionManager:
         if len(cluster.lessons) >= self.threshold:
             synth = self._promote_cluster(cluster)
             if synth is not None:
-                synth.source_lessons = [l.id for l in cluster.lessons]
+                synth.source_lessons = [lesson.id for lesson in cluster.lessons]
                 cluster.crystallized = True
                 self.derived_tools.append(synth)
                 return synth

@@ -38,6 +38,45 @@ The same (task, model, format) can be run three ways:
 
 `agent` is the canonical mode; `single` and `structured` are controls. Same scoring oracle for all three.
 
+## Scaffold-value gate
+
+The Gate 1 pilot compares control flow while holding the task, model/backend,
+search-replace edit tools, public-test tool, hidden final oracle, and total turn
+cap constant:
+
+| arm | control flow |
+|---|---|
+| `minimal_free_loop_v1` | one linear loop that decides when to inspect, edit, and test |
+| `fixed_phases_v1` | enforced localize → repair → deterministic public test → verify |
+| `heuristic_adaptive_v1` | frozen deploy-time issue heuristic chooses one of the two paths above |
+
+The minimal arm is the in-repository control, not an official
+mini-SWE-agent reproduction: it deliberately uses the same safe structured
+workspace tools as the phased arm rather than mini-SWE-agent's sandboxed shell.
+The adaptive heuristic sees only instructions, category, and seed-file count;
+it never sees hidden tests or oracle outcomes. Public test calls exclude the
+`_overlay` hidden-test tree, which is used only by the final scorer.
+
+```bash
+# Validate the pinned matrix without creating clients or spending API credits
+uv run --package code-editing python \
+  experiments/code-editing/scripts/run_scaffold_gate.py --dry-run
+
+# Small paired pilot; inspect the manifest before increasing --limit/--repetitions
+uv run --package code-editing python \
+  experiments/code-editing/scripts/run_scaffold_gate.py \
+  --model claude-sonnet-4-6 --limit 6 --max-turns 12 \
+  --out results/scaffold_gate_pilot
+```
+
+The run writes `per_trial.csv`, `per_cell.csv`, `gate.md`, `manifest.json`, plus
+replicate-safe transcripts and `SessionTrace` files. Arm order is seed-stable
+and cyclically counterbalanced across tasks and replicates. The manifest pins
+the resolved model parameters, task-content digests, git state, and runtime.
+Treat this hermetic task run as harness validation, not a leaderboard result;
+an official external baseline and SWE-bench environment remain separate
+integration work.
+
 ## Install
 
 ```bash

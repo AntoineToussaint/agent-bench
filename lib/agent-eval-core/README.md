@@ -20,7 +20,7 @@ src/agent_eval/
   models/
     __init__.py         # make_client(name), make_model(name, backend=?)
     anthropic_client.py # Anthropic Messages API; supports tool_choice
-    openai_client.py    # OpenAI Chat Completions; Anthropic-shape tools converted
+    openai_client.py    # OpenAI Responses API; Anthropic-shape tools converted
     openrouter_client.py
     registry.py         # YAML-driven default-backend-per-model lookup
   protocols/

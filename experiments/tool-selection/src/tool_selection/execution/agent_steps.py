@@ -11,7 +11,6 @@ LessonAwareAgentStep.
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Any
 
 from tool_selection.approaches.base import Approach
 from tool_selection.phases.base import Phase

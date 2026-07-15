@@ -1,10 +1,7 @@
-"""Shared streaming helper for the OpenAI-compatible clients.
+"""Streaming helper for Chat-Completions-compatible clients.
 
-The OpenAI and OpenRouter clients both speak the Chat Completions API, so
-they share one path for running a step as a stream and splitting latency into
-TTFT (queue + prefill, up to the first generated token) and generate (decode).
-Keeping it here means the TTFT boundary and the create() fallback are defined
-once, not copied per client.
+OpenRouter uses this Chat Completions path. OpenAI's native client uses the
+Responses API and its sibling `_openai_responses_stream` helper.
 """
 
 from __future__ import annotations

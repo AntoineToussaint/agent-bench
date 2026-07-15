@@ -17,7 +17,6 @@ import re
 import time
 
 from agent_eval.failure_modes import classify_output
-from agent_eval.pricing import cost_usd
 from agent_eval.types import ModelHandle, RunRecord, TurnUsage
 
 from file_localization.contract import LocalizationTask, score

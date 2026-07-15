@@ -290,14 +290,12 @@ def classify_trace(
         backend = str(t_attrs.get("agent_eval.backend") or "")
 
     # Aggregate per-turn signal.
-    raw_text = ""
     tool_call_signatures: list[tuple[str, str]] = []
     new_sig_per_turn: list[bool] = []
     n_done_calls = 0
     turn_count = len(turns)
     tool_call_count = 0
     observed_paths: list[str] = []
-    forced_terminal_seen = False
 
     for turn_sp in turns:
         ta = turn_sp.get("attrs", {})
@@ -312,8 +310,6 @@ def classify_trace(
                 n_done_calls += 1
             else:
                 tool_call_count += 1
-        if ta.get("agent_eval.turn.forced_terminal"):
-            forced_terminal_seen = True
         if "agent_eval.turn.added_new_signature" in ta:
             new_sig_per_turn.append(bool(ta["agent_eval.turn.added_new_signature"]))
 

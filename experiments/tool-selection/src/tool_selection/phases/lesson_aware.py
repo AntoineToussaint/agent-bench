@@ -22,7 +22,6 @@ back after each failed episode.
 from __future__ import annotations
 
 import concurrent.futures as cf
-from dataclasses import replace
 from typing import Any
 
 from agent_eval.types import ModelHandle
@@ -35,7 +34,6 @@ from .one_phase import BASE_SYSTEM_PROMPT, PLAN_FIRST_ADDENDUM, _call, _user_mes
 from .two_phase import (
     PHASE1_SYSTEM,
     PHASE2_SYSTEM_TEMPLATE,
-    TwoPhase,
     _format_tool_menu,
     _llm_text_call,
     _llm_tool_call,
@@ -48,8 +46,8 @@ def _render_lessons(lessons: list[Lesson], header: str) -> str:
     if not lessons:
         return ""
     lines = [f"\n# {header}", "(distilled from past failures; apply to avoid recurring mistakes)"]
-    for l in lessons:
-        lines.append(f"  - [{l.category}] {l.text}")
+    for lesson in lessons:
+        lines.append(f"  - [{lesson.category}] {lesson.text}")
     return "\n".join(lines)
 
 
@@ -84,8 +82,8 @@ class LessonAwareOnePhase(Phase):
         all_lessons = task_lessons + tool_lessons
 
         # Mark fires
-        for l in all_lessons:
-            l.fires += 1
+        for lesson in all_lessons:
+            lesson.fires += 1
 
         # Build augmented user message
         user_msg = _user_message(task)
@@ -149,8 +147,8 @@ class LessonAwareTwoPhase(Phase):
 
         # --- Phase 1: selection, augmented with task-level lessons only ---
         task_lessons = self.store.for_task(task_signature(task), top_k=self.k_per_task)
-        for l in task_lessons:
-            l.fires += 1
+        for lesson in task_lessons:
+            lesson.fires += 1
 
         menu = _format_tool_menu(surfaced_tools)
         lessons_block = _render_lessons(task_lessons, "Past lessons for this kind of task")
@@ -189,8 +187,8 @@ class LessonAwareTwoPhase(Phase):
         def fill_one(idx: int, item: dict[str, str]):
             tool = tools_by_name[item["name"]]
             per_tool = self.store.for_tool(item["name"], top_k=self.k_per_tool)
-            for l in per_tool:
-                l.fires += 1
+            for lesson in per_tool:
+                lesson.fires += 1
             tool_lessons_block = _render_lessons(per_tool, f"Past lessons for {item['name']}")
 
             sys_prompt = PHASE2_SYSTEM_TEMPLATE.format(

@@ -14,7 +14,7 @@ form). The failure trigger fires on `pytest <bare-filename>` (wrong form).
 
 from __future__ import annotations
 
-from tool_selection.matchers import Contains, Regex
+from tool_selection.matchers import Regex
 from tool_selection.types import RequiredCall, Task
 
 from ._failures import bash_pytest_wrong_path

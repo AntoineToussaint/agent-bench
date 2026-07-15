@@ -2,9 +2,11 @@
 name = "file-localization"
 version = "0.1.0"
 description = "File-localization benchmark for code retrievers using SWE-bench gold patches as ground truth."
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
+    "agent-eval-core",
     "datasets>=2.20.0",
+    "python-dotenv>=1.2.2",
     "unidiff>=0.7.5",
     "rank-bm25>=0.2.2",
     "tqdm>=4.66.0",
@@ -32,4 +34,5 @@ build-backend = "hatchling.build"
 packages = ["src/file_localization"]
 
 [tool.uv.sources]
+agent-eval-core = { workspace = true }
 semble = { git = "https://github.com/MinishLab/semble" }

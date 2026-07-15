@@ -119,8 +119,8 @@ is the only work that *designs around* it.
 
 ## Cross-cutting honest gaps
 
-Five things nobody in published work has done. Each is a position the
-bench can claim.
+Five candidate gaps the bench can test. These are absence-of-evidence claims,
+not durable novelty claims; re-run the literature review before publishing.
 
 1. Production context-engineering (Claude Code, Cursor) is delivered
    as **system prompts with no released A/B data** — an observation
@@ -148,8 +148,9 @@ instrument.
 
 ## Verification status
 
-All arxiv IDs in this file were verified against arxiv (title + ID
-confirmed) on 2026-05-28. MetaGPT, AutoGen, and Reflexion are
+Most arxiv IDs in this file were verified against arxiv (title + ID
+confirmed) on 2026-05-28; the program-level update is the 2026-07-15
+[`REVIEW_2026-07-15.md`](REVIEW_2026-07-15.md). MetaGPT, AutoGen, and Reflexion are
 well-known classics, assumed safe and not re-fetched. Titles and
 findings match the abstracts except for the two corrected below.
 

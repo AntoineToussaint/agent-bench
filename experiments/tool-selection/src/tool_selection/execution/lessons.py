@@ -13,7 +13,6 @@ future consolidation passes can evict low-value lessons.
 from __future__ import annotations
 
 import json
-import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -81,8 +80,8 @@ class LessonStore:
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("w") as f:
-            for l in self.lessons:
-                f.write(json.dumps(asdict(l)) + "\n")
+            for lesson in self.lessons:
+                f.write(json.dumps(asdict(lesson)) + "\n")
 
     def add(self, lesson: Lesson) -> None:
         # Dedupe by text within the same (scope, key). Skip if already present.
@@ -97,13 +96,15 @@ class LessonStore:
 
     def for_tool(self, tool_name: str, top_k: int = 3) -> list[Lesson]:
         """Lessons indexed against a specific tool name, ordered by utility."""
-        matched = [l for l in self.lessons if l.scope == "tool" and l.key == tool_name]
-        matched.sort(key=lambda l: -l.utility)
+        matched = [lesson for lesson in self.lessons
+                   if lesson.scope == "tool" and lesson.key == tool_name]
+        matched.sort(key=lambda lesson: -lesson.utility)
         return matched[:top_k]
 
     def for_task(self, task_signature: str, top_k: int = 5) -> list[Lesson]:
-        matched = [l for l in self.lessons if l.scope == "task" and l.key == task_signature]
-        matched.sort(key=lambda l: -l.utility)
+        matched = [lesson for lesson in self.lessons
+                   if lesson.scope == "task" and lesson.key == task_signature]
+        matched.sort(key=lambda lesson: -lesson.utility)
         return matched[:top_k]
 
     def all_for_tools(self, tool_names: list[str], top_k_per_tool: int = 3) -> list[Lesson]:

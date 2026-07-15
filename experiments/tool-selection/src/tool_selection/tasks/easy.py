@@ -7,7 +7,7 @@ target is only the *write-side* calls listed in required_calls.
 
 from __future__ import annotations
 
-from tool_selection.matchers import Contains, Eq, Present, Regex
+from tool_selection.matchers import Contains, Eq, Regex
 from tool_selection.types import RequiredCall, Task
 
 EASY: tuple[Task, ...] = (

@@ -37,8 +37,10 @@ A coding agent — the kind that fixes a GitHub issue — does a task in **stage
 and replay** — then, for each stage *separately*, **learn** the best setup
 (which model, which prompt, how much context to feed it) instead of
 hand-guessing one setup for the whole task. Localization might want a cheap
-fast model; repair the smart expensive one. Today everyone uses one setup for
-the whole task.
+fast model; repair the smart expensive one. Recent systems already explore
+per-module model choice and adaptive workflows, so the open question here is
+narrower: whether joint config and handoff routing at verifiable SWE boundaries
+generalizes on held-out repositories.
 
 **Why it's a real idea:** normally you can't score a single stage — you only
 find out if the *whole* task passed at the very end. Coding has a cheat: a
@@ -52,8 +54,9 @@ tests pass" at the end. So the plan is to **train the tuner offline on
 benchmarks, then ship it frozen.** Whether that transfers to real tasks is the
 central open question.
 
-**The plan, one line:** get the staged agent working end-to-end → add per-stage
-tuning → learn what to hand off between stages. Full version in
+**The plan, one line:** compare minimal, fixed-phase, and adaptive agents →
+validate that local rewards predict downstream success → add held-out per-stage
+routing and learnable handoffs. Full version in
 [`STRATEGY.md`](lib/agent-eval-core/STRATEGY.md).
 
 ---
@@ -65,6 +68,7 @@ All in [`lib/agent-eval-core/`](lib/agent-eval-core/), in reading order:
 | Doc | What it's for |
 |---|---|
 | [`STRATEGY.md`](lib/agent-eval-core/STRATEGY.md) | **The plan of record.** Where we are, what we optimize for, the steps. Read first. |
+| [`REVIEW_2026-07-15.md`](lib/agent-eval-core/REVIEW_2026-07-15.md) | Full code/research audit, current SOTA comparison, and the evidence gates behind the plan. |
 | [`PLATFORM.md`](lib/agent-eval-core/PLATFORM.md) | The thesis in depth + the verified literature behind it (what's done, what's open). |
 | [`TRACE.md`](lib/agent-eval-core/TRACE.md) | The session-trace interface spec (Step 0): is OTEL enough, the `PhaseNode` data model, the debug story. |
 | [`SOTA.md`](lib/agent-eval-core/SOTA.md) | Context-engineering literature shelf, per topic. Reference, not narrative. |

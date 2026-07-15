@@ -16,6 +16,8 @@ Categories (τ²-bench-style taxonomy):
 
 from __future__ import annotations
 
+import re
+
 from tool_selection.execution.state import Call, FailureTrigger
 
 
@@ -186,9 +188,7 @@ def commit_without_add() -> FailureTrigger:
 # training memory. This is where the same mistake actually recurs in
 # production agentic systems.
 
-import re as _re
-
-_PYTEST_CMD_RE = _re.compile(r"\bpytest\s+(\S+)")
+_PYTEST_CMD_RE = re.compile(r"\bpytest\s+(\S+)")
 
 
 def _bash_pytest_wrong_path_when(call: Call, hist: list[Call]) -> bool:
@@ -269,8 +269,8 @@ def bash_pytest_wrong_verify_dir() -> FailureTrigger:
 # `build`, `python build.py`. None work — only `./tools/run build` does.
 
 _PROJECT_SUBCMDS = ("build", "migrate", "seed", "deploy", "lint", "test-all", "format")
-_TOOLS_RUN_RE = _re.compile(r"\./tools/run\b")
-_PROJECT_SUBCMD_RE = _re.compile(r"\b(" + "|".join(_PROJECT_SUBCMDS) + r")\b")
+_TOOLS_RUN_RE = re.compile(r"\./tools/run\b")
+_PROJECT_SUBCMD_RE = re.compile(r"\b(" + "|".join(_PROJECT_SUBCMDS) + r")\b")
 
 
 def _tools_run_wrong_path_when(call: Call, hist: list[Call]) -> bool:

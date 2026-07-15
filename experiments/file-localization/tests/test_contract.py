@@ -31,7 +31,9 @@ def test_partial_recall_fails_pass_but_records_metric() -> None:
 
 def test_false_positives_penalize_composite() -> None:
     # found all 2 gold + 2 spurious = recall 1.0, fp=2, gold=2 → composite = 1.0 - 0.05*1.0 = 0.95
-    s = score(["a.py", "b.py", "x.py", "y.py"], frozenset({"a.py", "b.py"}), fp_penalty=0.05)
+    s = score(
+        ["a.py", "b.py", "x.py", "y.py"], frozenset({"a.py", "b.py"}), fp_penalty=0.05
+    )
     assert s.passed
     assert s.recall == 1.0
     assert s.precision == 0.5
@@ -40,7 +42,9 @@ def test_false_positives_penalize_composite() -> None:
 
 def test_top_k_clipping() -> None:
     # gold has 2 files; we predict 5; with k=1 only the first counts
-    s = score(["x.py", "a.py", "b.py", "y.py", "z.py"], frozenset({"a.py", "b.py"}), k=1)
+    s = score(
+        ["x.py", "a.py", "b.py", "y.py", "z.py"], frozenset({"a.py", "b.py"}), k=1
+    )
     assert s.recall == 0.0
     assert s.precision == 0.0
     assert s.n_predicted == 1
@@ -50,6 +54,13 @@ def test_path_normalization() -> None:
     s = score(["./src/a.py", "src\\b.py"], frozenset({"src/a.py", "src/b.py"}))
     assert s.passed
     assert s.recall == 1.0
+
+
+def test_empty_gold_is_not_a_vacuous_pass() -> None:
+    s = score([], frozenset())
+    assert not s.passed
+    assert s.recall == 0.0
+    assert s.composite == 0.0
 
 
 # --- parse_file_list ---

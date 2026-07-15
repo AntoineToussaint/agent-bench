@@ -16,10 +16,6 @@ resolution-markers = [
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
-[options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
-exclude-newer-span = "P3D"
-
 [manifest]
 members = [
     "agent-bench",
@@ -788,7 +784,9 @@ name = "file-localization"
 version = "0.1.0"
 source = { editable = "experiments/file-localization" }
 dependencies = [
+    { name = "agent-eval-core" },
     { name = "datasets" },
+    { name = "python-dotenv" },
     { name = "rank-bm25" },
     { name = "tqdm" },
     { name = "unidiff" },
@@ -805,8 +803,10 @@ semble = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval-core", editable = "lib/agent-eval-core" },
     { name = "datasets", specifier = ">=2.20.0" },
     { name = "openai", marker = "extra == 'embeddings'", specifier = ">=2.37.0" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "semble", marker = "extra == 'semble'", git = "https://github.com/MinishLab/semble" },
     { name = "tiktoken", marker = "extra == 'embeddings'", specifier = ">=0.7.0" },
@@ -3516,6 +3516,7 @@ name = "tool-selection"
 version = "0.1.0"
 source = { editable = "experiments/tool-selection" }
 dependencies = [
+    { name = "agent-eval-core" },
     { name = "altair" },
     { name = "anthropic" },
     { name = "marimo", extra = ["recommended"] },
@@ -3540,6 +3541,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agent-eval-core", editable = "lib/agent-eval-core" },
     { name = "altair", specifier = ">=6.1.0" },
     { name = "anthropic", specifier = ">=0.99.0" },
     { name = "marimo", extras = ["recommended"], specifier = ">=0.23.5" },

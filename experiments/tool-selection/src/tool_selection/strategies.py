@@ -24,7 +24,7 @@ from typing import Callable
 from .approaches.base import Approach
 from .approaches.composite import CompositeApproach
 from .approaches.full import FullApproach
-from .approaches.stages import Stage, ToolboxStage, ToolStage
+from .approaches.stages import ToolboxStage, ToolStage
 from .selectors import get_selector
 
 

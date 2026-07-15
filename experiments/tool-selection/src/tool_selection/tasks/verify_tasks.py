@@ -20,7 +20,7 @@ the derived tool directly.
 
 from __future__ import annotations
 
-from tool_selection.matchers import Contains, Regex
+from tool_selection.matchers import Regex
 from tool_selection.types import RequiredCall, Task
 
 from ._failures import bash_pytest_wrong_verify_dir

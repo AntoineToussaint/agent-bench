@@ -106,14 +106,21 @@ reality."
 - Adaptive-RAG — `2403.14403` — classifier picks no/single/iterative retrieval by predicted complexity.
 - Self-RAG — `2310.11511` — reflection tokens decide on-demand retrieval + self-critique.
 
-**Bandits / RL over configs (arm is a model, never a bundle):**
+**Bandits / RL over configs:**
 - MAB-meets-LLM survey — `2505.13355`.
 - Online multi-LLM selection via contextual bandits — `2506.17670` — LinUCB over models, **per-query**.
+- Neural bandit pipeline selection — `2508.09958` — sequential per-subtask
+  model choices with downstream dependencies. Directly competitive with the
+  phase-routing formulation, though its arm is model-only and its domains are
+  telecom/medical rather than software engineering.
 
 **Joint pipeline-level config optimization (the directly competitive cluster):**
 - LLMSelector — `2502.14815` — per-module **model** selection via estimated per-module performance; assumes end-to-end monotonic in module quality (so greedy works). **Model only.**
 - Optimas — `2507.03041` — **per-component learned local reward** aligned to global objective, then independent per-component config optimization. Closest prior art — but rewards are **learned surrogates** not verifiable, graph is arbitrary not phase-structured, and context-strategy isn't an action.
 - MASPO — `2605.06623` — joint prompt optimization across multi-agent systems with successor-agent-success credit. **Prompts only.**
+- icat-agent — `2606.25514` — deploy-time issue-quality routing between
+  exploration and parallel patch/validation workflows on Verified and
+  SWE-bench Pro. Makes adaptive workflow selection a required scaffold baseline.
 
 **Conditional materialization (the bun-vs-npm angle):**
 - Tool Attention — `2604.21816` — intent-scoring + state-aware tool gating; ~95% schema-token cut (**numbers are projections, not live evals**).
@@ -126,26 +133,28 @@ agents; per-phase *configuration* is left on the table.
 
 ---
 
-## The open gap (what no single paper does)
+## The narrower open gap (working claim; revalidate continuously)
 
-Nobody exposes localization/repair/test/verify as **checkpointable,
-resettable, heterogeneously-rewarded** sub-environments AND optimizes the
-**full {model × prompt × context-strategy} bundle per phase against
-externally verifiable per-phase rewards**. Each near-neighbor falls short on
-one defensible axis:
+The exact combination not found in the 2026-07-15 review is localization /
+repair / test / verify as **checkpointable, resettable** boundaries with a
+held-out task/state router over the **full {model × prompt × context/handoff}
+bundle**, trained against local rewards whose downstream alignment is measured.
+This is a narrow combination claim, not a claim that per-module or sequential
+LLM routing is new. Each near-neighbor differs on at least one axis:
 
 - DSPy/MIPRO: prompt-only, global metric, no model/context choice.
 - LLMSelector: model-only, *estimated* (not verifiable) reward.
 - Optimas: heterogeneous config but *learned surrogate* reward, arbitrary
   graph (not phase-structured), no context-strategy action.
-- Routing/bandits: per-query, single-axis arm.
+- Routing/bandits: mostly model-only; `2508.09958` already handles sequential
+  downstream coupling.
 - Crab: turn-granular, semantics-agnostic checkpoints, not wired to rewards.
 
 ### Sharpest defensible novelty
-Cast each phase as a contextual-bandit / short-horizon RL problem whose **arm
-is the configuration bundle** and whose **reward is the phase's own verifiable
-checkpoint signal** — turning the phase-segmented environment into the
-credit-assignment mechanism every config-optimizer had to fake.
+Test a held-out task/state router whose **arm is the configuration bundle** and
+whose local checkpoint signal is demonstrably aligned with downstream task
+success. Compare it against homogeneous, static-per-phase, and oracle-ceiling
+baselines.
 
 The most ownable sub-claim: **the handoff brief between phases is itself a
 learnable context-strategy action** — learn *what compressed context to pass

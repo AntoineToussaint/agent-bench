@@ -5,17 +5,23 @@ platform records, scores, debugs, and forks against. Grounded in two
 verified SOTA digs (2026-05-29); sources inline.
 
 > **Status:** the `PhaseNode` / `SessionTrace` data model below is implemented
-> in `src/agent_eval/trace.py` (proven in `tests/test_trace.py`) **and wired
-> into the live localization turn-loop**: pass `emit_session_dir=...` to the
+> in `src/agent_eval/trace.py` (proven in `tests/test_trace.py`) and wired into
+> both the live localization turn-loop and the hermetic end-to-end scaffold
+> gate. Pass `emit_session_dir=...` to the
 > localization trial and a real run writes a one-phase `SessionTrace` (root +
 > one `localize` node) whose reward is the localization `composite` score
 > (`kind="oracle"`) and whose config is the `{model, prompt_id,
 > context_strategy}` bundle — the unit the Step-2 bandit compares. The path
-> lands in `RunRecord.extra["session_path"]`. Offline-tested with a stub client
-> (`experiments/file-localization/tests/test_session_emit.py`), no API spend.
-> **Next:** the contextual bandit over `PhaseConfig` arms (STRATEGY.md Step 2) —
-> the first defensible result: does per-phase config selection beat the best
-> single config?
+> lands in `RunRecord.extra["session_path"]`. The code-editing gate additionally
+> records `solve` for the free loop or `localize → repair → test → verify` for
+> fixed control, with the public-test node marked `kind="prod"` and the final
+> result `kind="oracle"`. Mutating nodes currently record conversation state
+> and a workspace digest, not a fabricated restorable environment snapshot.
+> Both paths are offline-tested with stub clients, with no API spend.
+> **Next:** run a paid one-task canary, then the paired pilot; integrate an
+> official minimal-shell baseline and external SWE-bench environment before a
+> comparative claim. Config routing still waits until phase rewards predict
+> downstream success and a held-out router can be evaluated.
 
 ---
 

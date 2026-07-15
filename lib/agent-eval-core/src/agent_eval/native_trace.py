@@ -14,7 +14,8 @@ and ignores what's absent. We populate only what a SessionTrace + its captured
   populated:  task, plan + objectives (one per phase), audit.llm_calls (model,
               system prompt, raw reasoning text, tool_call_count, usage),
               tool_calls, timeline, object_index, run.summary counts.
-  ABSENT (do not fabricate): context_frames + omission_count, prompt profiles
+  MEASURED WHEN PRESENT: context_frames + omission_count from phase metadata
+  ABSENT (do not fabricate): prompt profiles
               (id/version/system_hash), structured audit next_action / plan
               mutations, artifacts. These are the context-engineering signals
               STRATEGY.md will instrument for Step 2 — they flow in here as we

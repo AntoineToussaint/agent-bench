@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import sys
 import tempfile
 from pathlib import Path
 
@@ -19,6 +17,7 @@ from agent_eval.reports import write_csv, write_markdown
 
 from code_editing.bench import discover_tasks, load_task, run_trial
 from code_editing.bench.runner import run_single_shot, run_structured
+from code_editing.contract import EditTask
 from code_editing.formats import FORMAT_REGISTRY
 
 
@@ -205,9 +204,7 @@ def sweep(
     console.print(f"\n[green]Wrote {len(records)} records to {out_dir}[/green]")
 
 
-def _resolve_task(task: str, tasks_dir: Path) -> "TaskSpec":  # type: ignore[name-defined]
-    from code_editing.types import TaskSpec
-
+def _resolve_task(task: str, tasks_dir: Path) -> EditTask:
     p = Path(task)
     if p.exists() and (p / "task.yaml").exists():
         return load_task(p)

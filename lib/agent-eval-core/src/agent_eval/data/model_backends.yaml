@@ -46,7 +46,11 @@ defaults:
 
   # OpenAI — UNTESTED in protocol_matrix. Defaults are conservative
   # (Native = function calling is the documented happy path). Current
-  # families as of 2026-05-29 (gpt-5/gpt-5-mini superseded by 5.4/5.5).
+  # families as of 2026-07-15. Historical entries remain for reproducibility.
+  gpt-5.6: native
+  gpt-5.6-sol: native
+  gpt-5.6-terra: native
+  gpt-5.6-luna: native
   gpt-5.5: native
   gpt-5.4: native
   gpt-5.4-mini: native

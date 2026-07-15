@@ -39,8 +39,8 @@ def load_task(task_dir: Path) -> EditTask:
         category=meta["category"],
         fixture_dir=fixture,
         instructions=meta["instructions"],
-        oracle_cmd=tuple(meta["oracle_cmd"]),
-        files_in_context=tuple(meta.get("files_in_context", [])),
+        oracle_cmd=list(meta["oracle_cmd"]),
+        files_in_context=list(meta.get("files_in_context", [])),
     )
 
 

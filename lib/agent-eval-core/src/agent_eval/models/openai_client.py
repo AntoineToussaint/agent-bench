@@ -1,9 +1,10 @@
-"""OpenAI Chat Completions client.
+"""OpenAI Responses API client.
 
 Quirks handled:
-  - GPT-5 family rejects `temperature != 1`. We skip the param entirely.
   - Tool schemas are translated from Anthropic shape ({name, description,
-    input_schema}) to OpenAI shape ({type: function, function: {...}}).
+    input_schema}) to the flat Responses function-tool shape.
+  - Responses are not stored server-side; encrypted reasoning items are
+    replayed with the manually managed history.
 """
 
 from __future__ import annotations
@@ -14,12 +15,23 @@ from typing import Any
 
 from openai import OpenAI
 
-from agent_eval.models._openai_stream import stream_step_with_latency
-from agent_eval.types import AssistantMessage, ModelClient, ToolCall, ToolResult, TurnUsage
+from agent_eval.models._openai_responses_stream import stream_response_with_latency
+from agent_eval.types import (
+    AssistantMessage,
+    ModelClient,
+    ToolCall,
+    ToolResult,
+    TurnUsage,
+)
 
 
 OPENAI_MODELS: dict[str, str] = {
-    # Current families (web-verified 2026-05-29, developers.openai.com pricing).
+    # Current families (web-verified 2026-07-15, developers.openai.com).
+    "gpt-5.6": "gpt-5.6",
+    "gpt-5.6-sol": "gpt-5.6-sol",
+    "gpt-5.6-terra": "gpt-5.6-terra",
+    "gpt-5.6-luna": "gpt-5.6-luna",
+    # Historical baselines remain resolvable so prior results reproduce.
     "gpt-5.5": "gpt-5.5",
     "gpt-5.5-pro": "gpt-5.5-pro",
     "gpt-5.4": "gpt-5.4",
@@ -33,25 +45,46 @@ OPENAI_MODELS: dict[str, str] = {
 
 
 def _convert_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Convert Anthropic-shape schemas to OpenAI function-tool shape."""
+    """Convert Anthropic-shape schemas to Responses function-tool shape."""
     return [
         {
             "type": "function",
-            "function": {
-                "name": t["name"],
-                "description": t.get("description", ""),
-                "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
-            },
+            "name": t["name"],
+            "description": t.get("description", ""),
+            "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+            # Preserve the permissive behavior of the former Chat Completions
+            # integration. Strict schemas can be tested as a protocol arm.
+            "strict": False,
         }
         for t in tools
     ]
+
+
+def _item_dict(item: Any) -> dict[str, Any]:
+    if isinstance(item, dict):
+        return item
+    dump = getattr(item, "model_dump", None)
+    if callable(dump):
+        return dump(exclude_none=True)
+    return dict(vars(item))
+
+
+def _response_text(output: list[Any]) -> str:
+    chunks: list[str] = []
+    for item in output:
+        if getattr(item, "type", None) != "message":
+            continue
+        for block in getattr(item, "content", []) or []:
+            if getattr(block, "type", None) == "output_text":
+                chunks.append(getattr(block, "text", "") or "")
+    return "".join(chunks)
 
 
 @dataclass
 class _OpenAIClient(ModelClient):
     model_id: str
     max_tokens: int = 8192
-    temperature: float = 0.0
+    reasoning_effort: str | None = None
 
     def __post_init__(self) -> None:
         self.client = OpenAI()
@@ -60,7 +93,7 @@ class _OpenAIClient(ModelClient):
 
     def reset(self, system: str) -> None:
         self.system = system
-        self.messages = [{"role": "system", "content": system}]
+        self.messages = []
 
     def add_user_text(self, text: str) -> None:
         self.messages.append({"role": "user", "content": text})
@@ -69,9 +102,9 @@ class _OpenAIClient(ModelClient):
         for r in results:
             self.messages.append(
                 {
-                    "role": "tool",
-                    "tool_call_id": r.call_id,
-                    "content": r.content if r.status == "ok" else f"ERROR: {r.content}",
+                    "type": "function_call_output",
+                    "call_id": r.call_id,
+                    "output": r.content if r.status == "ok" else f"ERROR: {r.content}",
                 }
             )
 
@@ -82,64 +115,67 @@ class _OpenAIClient(ModelClient):
     ) -> AssistantMessage:
         kwargs: dict[str, Any] = dict(
             model=self.model_id,
-            messages=self.messages,
-            max_completion_tokens=self.max_tokens,
+            instructions=self.system,
+            input=self.messages,
+            max_output_tokens=self.max_tokens,
+            store=False,
+            include=["reasoning.encrypted_content"],
         )
+        if self.reasoning_effort is not None:
+            kwargs["reasoning"] = {"effort": self.reasoning_effort}
         if tools:
             kwargs["tools"] = _convert_tools(tools)
         if tool_choice is not None and tools:
             # Translate Anthropic-shape tool_choice to OpenAI's shape.
             # Anthropic: {"type": "any"} / {"type": "tool", "name": "X"}
-            # OpenAI:    "required" / {"type": "function", "function": {"name": "X"}}
+            # Responses: "required" / {"type": "function", "name": "X"}
             if tool_choice.get("type") == "any":
                 kwargs["tool_choice"] = "required"
             elif tool_choice.get("type") == "tool" and tool_choice.get("name"):
                 kwargs["tool_choice"] = {
                     "type": "function",
-                    "function": {"name": tool_choice["name"]},
+                    "name": tool_choice["name"],
                 }
-        # GPT-5 family only accepts the default temperature.
-        if not self.model_id.startswith("gpt-5"):
-            kwargs["temperature"] = self.temperature
 
-        # Stream so we can split latency into TTFT (queue + prefill) and generate
-        # (decode); falls back to a non-streamed create() when the model/org
-        # can't stream. See agent_eval.models._openai_stream.
-        resp, ttft, generate = stream_step_with_latency(self.client, kwargs)
-        choice = resp.choices[0].message
-
-        assistant_entry: dict[str, Any] = {
-            "role": "assistant",
-            "content": choice.content or "",
-        }
-        if choice.tool_calls:
-            assistant_entry["tool_calls"] = [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {"name": tc.function.name, "arguments": tc.function.arguments},
-                }
-                for tc in choice.tool_calls
-            ]
-        self.messages.append(assistant_entry)
+        resp, ttft, generate = stream_response_with_latency(self.client, kwargs)
+        output = list(getattr(resp, "output", []) or [])
+        # Replay every output item, including reasoning items. With store=False,
+        # encrypted reasoning content is what preserves multi-turn reasoning.
+        self.messages.extend(_item_dict(item) for item in output)
+        text = _response_text(output)
 
         calls: list[ToolCall] = []
-        for tc in choice.tool_calls or []:
+        for item in output:
+            if getattr(item, "type", None) != "function_call":
+                continue
+            arguments = getattr(item, "arguments", "") or "{}"
             try:
-                args = json.loads(tc.function.arguments or "{}")
+                args = json.loads(arguments)
             except json.JSONDecodeError:
-                args = {"__parse_error__": tc.function.arguments}
-            calls.append(ToolCall(name=tc.function.name, arguments=args, call_id=tc.id))
+                args = {"__parse_error__": arguments}
+            calls.append(
+                ToolCall(
+                    name=getattr(item, "name", ""),
+                    arguments=args,
+                    call_id=getattr(item, "call_id", ""),
+                )
+            )
 
         usage_obj = resp.usage
+        input_details = getattr(usage_obj, "input_tokens_details", None)
+        cached = getattr(input_details, "cached_tokens", 0) or 0
+        total_input = getattr(usage_obj, "input_tokens", 0) or 0
         usage = TurnUsage(
-            input_tokens=getattr(usage_obj, "prompt_tokens", 0) or 0,
-            output_tokens=getattr(usage_obj, "completion_tokens", 0) or 0,
+            # Responses input_tokens includes cached tokens; TurnUsage keeps
+            # billable uncached and cached input separate.
+            input_tokens=max(0, total_input - cached),
+            cache_read_tokens=cached,
+            output_tokens=getattr(usage_obj, "output_tokens", 0) or 0,
             ttft_seconds=ttft,
             generate_seconds=generate,
         )
         return AssistantMessage(
-            text=choice.content or "", tool_calls=calls, usage=usage, raw=resp.model_dump()
+            text=text, tool_calls=calls, usage=usage, raw=resp.model_dump()
         )
 
 

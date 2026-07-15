@@ -34,7 +34,6 @@ from typing import Callable
 from agent_eval.failure_modes import classify_output
 from agent_eval.pricing import cost_usd
 from agent_eval.protocols import (
-    NativeToolUseBackend,
     PromptJSONBackend,
     SchemaEnforcedBackend,
     ToolBackend,
@@ -106,6 +105,20 @@ def _provider_of(model_name: str) -> str:
     if "gemini" in n or "google" in n:
         return "google"
     return "unknown"
+
+
+def _context_reduction(before: list[dict], after: list[dict]) -> tuple[int, int]:
+    """Return (changed-or-removed frames, serialized characters removed).
+
+    Elision replaces message content without shortening the message list, so a
+    length-only counter silently reports zero. This comparison captures both
+    replacement policies and policies that drop complete frames.
+    """
+    changed = sum(old != new for old, new in zip(before, after, strict=False))
+    changed += max(0, len(before) - len(after))
+    before_chars = len(json.dumps(before, sort_keys=True, default=str))
+    after_chars = len(json.dumps(after, sort_keys=True, default=str))
+    return changed, max(0, before_chars - after_chars)
 
 
 def _signature(call: ToolCall) -> tuple[str, str]:
@@ -195,13 +208,13 @@ def make_turn_loop_trial_with_backend(
         consecutive_errors = 0
         no_progress_turns = 0
         mimicry_total = 0
-        # Context-engineering signal: how many messages the context policy
-        # elided across the run (0 for KeepEverything), and the peak context
-        # size. These feed the native trace's context_frames (STRATEGY.md Step 2).
+        # Context-engineering signals: changed/removed frame applications,
+        # serialized payload reduction, and peak frames sent.
         ctx_omitted_total = 0
+        ctx_chars_elided_total = 0
         ctx_frames_peak = 0
         # Step-level metrics: aggregated at trial end. See DIMENSIONS.md.
-        turns_with_new_signature = 0    # for wasted_turn_fraction
+        turns_with_new_signature = 0  # for wasted_turn_fraction
         actions_per_active_turn: list[int] = []  # for batch_efficiency
         # Context-engineering observation: input_tokens per turn. With
         # our "keep everything" policy this grows monotonically; under
@@ -221,23 +234,34 @@ def make_turn_loop_trial_with_backend(
                 # model's "I'm done" reasoning (SchemaEnforcedBackend) never
                 # produce an answer at all.
                 forced_terminal = turns == limits.max_turns
-                turn_sp.set_attribute("agent_eval.turn.forced_terminal", forced_terminal)
+                turn_sp.set_attribute(
+                    "agent_eval.turn.forced_terminal", forced_terminal
+                )
                 # Apply the context policy: replace client's history with
                 # whatever the policy returns. KeepEverything is a no-op;
                 # other policies prune / elide. See HARNESS.md.
                 if handle.context_policy is not None and hasattr(client, "messages"):
                     provider = _provider_of(client.name)
-                    _before = len(client.messages)
-                    client.messages = handle.context_policy.prepare(
-                        client.messages, provider=provider, turn_idx=turns
+                    _before_messages = client.messages
+                    _after_messages = handle.context_policy.prepare(
+                        _before_messages, provider=provider, turn_idx=turns
                     )
-                    _omitted = max(0, _before - len(client.messages))
+                    _omitted, _chars_elided = _context_reduction(
+                        _before_messages, _after_messages
+                    )
+                    client.messages = _after_messages
                     ctx_omitted_total += _omitted
+                    ctx_chars_elided_total += _chars_elided
                     ctx_frames_peak = max(ctx_frames_peak, len(client.messages))
                     turn_sp.set_attribute(
                         "agent_eval.context_policy", handle.context_policy.name
                     )
-                    turn_sp.set_attribute("agent_eval.context.omitted_this_turn", _omitted)
+                    turn_sp.set_attribute(
+                        "agent_eval.context.omitted_this_turn", _omitted
+                    )
+                    turn_sp.set_attribute(
+                        "agent_eval.context.chars_elided_this_turn", _chars_elided
+                    )
                 try:
                     with span_llm_request(model=client.name, backend=bk.name) as llm_sp:
                         if forced_terminal:
@@ -265,10 +289,18 @@ def make_turn_loop_trial_with_backend(
                 input_tokens_per_turn.append(response.usage.input_tokens)
                 if response.raw_text:
                     raw_text_chunks.append(response.raw_text)
-                turn_sp.set_attribute("gen_ai.usage.input_tokens", response.usage.input_tokens)
-                turn_sp.set_attribute("gen_ai.usage.output_tokens", response.usage.output_tokens)
-                turn_sp.set_attribute("agent_eval.turn.n_actions", len(response.actions))
-                turn_sp.set_attribute("agent_eval.turn.invalid_attempts", response.invalid_attempts)
+                turn_sp.set_attribute(
+                    "gen_ai.usage.input_tokens", response.usage.input_tokens
+                )
+                turn_sp.set_attribute(
+                    "gen_ai.usage.output_tokens", response.usage.output_tokens
+                )
+                turn_sp.set_attribute(
+                    "agent_eval.turn.n_actions", len(response.actions)
+                )
+                turn_sp.set_attribute(
+                    "agent_eval.turn.invalid_attempts", response.invalid_attempts
+                )
                 turn_sp.set_attribute(
                     "agent_eval.turn.tool_names",
                     json.dumps([a.name for a in response.actions]),
@@ -287,7 +319,9 @@ def make_turn_loop_trial_with_backend(
                 )
 
                 invalid += response.invalid_attempts
-                mimicry_total += response.invalid_attempts  # PromptJSON uses this for mimicry; harmless on native
+                mimicry_total += (
+                    response.invalid_attempts
+                )  # PromptJSON uses this for mimicry; harmless on native
 
                 # Hard error from the backend: nudge and re-try (or abort).
                 if response.error and not response.actions:
@@ -303,7 +337,10 @@ def make_turn_loop_trial_with_backend(
                     if consecutive_errors >= limits.max_consecutive_errors:
                         error = f"aborted: {consecutive_errors} consecutive error turns"
                         break
-                    if not done_flag and no_progress_turns >= limits.max_no_progress_turns:
+                    if (
+                        not done_flag
+                        and no_progress_turns >= limits.max_no_progress_turns
+                    ):
                         error = f"aborted: {no_progress_turns} no-progress turns"
                         break
                     continue
@@ -319,7 +356,10 @@ def make_turn_loop_trial_with_backend(
                     transcript.add_user_text("(nudge: no actions)")
                     no_progress_turns += 1
                     turn_sp.set_attribute("agent_eval.turn.outcome", "no_actions")
-                    if not done_flag and no_progress_turns >= limits.max_no_progress_turns:
+                    if (
+                        not done_flag
+                        and no_progress_turns >= limits.max_no_progress_turns
+                    ):
                         error = f"aborted: {no_progress_turns} no-progress turns"
                         break
                     continue
@@ -340,12 +380,18 @@ def make_turn_loop_trial_with_backend(
                         call_sp.set_attribute("agent_eval.tool.new_signature", is_new)
                         res = apply_tool_call(tc, repo)
                         call_sp.set_attribute("agent_eval.tool.status", res.status)
-                        call_sp.set_attribute("agent_eval.tool.result_chars", len(res.content or ""))
+                        call_sp.set_attribute(
+                            "agent_eval.tool.result_chars", len(res.content or "")
+                        )
                     # Track which paths the agent actually visited — needed
                     # for `path_fabrication` detection. `path` is the arg
                     # name used by list_files / view_file; grep's `glob`
                     # isn't a real path so we skip it.
-                    p = tc.arguments.get("path") if isinstance(tc.arguments, dict) else None
+                    p = (
+                        tc.arguments.get("path")
+                        if isinstance(tc.arguments, dict)
+                        else None
+                    )
                     if isinstance(p, str) and p:
                         observed_paths.append(p)
                     if res.status == "ok":
@@ -371,11 +417,15 @@ def make_turn_loop_trial_with_backend(
                     actions_per_active_turn.append(non_done_actions)
 
                 transcript.add_tool_results(results)
-                turn_sp.set_attribute("agent_eval.turn.added_new_signature", turn_added_signature)
+                turn_sp.set_attribute(
+                    "agent_eval.turn.added_new_signature", turn_added_signature
+                )
                 turn_sp.set_attribute("agent_eval.turn.done_called", done_flag)
                 turn_sp.set_attribute(
                     "agent_eval.turn.outcome",
-                    "done" if done_flag else ("dispatched" if not turn_all_errors else "all_errors"),
+                    "done"
+                    if done_flag
+                    else ("dispatched" if not turn_all_errors else "all_errors"),
                 )
 
                 if done_flag:
@@ -441,7 +491,9 @@ def make_turn_loop_trial_with_backend(
 
             _ctx = _otel_trace2.get_current_span().get_span_context()
             _span_id = format(_ctx.span_id, "016x") if _ctx and _ctx.span_id else None
-            _trace_id = format(_ctx.trace_id, "032x") if _ctx and _ctx.trace_id else None
+            _trace_id = (
+                format(_ctx.trace_id, "032x") if _ctx and _ctx.trace_id else None
+            )
             sess = localization_session(
                 task=task,
                 model=client.name,
@@ -457,9 +509,13 @@ def make_turn_loop_trial_with_backend(
                 trace_id=_trace_id,
                 context_frames=ctx_frames_peak,
                 context_omissions=ctx_omitted_total,
+                context_chars_elided=ctx_chars_elided_total,
             )
             if emit_session_dir is not None:
-                _p = Path(emit_session_dir) / f"{task.task_id}__{client.name}__{condition}.jsonl"
+                _p = (
+                    Path(emit_session_dir)
+                    / f"{task.task_id}__{client.name}__{condition}.jsonl"
+                )
                 sess.to_jsonl(_p)
                 session_path = str(_p)
             if debugger_dir is not None:
@@ -494,7 +550,8 @@ def make_turn_loop_trial_with_backend(
                 ),
                 "batch_efficiency": (
                     sum(actions_per_active_turn) / len(actions_per_active_turn)
-                    if actions_per_active_turn else 0.0
+                    if actions_per_active_turn
+                    else 0.0
                 ),
                 "active_turns": len(actions_per_active_turn),
                 # Context-engineering observation (see HARNESS.md). With
@@ -508,7 +565,8 @@ def make_turn_loop_trial_with_backend(
                 "context_growth_per_turn": (
                     (input_tokens_per_turn[-1] - input_tokens_per_turn[0])
                     / max(1, len(input_tokens_per_turn) - 1)
-                    if len(input_tokens_per_turn) >= 2 else 0.0
+                    if len(input_tokens_per_turn) >= 2
+                    else 0.0
                 ),
                 "context_policy": (
                     handle.context_policy.name if handle.context_policy else "none"
@@ -518,6 +576,7 @@ def make_turn_loop_trial_with_backend(
                 ),
                 "session_path": session_path,
                 "context_omitted_total": ctx_omitted_total,
+                "context_chars_elided_total": ctx_chars_elided_total,
                 "context_frames_peak": ctx_frames_peak,
             },
         )

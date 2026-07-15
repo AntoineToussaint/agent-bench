@@ -25,6 +25,16 @@ jobs:
       - name: Sync workspace (all packages + dev tools)
         run: uv sync --all-packages --group dev --frozen
 
+      - name: Lint maintained Python sources
+        run: >-
+          uv run --all-packages --group dev ruff check
+          lib/agent-eval-core/src lib/agent-eval-core/tests
+          experiments/file-localization/src experiments/file-localization/tests
+          experiments/file-localization/scripts/run_config_arms.py
+          experiments/tool-selection/src experiments/tool-selection/tests
+          experiments/code-editing/src experiments/code-editing/tests
+          experiments/code-editing/scripts/run_scaffold_gate.py
+
       # Only the top-level package test suites — the per-task fixture tests
       # under experiments/code-editing/tasks/ run inside their own sandboxes,
       # not here.

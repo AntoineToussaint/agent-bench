@@ -20,7 +20,7 @@ from openai import BadRequestError
 # OpenAI                                                                       #
 # --------------------------------------------------------------------------- #
 class _FakeOAIStream:
-    """Stands in for the ChatCompletionStreamManager context manager."""
+    """Stands in for the ResponseStreamManager context manager."""
 
     def __init__(self, events, final):
         self._events = events
@@ -34,13 +34,39 @@ class _FakeOAIStream:
 
     def __iter__(self):
         for e in self._events:
-            if e.type == "content.delta" or e.type.endswith("arguments.delta"):
+            if e.type == "response.output_text.delta" or e.type.endswith(
+                "arguments.delta"
+            ):
                 time.sleep(0.003)  # simulate prefill before the first token
             yield e
             time.sleep(0.001)  # simulate decode between tokens
 
+    def get_final_response(self):
+        return self._final
+
     def get_final_completion(self):
         return self._final
+
+
+def _oai_item(item_type, **values):
+    item = SimpleNamespace(type=item_type, **values)
+    item.model_dump = lambda **kw: {
+        "type": item_type,
+        **{key: value for key, value in values.items() if value is not None},
+    }
+    return item
+
+
+def _oai_response(output, input_tokens, output_tokens, cached_tokens=0, raw_id="x"):
+    return SimpleNamespace(
+        output=output,
+        usage=SimpleNamespace(
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            input_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
+        ),
+        model_dump=lambda: {"id": raw_id},
+    )
 
 
 def _make_openai(monkeypatch, events, final):
@@ -51,19 +77,20 @@ def _make_openai(monkeypatch, events, final):
     c.reset("system")
     c.add_user_text("hi")
     c.client = SimpleNamespace(
-        chat=SimpleNamespace(
-            completions=SimpleNamespace(stream=lambda **kw: _FakeOAIStream(events, final))
-        )
+        responses=SimpleNamespace(stream=lambda **kw: _FakeOAIStream(events, final))
     )
     return c
 
 
 def test_openai_stream_splits_latency_text(monkeypatch):
-    events = [SimpleNamespace(type="content.delta"), SimpleNamespace(type="content.done")]
-    final = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="hello", tool_calls=None))],
-        usage=SimpleNamespace(prompt_tokens=12, completion_tokens=5),
-        model_dump=lambda: {"id": "x"},
+    events = [
+        SimpleNamespace(type="response.output_text.delta"),
+        SimpleNamespace(type="response.output_text.done"),
+    ]
+    final = _oai_response(
+        [_oai_item("message", content=[_oai_item("output_text", text="hello")])],
+        input_tokens=12,
+        output_tokens=5,
     )
     c = _make_openai(monkeypatch, events, final)
     msg = c.step(tools=[])
@@ -76,16 +103,21 @@ def test_openai_stream_splits_latency_text(monkeypatch):
 
 def test_openai_stream_splits_latency_tool_call(monkeypatch):
     events = [
-        SimpleNamespace(type="tool_calls.function.arguments.delta"),
-        SimpleNamespace(type="tool_calls.function.arguments.done"),
+        SimpleNamespace(type="response.function_call_arguments.delta"),
+        SimpleNamespace(type="response.function_call_arguments.done"),
     ]
-    tc = SimpleNamespace(
-        id="call_1", function=SimpleNamespace(name="edit", arguments='{"path": "a.py"}')
-    )
-    final = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content=None, tool_calls=[tc]))],
-        usage=SimpleNamespace(prompt_tokens=30, completion_tokens=8),
-        model_dump=lambda: {"id": "y"},
+    final = _oai_response(
+        [
+            _oai_item(
+                "function_call",
+                call_id="call_1",
+                name="edit",
+                arguments='{"path": "a.py"}',
+            )
+        ],
+        input_tokens=30,
+        output_tokens=8,
+        raw_id="y",
     )
     c = _make_openai(monkeypatch, events, final)
     msg = c.step(tools=[{"name": "edit", "input_schema": {}}])
@@ -98,11 +130,7 @@ def test_openai_no_content_events_zero_generate(monkeypatch):
     # A stream that never emits a content/tool delta (edge case) must not blow
     # up: ttft falls back to total, generate collapses to 0.
     events = [SimpleNamespace(type="chunk")]
-    final = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="", tool_calls=None))],
-        usage=SimpleNamespace(prompt_tokens=1, completion_tokens=0),
-        model_dump=lambda: {},
-    )
+    final = _oai_response([], input_tokens=1, output_tokens=0)
     c = _make_openai(monkeypatch, events, final)
     msg = c.step(tools=[])
     assert msg.usage.generate_seconds == 0.0
@@ -110,7 +138,7 @@ def test_openai_no_content_events_zero_generate(monkeypatch):
 
 
 def _bad_request(message, param=None):
-    req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+    req = httpx.Request("POST", "https://api.openai.com/v1/responses")
     return BadRequestError(
         message, response=httpx.Response(400, request=req), body={"param": param}
     )
@@ -124,10 +152,11 @@ def test_openai_falls_back_to_create_when_streaming_unsupported(monkeypatch):
             "Your organization must be verified to stream this model.", param="stream"
         )
 
-    created = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="fallback", tool_calls=None))],
-        usage=SimpleNamespace(prompt_tokens=4, completion_tokens=2),
-        model_dump=lambda: {"id": "fb"},
+    created = _oai_response(
+        [_oai_item("message", content=[_oai_item("output_text", text="fallback")])],
+        input_tokens=4,
+        output_tokens=2,
+        raw_id="fb",
     )
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     from agent_eval.models.openai_client import _OpenAIClient
@@ -136,9 +165,7 @@ def test_openai_falls_back_to_create_when_streaming_unsupported(monkeypatch):
     c.reset("system")
     c.add_user_text("hi")
     c.client = SimpleNamespace(
-        chat=SimpleNamespace(
-            completions=SimpleNamespace(stream=_raise, create=lambda **kw: created)
-        )
+        responses=SimpleNamespace(stream=_raise, create=lambda **kw: created)
     )
     msg = c.step(tools=[])
     assert msg.text == "fallback"
@@ -165,12 +192,37 @@ def test_openai_reraises_unrelated_bad_request(monkeypatch):
     c = _OpenAIClient(model_id="gpt-5.4")
     c.reset("system")
     c.add_user_text("hi")
-    c.client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(stream=_raise, create=_create))
-    )
+    c.client = SimpleNamespace(responses=SimpleNamespace(stream=_raise, create=_create))
     with pytest.raises(BadRequestError):
         c.step(tools=[])
     assert called["create"] is False  # no fallback attempted
+
+
+def test_openai_responses_replays_output_and_accounts_for_cache(monkeypatch):
+    events = [SimpleNamespace(type="response.output_text.delta")]
+    reasoning = _oai_item("reasoning", encrypted_content="opaque")
+    call = _oai_item("function_call", call_id="call_1", name="edit", arguments="{}")
+    final = _oai_response(
+        [reasoning, call], input_tokens=20, output_tokens=4, cached_tokens=7
+    )
+    captured = {}
+    c = _make_openai(monkeypatch, events, final)
+    c.client.responses.stream = lambda **kw: (
+        captured.update(kw) or _FakeOAIStream(events, final)
+    )
+
+    msg = c.step(
+        tools=[{"name": "edit", "input_schema": {"type": "object"}}],
+        tool_choice={"type": "tool", "name": "edit"},
+    )
+
+    assert captured["store"] is False
+    assert captured["tool_choice"] == {"type": "function", "name": "edit"}
+    assert captured["tools"][0]["name"] == "edit"
+    assert c.messages[-2]["type"] == "reasoning"
+    assert c.messages[-1]["type"] == "function_call"
+    assert msg.usage.input_tokens == 13
+    assert msg.usage.cache_read_tokens == 7
 
 
 # --------------------------------------------------------------------------- #
@@ -180,9 +232,14 @@ def test_openrouter_stream_splits_latency(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
     from agent_eval.models.openrouter_client import _OpenRouterClient
 
-    events = [SimpleNamespace(type="content.delta"), SimpleNamespace(type="content.done")]
+    events = [
+        SimpleNamespace(type="content.delta"),
+        SimpleNamespace(type="content.done"),
+    ]
     final = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="ok", tool_calls=None))],
+        choices=[
+            SimpleNamespace(message=SimpleNamespace(content="ok", tool_calls=None))
+        ],
         usage=SimpleNamespace(prompt_tokens=9, completion_tokens=3),
         model_dump=lambda: {"id": "z"},
     )
@@ -191,7 +248,9 @@ def test_openrouter_stream_splits_latency(monkeypatch):
     c.add_user_text("hi")
     c.client = SimpleNamespace(
         chat=SimpleNamespace(
-            completions=SimpleNamespace(stream=lambda **kw: _FakeOAIStream(events, final))
+            completions=SimpleNamespace(
+                stream=lambda **kw: _FakeOAIStream(events, final)
+            )
         )
     )
     msg = c.step(tools=[])
@@ -237,9 +296,7 @@ def _make_google(monkeypatch, chunks):
             yield ch
             time.sleep(0.001)
 
-    c.client = SimpleNamespace(
-        models=SimpleNamespace(generate_content_stream=_stream)
-    )
+    c.client = SimpleNamespace(models=SimpleNamespace(generate_content_stream=_stream))
     return c
 
 
